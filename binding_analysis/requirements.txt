@@ -5,4 +5,5 @@ scipy
 statsmodels
 sympy
 pytest
+pytest-cov
 pyyaml
