@@ -17,7 +17,6 @@ def main():
 
     os.makedirs(output_folder, exist_ok=True)
     delete_old_result_files(output_folder)
-
     process_csv_files_in_folder(input_folder, output_folder)
 
 if __name__ == "__main__":
