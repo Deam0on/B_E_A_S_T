@@ -166,6 +166,24 @@ pip install -r requirements.txt
 
 ---
 
+## Testing
+
+This project includes unit tests for all implemented binding models. These tests use synthetic data based on experimentally observed concentration ranges and fitted parameters.
+
+To run tests locally:
+
+```bash
+pytest tests/
+```
+
+Tests are automatically run via GitHub Actions on every push and pull request.
+
+Each test validates that:
+- The model produces finite results with realistic inputs
+- Fitted parameters are within reasonable bounds of known synthetic values
+- Optimization converges using `scipy.optimize.curve_fit` with increased iteration limits
+
+
 ## License
 
 This project is released under the MIT License. See `LICENSE` for details.
