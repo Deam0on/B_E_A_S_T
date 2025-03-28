@@ -21,15 +21,15 @@ This Python tool analyzes titration experiment data to determine association con
 ## Folder Structure
 
 ```
-binding_analysis/
-├── binding_analysis_tool.py       # Main script (entry point)
-├── models.py                      # Model definitions and initial guess logic
-├── analysis.py                    # Curve fitting, evaluation, and plotting
-├── utils.py                       # CSV handling, cleanup, logging setup
-├── requirements.txt               # All required dependencies
-├── README.md                      # This file
-├── data_input/                    # Folder for input CSV files
-└── results/                       # Output plots and results
+mysak_delta_iso/
+├── binding_analysis/
+│   ├── binding_analysis_tool.py
+│   ├── analysis.py
+│   ├── utils.py
+│   ├── models.py
+│   └── requirements.txt
+├── colab_template.ipynb
+└── README.md
 ```
 
 ---
