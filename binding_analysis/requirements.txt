@@ -5,3 +5,4 @@ scipy
 statsmodels
 sympy
 pytest
+pyyaml
