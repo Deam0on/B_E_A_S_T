@@ -19,16 +19,18 @@ This Python tool analyzes titration experiment data to determine association con
 
 ## 📁 Folder Structure
 
+```
+.
 binding_analysis/ 
-├── binding_analysis_tool.py # Main script (entry point) 
-├── models.py # Model definitions and initial guess logic 
-├── analysis.py # Curve fitting, evaluation, and plotting 
-├── utils.py # CSV handling, cleanup, logging setup 
-├── requirements.txt # All required dependencies 
-├── README.md # This file 
-├── data_input/ # Folder for input CSV files 
-└── results/ # Output plots and results
-
+├── binding_analysis_tool.py      # Main script (entry point) 
+├── models.py                     # Model definitions and initial guess logic 
+├── analysis.py                   # Curve fitting, evaluation, and plotting 
+├── utils.py                      # CSV handling, cleanup, logging setup 
+├── requirements.txt              # All required dependencies 
+├── README.md                     # This file 
+├── data_input/                   # Folder for input CSV files 
+└── results/                      # Output plots and results
+```
 ---
 
 ## 📊 Input File Format
@@ -51,10 +53,12 @@ Input `.csv` files must be placed in the `data_input/` folder and contain the fo
 
 ```bash
 pip install -r requirements.txt
+```
 2. Add your .csv data files into the data_input/ directory.
 3. Run the tool:
 ```bash
 python binding_analysis_tool.py
+```
 4. Output will be saved to the results/ folder:
 - Fitted values and residuals (*_results.csv)
 - Fit and residual plots (*_plot.png)
