@@ -37,7 +37,7 @@ Input `.csv` files must be placed in the `data_input/` folder and contain the fo
 
 You can run a template:
 > [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Deam0on/mysak_delta_iso/blob/main/colab_template.ipynb)
-> [![Launch Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/Deam0on/mysak_delta_iso/HEAD?urlpath=lab/tree/colab_template.ipynb)
+
 
 
 Or manually:
