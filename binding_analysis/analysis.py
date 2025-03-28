@@ -7,7 +7,7 @@ from statsmodels.stats.diagnostic import acorr_ljungbox, acorr_breusch_godfrey, 
 from models import model_definitions
 from utils import save_combined_csv
 from utils import autocorrelation_tests
-
+import traceback
 import logging
 
 def process_csv_files_in_folder(input_folder, output_folder):
@@ -78,7 +78,9 @@ def process_csv_files_in_folder(input_folder, output_folder):
                 logging.info(f"{model_name} → R²={r2:.3f}, RMSE={rmse:.3f}")
 
             except Exception as e:
-                logging.warning(f"Model {model_name} failed: {e}")
+                logging.error(f"Exception in model {model_name}: {e}")
+                logging.error(traceback.format_exc())  # <- full traceback
+                continue
 
         output_file = os.path.join(output_folder, filename.replace(".csv", "_results.csv"))
         save_combined_csv(output_rows, output_file)
