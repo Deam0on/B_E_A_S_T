@@ -20,7 +20,6 @@ This Python tool analyzes titration experiment data to determine association con
 ## 📁 Folder Structure
 
 ```
-.
 binding_analysis/ 
 ├── binding_analysis_tool.py      # Main script (entry point) 
 ├── models.py                     # Model definitions and initial guess logic 
