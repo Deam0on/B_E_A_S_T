@@ -50,7 +50,8 @@ Input `.csv` files must be placed in the `data_input/` folder and contain the fo
 
 ## How to Run
 
-You can [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YOUR_USERNAME/YOUR_REPO/blob/main/colab_template.ipynb)
+You can run a template:
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YOUR_USERNAME/YOUR_REPO/blob/main/colab_template.ipynb)
 
 Or manually:
 1. Install the dependencies:
