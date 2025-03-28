@@ -1,8 +1,16 @@
-
+import sys
 import os
 import logging
 from analysis import process_csv_files_in_folder
 from utils import delete_old_result_files
+
+def log_uncaught_exceptions(exc_type, exc_value, exc_traceback):
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+    logging.critical("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
+
+sys.excepthook = log_uncaught_exceptions
 
 def setup_logging():
     os.makedirs("results", exist_ok=True)
