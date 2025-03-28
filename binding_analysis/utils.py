@@ -43,6 +43,15 @@ def autocorrelation_tests(H0, residuals, model_name, lags=10):
         logging.info("✅ No significant autocorrelation detected in residuals.")
 
     logging.info("-" * 70)
+    return {
+        "ljung_stat": lb_stat,
+        "ljung_p": lb_p,
+        "bg_name": bg_name,
+        "bg_stat": bg_stat,
+        "bg_p": bg_p,
+        "ljung_significant": ljung_fail,
+        "bg_significant": bg_fail
+    }
 
 
 def delete_old_result_files(folder_path):
