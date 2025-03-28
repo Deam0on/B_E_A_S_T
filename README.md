@@ -122,7 +122,7 @@ mysak_delta_iso/
 ├── example_data/
 │   ├── colab_template.ipynb
 │   └── test.csv
-├── reproducibility.md
+├── REPRODUCIBILITY.md
 └── README.md
 ```
 
