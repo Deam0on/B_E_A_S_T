@@ -29,6 +29,9 @@ jobs:
         pip install -r binding_analysis/requirements.txt
         pip install pytest
 
+    - name: Set PYTHONPATH
+      run: echo "PYTHONPATH=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+
     - name: Run tests
       run: |
         pytest tests/
