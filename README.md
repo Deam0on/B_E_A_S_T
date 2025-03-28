@@ -168,6 +168,8 @@ pip install -r requirements.txt
 
 ## Testing
 
+![CI](https://github.com/Deam0on/mysak_delta_iso/actions/workflows/test.yml/badge.svg)
+
 This project includes unit tests for all implemented binding models. These tests use synthetic data based on experimentally observed concentration ranges and fitted parameters.
 
 To run tests locally:
