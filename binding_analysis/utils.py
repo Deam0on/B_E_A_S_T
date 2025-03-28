@@ -49,8 +49,8 @@ def autocorrelation_tests(H0, residuals, model_name, lags=10):
         "bg_name": bg_name,
         "bg_stat": bg_stat,
         "bg_p": bg_p,
-        "ljung_significant": ljung_fail,
-        "bg_significant": bg_fail
+        "ljung_failed": lb_p < 0.05,
+        "bg_failed": bg_p < 0.05
     }
 
 
