@@ -38,7 +38,7 @@ Example dataset is included in `example_dataset/test.csv`
 ## How to Run
 
 You can run a template:
-> [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Deam0on/mysak_delta_iso/blob/main/colab_template.ipynb)
+> [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Deam0on/mysak_delta_iso/blob/main/example_data/colab_template.ipynb)
 
 
 
