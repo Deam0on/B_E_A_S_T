@@ -118,12 +118,10 @@ mysak_delta_iso/
 │   ├── models.py
 │   ├── utils.py
 │   ├── config.yaml
-│   ├── requirements.txt
-├── data_input/
-├── results/
+│   └── requirements.txt
 ├── example_data/
+│   ├── colab_template.ipynb
 │   └── test.csv
-├── colab_template.ipynb
 ├── reproducibility.md
 └── README.md
 ```
