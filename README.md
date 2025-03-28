@@ -107,17 +107,3 @@ Install them using:
 ```bash
 pip install -r requirements.txt
 ```
-
----
-
-## 📜 License
-
-MIT License
-
----
-
-## ✍️ Author
-
-**Your Name**  
-📧 your.email@example.com  
-💡 Contributions welcome!
