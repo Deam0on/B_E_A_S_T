@@ -45,6 +45,7 @@ def process_csv_files_in_folder(input_folder, output_folder):
 
         for model_name, model in models.items():
             try:
+                logging.info(f"Evaluating model: {model_name}")
                 guess = model['initial_guess']
                 bounds = model['bounds']
                 func = model['lambda']
@@ -89,7 +90,11 @@ def process_csv_files_in_folder(input_folder, output_folder):
                     "bg_failed": autocorr["bg_failed"]
                 })
 
-                logging.info(f"{model_name} → R²={r2:.3f}, RMSE={rmse:.3f}")
+                logging.info(f"Model {model_name} fit completed")
+                logging.info(f"→ Parameters: {params}")
+                logging.info(f"→ R²: {r_squared:.4f}, AIC: {AIC:.2f}, BIC: {BIC:.2f}, RMSE: {RMSE:.4f}")
+                logging.info(f"Ljung-Box p = {autocorr_results['ljung_p']:.4f} | Failed: {autocorr_results['ljung_failed']}")
+                logging.info(f"{autocorr_results['bg_name']} p = {autocorr_results['bg_p']:.4f} | Failed: {autocorr_results['bg_failed']}")
 
             except Exception as e:
                 logging.error(f"Exception in model {model_name}: {e}")
