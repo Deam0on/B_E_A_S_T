@@ -36,11 +36,11 @@ def autocorrelation_tests(H0, residuals, model_name, lags=10):
     logging.info(f"{bg_name}: stat = {bg_stat:.3f}, p = {bg_p:.3f}")
 
     if ljung_fail and bg_fail:
-        logging.warning("⚠️ Both tests detected autocorrelation! Model may need revision.")
+        logging.warning("Both tests detected autocorrelation! Model may need revision.")
     elif ljung_fail or bg_fail:
-        logging.warning("⚠️ One test detected autocorrelation. Consider reviewing residuals.")
+        logging.warning("One test detected autocorrelation. Consider reviewing residuals.")
     else:
-        logging.info("✅ No significant autocorrelation detected in residuals.")
+        logging.info("No significant autocorrelation detected in residuals.")
 
     logging.info("-" * 70)
     return {
