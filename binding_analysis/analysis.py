@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import pandas as pd
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 from statsmodels.api import OLS, add_constant
@@ -7,6 +8,7 @@ from statsmodels.stats.diagnostic import acorr_ljungbox, acorr_breusch_godfrey, 
 from models import model_definitions
 from utils import save_combined_csv
 from utils import autocorrelation_tests
+from utils import validate_data
 import traceback
 import logging
 
@@ -17,6 +19,18 @@ def process_csv_files_in_folder(input_folder, output_folder):
 
         full_path = os.path.join(input_folder, filename)
         logging.info(f"Processing: {full_path}")
+
+        # Use context manager + pandas
+        try:
+            df = pd.read_csv(full_path)
+        except Exception as e:
+            logging.error(f"Failed to read {filename}: {e}")
+            continue
+    
+        # Validate required columns and check for nulls
+        if not validate_data(df):
+            logging.error(f"Skipping {filename} due to validation error.")
+            continue
 
         H0, G0, d_delta_exp = np.genfromtxt(full_path, delimiter=',', names=True, unpack=True)
         H0 = np.array(H0, dtype=float)
