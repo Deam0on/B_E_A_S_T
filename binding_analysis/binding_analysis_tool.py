@@ -4,6 +4,11 @@ import logging
 from analysis import process_csv_files_in_folder
 from utils import delete_old_result_files
 from datetime import datetime
+import yaml
+
+def load_config(path="config.yaml"):
+    with open(path, "r") as f:
+        return yaml.safe_load(f)
 
 def log_uncaught_exceptions(exc_type, exc_value, exc_traceback):
     if issubclass(exc_type, KeyboardInterrupt):
@@ -31,12 +36,13 @@ def setup_logging():
 
 def main():
     setup_logging()
+    config = load_config()
     input_folder = "data_input"
     output_folder = "results"
 
     os.makedirs(output_folder, exist_ok=True)
     delete_old_result_files(output_folder)
-    process_csv_files_in_folder(input_folder, output_folder)
+    process_csv_files_in_folder(config)
 
     logging.info("Analysis completed. Results and log saved to /results.")
 
