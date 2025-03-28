@@ -6,6 +6,16 @@ import numpy as np
 import statsmodels.api as sm
 from statsmodels.stats.diagnostic import acorr_ljungbox, acorr_breusch_godfrey, het_white
 
+def validate_data(df):
+    required_cols = ['H', 'G', 'delta']
+    missing = [col for col in required_cols if col not in df.columns]
+    if missing:
+        logging.error(f"Missing columns: {missing}")
+        return False
+    if df[required_cols].isnull().any().any():
+        logging.warning("Detected NaNs in input data.")
+    return True
+
 def autocorrelation_tests(H0, residuals, model_name, lags=10):
     """
     Performs Ljung-Box and Breusch-Godfrey (or White's) tests on residuals.
