@@ -1,11 +1,11 @@
 
-# 🧪 Reproducibility Report
+# Reproducibility Report
 
 This document provides the necessary information to ensure that the results produced using this repository can be reproduced reliably across different environments.
 
 ---
 
-## 📦 Python Environment
+## Python Environment
 
 This project was developed and tested with:
 
@@ -14,7 +14,7 @@ This project was developed and tested with:
 
 ---
 
-## 📚 Dependencies
+## Dependencies
 
 All required packages are listed in [`requirements.txt`](requirements.txt).  
 You can install them using:
@@ -37,7 +37,7 @@ pip freeze > requirements_lock.txt
 
 ---
 
-## 🔁 How to Reproduce the Results
+## How to Reproduce the Results
 
 1. Clone the repository:
 
@@ -70,7 +70,7 @@ python binding_analysis_tool.py
 
 ---
 
-## 🧪 Sample Dataset
+## Sample Dataset
 
 An example input file is included in:
 
@@ -82,14 +82,14 @@ You can copy or move it into the `data_input/` directory before running the tool
 
 ---
 
-## 📝 Logging and Traceability
+## Logging and Traceability
 
 - All logs and outputs will be saved in the `results/` folder.
 - Logs include model parameters, metrics, autocorrelation diagnostics, and error messages if any.
 
 ---
 
-## 🧠 Notes
+## Notes
 
 - The models used involve numerical optimization and may produce slightly different fits depending on environment (especially if run on CPU vs GPU or different BLAS libraries).
 - Ensure reproducibility by fixing the initial guesses or setting seeds where randomness is introduced (e.g., in optimization).
