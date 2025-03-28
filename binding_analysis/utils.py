@@ -86,7 +86,14 @@ def save_combined_csv(results, output_file):
                 "r_squared": result["r_squared"],
                 "AIC": result["AIC"],
                 "BIC": result["BIC"],
-                "RMSE": result["RMSE"]
+                "RMSE": result["RMSE"],
+                "ljung_stat": result.get("ljung_stat"),
+                "ljung_p": result.get("ljung_p"),
+                "ljung_failed": result.get("ljung_failed"),
+                "bg_test": result.get("bg_test"),
+                "bg_stat": result.get("bg_stat"),
+                "bg_p": result.get("bg_p"),
+                "bg_failed": result.get("bg_failed")
             })
 
     pd.DataFrame(rows).to_csv(output_file, index=False)
