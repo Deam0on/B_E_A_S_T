@@ -3,6 +3,7 @@ import os
 import logging
 from analysis import process_csv_files_in_folder
 from utils import delete_old_result_files
+from datetime import datetime
 
 def log_uncaught_exceptions(exc_type, exc_value, exc_traceback):
     if issubclass(exc_type, KeyboardInterrupt):
@@ -18,12 +19,15 @@ def setup_logging():
 
     logging.basicConfig(
         level=logging.INFO,
-        format='[%(asctime)s] %(levelname)s: %(message)s',
+        format="%(asctime)s [%(levelname)s] %(message)s",
         handlers=[
-            logging.FileHandler(log_path, mode='w'),
-            logging.StreamHandler()  # still print to Colab terminal
+            logging.FileHandler(log_path, mode='w', encoding='utf-8'),
+            logging.StreamHandler()
         ]
     )
+
+    logging.info("Binding analysis started")
+    logging.info(f"Timestamp: {datetime.now().isoformat()}")
 
 def main():
     setup_logging()
