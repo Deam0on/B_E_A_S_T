@@ -5,7 +5,7 @@ This Python tool analyzes titration experiment data to determine association con
 
 ---
 
-## 📦 Features
+## Features
 
 - Multiple binding models
 - Automatic parameter optimization
@@ -18,7 +18,7 @@ This Python tool analyzes titration experiment data to determine association con
 
 ---
 
-## 📁 Folder Structure
+## Folder Structure
 
 ```
 binding_analysis/
@@ -34,7 +34,7 @@ binding_analysis/
 
 ---
 
-## 📊 Input File Format
+## Input File Format
 
 Input `.csv` files must be placed in the `data_input/` folder and contain the following columns:
 
@@ -44,11 +44,11 @@ Input `.csv` files must be placed in the `data_input/` folder and contain the fo
 | `G`    | Guest concentration              |
 | `delta`| Observed chemical shift (Hz)     |
 
-> ⚠️ Do not rename these columns – they are required for parsing.
+> Do not rename these columns – they are required for parsing.
 
 ---
 
-## 🚀 How to Run
+## How to Run
 
 1. Install the dependencies:
 
@@ -71,7 +71,7 @@ python binding_analysis_tool.py
 
 ---
 
-## 🧪 Supported Binding Models
+## Supported Binding Models
 
 | Model  | Description                   |
 |--------|-------------------------------|
@@ -83,7 +83,7 @@ python binding_analysis_tool.py
 
 ---
 
-## 📈 Output Summary (per model per file)
+## Output Summary (per model per file)
 
 - Optimized parameters
 - Standard errors
@@ -93,7 +93,7 @@ python binding_analysis_tool.py
 
 ---
 
-## 📚 Dependencies
+## Dependencies
 
 - numpy
 - pandas
