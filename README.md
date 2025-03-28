@@ -31,6 +31,8 @@ Input `.csv` files must be placed in the `data_input/` folder and contain the fo
 
 > Do not rename these columns – they are required for parsing.
 
+Example dataset is included in `example_dataset/test.csv`
+
 ---
 
 ## How to Run
