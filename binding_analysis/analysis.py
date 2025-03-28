@@ -51,7 +51,7 @@ def process_csv_files_in_folder(input_folder, output_folder):
 
                 results[model_name] = (fit_vals, residuals)
 
-                autocorr_results = autocorrelation_tests(H0, residuals, model_name)
+                autocorr = autocorrelation_tests(H0, residuals, model_name)
 
                 output_rows.append({
                     "file": filename,
@@ -66,11 +66,13 @@ def process_csv_files_in_folder(input_folder, output_folder):
                     "fitted_values": fit_vals.tolist(),
                     "residuals": residuals.tolist(),
                     "H_over_G": (H0 / G0).tolist(),
-                    "ljung_stat": autocorr_results["ljung_stat"],
-                    "ljung_p": autocorr_results["ljung_p"],
-                    "bg_test": autocorr_results["bg_name"],
-                    "bg_stat": autocorr_results["bg_stat"],
-                    "bg_p": autocorr_results["bg_p"]
+                    "ljung_stat": autocorr["ljung_stat"],
+                    "ljung_p": autocorr["ljung_p"],
+                    "ljung_failed": autocorr["ljung_failed"],
+                    "bg_test": autocorr["bg_name"],
+                    "bg_stat": autocorr["bg_stat"],
+                    "bg_p": autocorr["bg_p"],
+                    "bg_failed": autocorr["bg_failed"]
                 })
 
                 logging.info(f"{model_name} → R²={r2:.3f}, RMSE={rmse:.3f}")
