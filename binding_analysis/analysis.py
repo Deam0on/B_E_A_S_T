@@ -6,6 +6,7 @@ from statsmodels.api import OLS, add_constant
 from statsmodels.stats.diagnostic import acorr_ljungbox, acorr_breusch_godfrey, het_white
 from models import model_definitions
 from utils import save_combined_csv
+from utils import autocorrelation_tests
 
 import logging
 
@@ -50,6 +51,8 @@ def process_csv_files_in_folder(input_folder, output_folder):
 
                 results[model_name] = (fit_vals, residuals)
 
+                autocorr_results = autocorrelation_tests(H0, residuals, model_name)
+
                 output_rows.append({
                     "file": filename,
                     "model": model_name,
@@ -62,7 +65,12 @@ def process_csv_files_in_folder(input_folder, output_folder):
                     "confidence_intervals": [(v - 1.96*s, v + 1.96*s) for v, s in zip(params, std_err)],
                     "fitted_values": fit_vals.tolist(),
                     "residuals": residuals.tolist(),
-                    "H_over_G": (H0 / G0).tolist()
+                    "H_over_G": (H0 / G0).tolist(),
+                    "ljung_stat": autocorr_results["ljung_stat"],
+                    "ljung_p": autocorr_results["ljung_p"],
+                    "bg_test": autocorr_results["bg_name"],
+                    "bg_stat": autocorr_results["bg_stat"],
+                    "bg_p": autocorr_results["bg_p"]
                 })
 
                 logging.info(f"{model_name} → R²={r2:.3f}, RMSE={rmse:.3f}")
