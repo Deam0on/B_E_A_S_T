@@ -18,21 +18,6 @@ This Python tool analyzes titration experiment data to determine association con
 
 ---
 
-## Folder Structure
-
-```
-mysak_delta_iso/
-├── binding_analysis/
-│   ├── binding_analysis_tool.py
-│   ├── analysis.py
-│   ├── utils.py
-│   ├── models.py
-│   └── requirements.txt
-├── colab_template.ipynb
-└── README.md
-```
-
----
 
 ## Input File Format
 
@@ -72,6 +57,21 @@ python binding_analysis_tool.py
    - Fitted values and residuals (`*_results.csv`)
    - Fit and residual plots (`*_plot.png`)
    - Logging output printed to console
+
+---
+## Folder Structure
+
+```
+mysak_delta_iso/
+├── binding_analysis/
+│   ├── binding_analysis_tool.py
+│   ├── analysis.py
+│   ├── utils.py
+│   ├── models.py
+│   └── requirements.txt
+├── colab_template.ipynb
+└── README.md
+```
 
 ---
 
