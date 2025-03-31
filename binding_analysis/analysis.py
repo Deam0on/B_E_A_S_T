@@ -55,7 +55,7 @@ def process_csv_files_in_folder(config):
                     model_config["bounds"]["upper"]
                 )
 
-                models = model_definitions(H0, G0)
+                models = model_definitions(H0, G0, d_delta_exp)
                 func = models[model_name]["lambda"]
 
                 params, cov = curve_fit(func, H0, d_delta_exp, p0=initial_guess, bounds=bounds, maxfev=maxfev)
