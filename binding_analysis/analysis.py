@@ -46,7 +46,7 @@ def process_csv_files_in_folder(config):
         results = {}
         output_rows = []
 
-        for model_name in config["models"]:
+        for model_name, model in models.items():
             try:
                 logging.info(f"Evaluating model: {model_name}")
                 guess = model['initial_guess']
