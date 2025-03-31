@@ -22,6 +22,43 @@ This Python-based analysis tool is designed for evaluating titration data from N
 
 ---
 
+## How to Use
+
+### Option 1: Google Colab
+
+Launch in Colab:  
+[Open in Colab](https://colab.research.google.com/github/Deam0on/mysak_delta_iso/blob/main/example_data/colab_template.ipynb)
+
+### Option 2: Run Locally
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/Deam0on/mysak_delta_iso.git
+cd mysak_delta_iso/binding_analysis
+```
+
+2. Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+3. Place `.csv` files into the `data_input/` directory.
+
+4. Run the tool:
+
+```bash
+python binding_analysis_tool.py
+```
+
+5. Review the output in the `results/` folder:
+   - `*_results.csv`: fit parameters and stats
+   - `*_plot.png`: fit and residuals
+   - `log.txt`: execution log
+
+---
+
 ## Input File Format
 
 Input `.csv` files must be placed in the `data_input/` folder. Each file must contain the following columns:
@@ -101,43 +138,6 @@ H₂ + G ⇌ H₂G (K_H₂G)
 **Observed shift:**
 
 δ_obs = (δ_G × [G] + δ_HG × [HG] + δ_H₂G × [H₂G]) / [G]_0
-
----
-
-## How to Use
-
-### Option 1: Google Colab
-
-Launch in Colab:  
-[Open in Colab](https://colab.research.google.com/github/Deam0on/mysak_delta_iso/blob/main/example_data/colab_template.ipynb)
-
-### Option 2: Run Locally
-
-1. Clone the repository:
-
-```bash
-git clone https://github.com/Deam0on/mysak_delta_iso.git
-cd mysak_delta_iso/binding_analysis
-```
-
-2. Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-3. Place `.csv` files into the `data_input/` directory.
-
-4. Run the tool:
-
-```bash
-python binding_analysis_tool.py
-```
-
-5. Review the output in the `results/` folder:
-   - `*_results.csv`: fit parameters and stats
-   - `*_plot.png`: fit and residuals
-   - `log.txt`: execution log
 
 ---
 
