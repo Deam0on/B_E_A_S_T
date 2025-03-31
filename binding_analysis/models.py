@@ -8,7 +8,9 @@ def binding_isotherm_1_1(H0, G0, d_delta_exp, Ka, d_inf):
     d_free = d_delta_exp[0]
     d_delta_comp = (d_free * (HG - G0) / G0) + (d_inf * (HG / G0))
     return d_delta_comp
-    
+
+# Def modelu 1:2
+# Modifikace d_delta_compo -> konst. G pro H(0) = 0
 def binding_isotherm_1_2(H0, G0, Ka, Kd, d_inf_1, d_inf_2):
     d_delta_comp = np.zeros_like(H0)
     for i in range(len(H0)):
@@ -27,6 +29,8 @@ def binding_isotherm_1_2(H0, G0, Ka, Kd, d_inf_1, d_inf_2):
         d_delta_comp[i] = ((d_inf_1 * G0_i * Ka * G_free) + (d_inf_2 * G0_i * Ka * Kd * G_free**2)) / (1 + (Ka * G_free) + (Ka * Kd * G_free**2))
     return d_delta_comp
 
+# Def modelu 2:1
+# Modifikace d_delta_compo -> konst. G pro H(0) = 0
 def binding_isotherm_2_1(H0, G0, Ka, Kd, d_inf_1, d_inf_2):
     d_delta_comp = np.zeros_like(H0)
     for i in range(len(H0)):
@@ -116,13 +120,13 @@ def model_definitions(H0, G0, d_delta_exp):
         "1:2": {
             "function": binding_isotherm_1_2,
             "initial_guess": [100, 100, 100, 100],
-            "bounds": ([0, 0, -np.inf, -np.inf], [np.inf, np.inf, np.inf, np.inf]),
+            "bounds": ([0, 0, np.NINF, np.NINF], [np.inf, np.inf, np.inf, np.inf]),
             "lambda": lambda H0, Ka, Kd, d_inf_1, d_inf_2: binding_isotherm_1_2(H0, G0, Ka, Kd, d_inf_1, d_inf_2)
         },
         "2:1": {
             "function": binding_isotherm_2_1,
             "initial_guess": [100, 100, 100, 100],
-            "bounds": ([0, 0, -np.inf, -np.inf], [np.inf, np.inf, np.inf, np.inf]),
+            "bounds": ([0, 0, np.NINF, np.NINF], [np.inf, np.inf, np.inf, np.inf]),
             "lambda": lambda H0, Ka, Kd, d_inf_1, d_inf_2: binding_isotherm_2_1(H0, G0, Ka, Kd, d_inf_1, d_inf_2)
         },
         "dimer": {
