@@ -124,14 +124,20 @@ def plot_results(H0, G0, d_delta_exp, model_results, filename):
         fitted, residuals = model_results[model]
         x = H0 / G0
 
+        # Left plot: Fit
         axes[i, 0].scatter(x, d_delta_exp, label='Experimental')
         axes[i, 0].plot(x, fitted, color='red', label=f'{model} Fit')
         axes[i, 0].set_title(f'{model} Fit')
+        axes[i, 0].set_xlabel('[H]/[G]')          
+        axes[i, 0].set_ylabel('Δδ [Hz]')          
         axes[i, 0].legend()
 
+        # Right plot: Residuals
         axes[i, 1].scatter(x, residuals, color='red')
         axes[i, 1].axhline(0, linestyle='--')
         axes[i, 1].set_title(f'{model} Residuals')
+        axes[i, 1].set_xlabel('[H]/[G]')           
+        axes[i, 1].set_ylabel('Residual [Hz]')     
 
     plt.tight_layout()
     plt.savefig(filename)
