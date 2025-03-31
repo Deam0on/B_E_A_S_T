@@ -6,11 +6,11 @@ def binding_isotherm_1_1(H0, G0, d_delta_exp, Ka, d_inf):
     sqrt_term = np.sqrt(term * term - 4 * G0 * H0)
     HG = 0.5 * (term - sqrt_term)
     d_free = d_delta_exp[0]
-    d_delta_exp = (d_free * (HG - G0) / G0) + (d_inf * (HG / G0))
-    return d_delta_exp
+    d_delta_comp = (d_free * (HG - G0) / G0) + (d_inf * (HG / G0))
+    return d_delta_comp
     
 def binding_isotherm_1_2(H0, G0, Ka, Kd, d_inf_1, d_inf_2):
-    d_delta_exp = np.zeros_like(H0)
+    d_delta_comp = np.zeros_like(H0)
     for i in range(len(H0)):
         epsilon = 1e-10
         H0_i = H0[i]
@@ -24,11 +24,11 @@ def binding_isotherm_1_2(H0, G0, Ka, Kd, d_inf_1, d_inf_2):
         real_roots = roots[np.isreal(roots)].real
         positive_real_roots = real_roots[real_roots > epsilon]
         G_free = np.min(positive_real_roots) if len(positive_real_roots) > 0 else epsilon
-        d_delta_exp[i] = ((d_inf_1 * G0_i * Ka * G_free) + (d_inf_2 * G0_i * Ka * Kd * G_free**2)) / (1 + (Ka * G_free) + (Ka * Kd * G_free**2))
-    return d_delta_exp
+        d_delta_comp[i] = ((d_inf_1 * G0_i * Ka * G_free) + (d_inf_2 * G0_i * Ka * Kd * G_free**2)) / (1 + (Ka * G_free) + (Ka * Kd * G_free**2))
+    return d_delta_comp
 
 def binding_isotherm_2_1(H0, G0, Ka, Kd, d_inf_1, d_inf_2):
-    d_delta_exp = np.zeros_like(H0)
+    d_delta_comp = np.zeros_like(H0)
     for i in range(len(H0)):
         epsilon = 1e-10
         H0_i = H0[i]
@@ -42,8 +42,8 @@ def binding_isotherm_2_1(H0, G0, Ka, Kd, d_inf_1, d_inf_2):
         real_roots = roots[np.isreal(roots)].real
         positive_real_roots = real_roots[real_roots > epsilon]
         H_free = np.min(positive_real_roots) if len(positive_real_roots) > 0 else epsilon
-        d_delta_exp[i] = ((d_inf_1 * G0_i * Ka * H_free) + (2 * d_inf_2 * G0_i * Ka * Kd * H_free**2)) / (G0_i * (1 + (Ka * H_free) + (Ka * Kd* H_free**2)))
-    return d_delta_exp
+        d_delta_comp[i] = ((d_inf_1 * G0_i * Ka * H_free) + (2 * d_inf_2 * G0_i * Ka * Kd * H_free**2)) / (G0_i * (1 + (Ka * H_free) + (Ka * Kd* H_free**2)))
+    return d_delta_comp
 
 
 def binding_dimer(H0, G0, Ka, Kd, d_inf_1, d_inf_2):
@@ -66,9 +66,9 @@ def binding_dimer(H0, G0, Ka, Kd, d_inf_1, d_inf_2):
         d_obs[i] = numerator / denominator
 
     # Convert to Δδ
-    d_delta_exp = d_obs - d_obs[0]
-    d_delta_exp[0] = 0
-    return d_delta_exp
+    d_delta_comp = d_obs - d_obs[0]
+    d_delta_comp[0] = 0
+    return d_delta_comp
 
 def multi_model(H0, G0, KHG, Kd, KH2G, dG, dHG, dH2G, max_iter=100, tol=1e-6):
     d_obs = np.zeros_like(H0)
@@ -101,9 +101,9 @@ def multi_model(H0, G0, KHG, Kd, KH2G, dG, dHG, dH2G, max_iter=100, tol=1e-6):
         d_obs[i] = numerator / denominator
 
     # Convert to Δδ
-    d_delta_exp = d_obs - d_obs[0]
-    d_delta_exp[0] = 0
-    return d_delta_exp
+    d_delta_comp = d_obs - d_obs[0]
+    d_delta_comp[0] = 0
+    return d_delta_comp
 
 def model_definitions(H0, G0, d_delta_exp):
     return {
