@@ -1,70 +1,83 @@
 
 import numpy as np
 
-def binding_isotherm_1_1(H0, G0, Ka, dG, dHG):
+def binding_isotherm_1_1(H0, G0, d_delta_exp, Ka, d_inf):
     term = G0 + H0 + (1 / Ka)
-    sqrt_term = np.sqrt(term**2 - 4 * H0 * G0)
+    sqrt_term = np.sqrt(term * term - 4 * G0 * H0)
     HG = 0.5 * (term - sqrt_term)
-    G_free = G0 - HG
-    d_obs = (dG * (G_free / G0)) + (dHG * (HG / G0))
-    return d_obs
+    d_free = d_delta_exp[0]
+    delta_shift = (d_free * (HG - G0) / G0) + (d_inf * (HG / G0))
+    return delta_shift
     
-def binding_isotherm_1_2(H0, G0, K1, K2, dG, dHG, dHG2):
-    d_obs = np.zeros_like(H0)
-    epsilon = 1e-10
+def binding_isotherm_1_2(H0, G0, Ka, Kd, d_inf_1, d_inf_2):
+    delta_shift = np.zeros_like(H0)
     for i in range(len(H0)):
-        a = 2 * K1 * K2 * H0[i]
-        b = K1 * H0[i]
-        c = 1
-        d = -G0[i]
-        roots = np.roots([a, b, c, d])
+        epsilon = 1e-10
+        H0_i = H0[i]
+        G0_i = G0[i]
+        a = (Ka * Kd)
+        b = (Ka * ((2 * Kd * H0_i) - (Kd * G0_i) + 1))
+        c = (Ka * (H0_i - G0_i) + 1)
+        d = -1 * G0_i
+        coefficients = [a, b, c, d]
+        roots = np.roots(coefficients)
         real_roots = roots[np.isreal(roots)].real
-        G = np.min(real_roots[real_roots > epsilon]) if len(real_roots[real_roots > epsilon]) > 0 else epsilon
-        HG = K1 * H0[i] * G
-        HG2 = K1 * K2 * H0[i] * G**2
-        free_G = G0[i] - HG - 2 * HG2
-        d_obs[i] = (free_G * dG + HG * dHG + HG2 * dHG2) / G0[i]
-    return d_obs
+        positive_real_roots = real_roots[real_roots > epsilon]
+        G_free = np.min(positive_real_roots) if len(positive_real_roots) > 0 else epsilon
+        delta_shift[i] = ((d_inf_1 * G0_i * Ka * G_free) + (d_inf_2 * G0_i * Ka * Kd * G_free**2)) / (1 + (Ka * G_free) + (Ka * Kd * G_free**2))
+    return delta_shift
 
-def binding_isotherm_2_1(H0, G0, K1, K2, dG, dHG, dH2G):
-    d_obs = np.zeros_like(H0)
-    epsilon = 1e-10
+def binding_isotherm_2_1(H0, G0, Ka, Kd, d_inf_1, d_inf_2):
+    delta_shift = np.zeros_like(H0)
     for i in range(len(H0)):
-        a = 2 * K1 * K2 * G0[i]
-        b = K1 * G0[i]
-        c = 1
-        d = -H0[i]
-        roots = np.roots([a, b, c, d])
+        epsilon = 1e-10
+        H0_i = H0[i]
+        G0_i = G0[i]
+        a = (Ka * Kd)
+        b = (Ka * ((2 * Kd * G0_i) - (Kd * H0_i) + 1))
+        c = (Ka * (G0_i - H0_i) + 1)
+        d = -H0_i
+        coefficients = [a, b, c, d]
+        roots = np.roots(coefficients)
         real_roots = roots[np.isreal(roots)].real
-        H = np.min(real_roots[real_roots > epsilon]) if len(real_roots[real_roots > epsilon]) > 0 else epsilon
-        HG = K1 * H * G0[i]
-        H2G = K1 * K2 * H**2 * G0[i]
-        G = G0[i] - HG - H2G
-        d_obs[i] = (G * dG + HG * dHG + H2G * dH2G) / G0[i]
-    return d_obs
+        positive_real_roots = real_roots[real_roots > epsilon]
+        H_free = np.min(positive_real_roots) if len(positive_real_roots) > 0 else epsilon
+        delta_shift[i] = ((d_inf_1 * G0_i * Ka * H_free) + (2 * d_inf_2 * G0_i * Ka * Kd * H_free**2)) / (G0_i * (1 + (Ka * H_free) + (Ka * Kd* H_free**2)))
+    return delta_shift
 
 
 def binding_dimer(H0, G0, Ka, Kd, d_inf_1, d_inf_2):
     d_obs = np.zeros_like(H0)
     epsilon = 1e-10
+
     for i in range(len(H0)):
+        H0_i = H0[i]
+        G0_i = G0[i]
+
         a = -2 * Kd
-        b = -1 * (G0[i] * Ka + 1)
-        c = H0[i]
+        b = -1 * (G0_i * Ka + 1)
+        c = H0_i
         roots = np.roots([a, b, c])
         real_roots = roots[np.isreal(roots)].real
         H_free = np.min(real_roots[real_roots > epsilon]) if len(real_roots[real_roots > epsilon]) > 0 else epsilon
-        numerator = (d_inf_1 * G0[i]) / (1 + Ka * H_free) + (d_inf_2 * Ka * H_free * G0[i])
-        denominator = (G0[i] / (1 + Ka * H_free)) + (Ka * H_free * G0[i])
+
+        numerator = (d_inf_1 * G0_i) / (1 + Ka * H_free) + (d_inf_2 * Ka * H_free * G0_i)
+        denominator = (G0_i / (1 + Ka * H_free)) + (Ka * H_free * G0_i)
         d_obs[i] = numerator / denominator
-    return d_obs
+
+    # Convert to Δδ
+    delta_shift = d_obs - d_obs[0]
+    delta_shift[0] = 0
+    return delta_shift
 
 def multi_model(H0, G0, KHG, Kd, KH2G, dG, dHG, dH2G, max_iter=100, tol=1e-6):
     d_obs = np.zeros_like(H0)
     epsilon = 1e-10
+
     for i in range(len(H0)):
         H0_i, G0_i = H0[i], G0[i]
         G_free = G0_i
+
         for _ in range(max_iter):
             aH = 2 * Kd + 2 * KH2G * G_free
             bH = 1 + KHG * G_free
@@ -86,7 +99,11 @@ def multi_model(H0, G0, KHG, Kd, KH2G, dG, dHG, dH2G, max_iter=100, tol=1e-6):
         numerator = dG * Kd * H_free**2 + dHG * KHG * H_free * G_free + dH2G * KH2G * H_free**2 * G_free
         denominator = Kd * H_free**2 + KHG * H_free * G_free + KH2G * H_free**2 * G_free
         d_obs[i] = numerator / denominator
-    return d_obs
+
+    # Convert to Δδ
+    delta_shift = d_obs - d_obs[0]
+    delta_shift[0] = 0
+    return delta_shift
 
 def model_definitions(H0, G0):
     return {
@@ -99,25 +116,25 @@ def model_definitions(H0, G0):
         "1:2": {
             "function": binding_isotherm_1_2,
             "initial_guess": [100, 100, 100, 100, 100],
-            "bounds": ([0, 0, -np.inf, -np.inf, -np.inf], [np.inf, np.inf, np.inf, np.inf, np.inf]),
+            "bounds": ([0, 0, -np.inf, -np.inf, -np.inf], [np.inf]*5),
             "lambda": lambda H0, K1, K2, dG, dHG, dHG2: binding_isotherm_1_2(H0, G0, K1, K2, dG, dHG, dHG2)
         },
         "2:1": {
             "function": binding_isotherm_2_1,
             "initial_guess": [100, 100, 100, 100, 100],
-            "bounds": ([0, 0, -np.inf, -np.inf, -np.inf], [np.inf, np.inf, np.inf, np.inf, np.inf]),
+            "bounds": ([0, 0, -np.inf, -np.inf, -np.inf], [np.inf]*5),
             "lambda": lambda H0, K1, K2, dG, dHG, dH2G: binding_isotherm_2_1(H0, G0, K1, K2, dG, dHG, dH2G)
         },
         "dimer": {
             "function": binding_dimer,
             "initial_guess": [100, 100, 100, 100],
-            "bounds": ([0, 0, -np.inf, -np.inf], [np.inf, np.inf, np.inf, np.inf]),
-            "lambda": lambda H0, Ka, Kd, d_inf_1, d_inf_2: binding_dimer(H0, G0, Ka, Kd, d_inf_1, d_inf_2)
+            "bounds": ([0, 0, -np.inf, -np.inf], [np.inf]*4),
+            "lambda": lambda H0, Ka, Kd, d_inf_1, d_inf_2: binding_dimer(H0, G0, Ka, Kd, d_inf_1, d_inf_2, return_delta=True)
         },
         "multi": {
             "function": multi_model,
             "initial_guess": [100, 100, 100, 100, 100, 100],
             "bounds": ([0, 0, 0, -np.inf, -np.inf, -np.inf], [np.inf]*6),
-            "lambda": lambda H0, KHG, Kd, KH2G, dG, dHG, dH2G: multi_model(H0, G0, KHG, Kd, KH2G, dG, dHG, dH2G)
+            "lambda": lambda H0, KHG, Kd, KH2G, dG, dHG, dH2G: multi_model(H0, G0, KHG, Kd, KH2G, dG, dHG, dH2G, return_delta=True)
         }
     }
