@@ -39,8 +39,30 @@ def test_binding_isotherm_1_2():
     def model(H, K1, K2, dG, dHG, dHG2):
         return binding_isotherm_1_2(H, G0, K1, K2, dG, dHG, dHG2)
 
-    popt, _ = curve_fit(model, H0, d_delta, p0=[1e4, 1e4, 2700, 150, 350], maxfev=10000)
-    assert np.all(np.isfinite(popt))
+    # Use true params ±10% as initial guess
+    p0 = [K1 * 0.9, K2 * 0.9, dG * 0.9, dHG * 0.9, dHG2 * 0.9]
+
+    # Define reasonable bounds to assist optimizer
+    bounds = (
+        [0, 0, -1e6, -1e6, -1e6],   # lower bounds
+        [1e6, 1e6, 1e6, 1e6, 1e6]   # upper bounds
+    )
+
+    popt, _ = curve_fit(
+        model, H0, d_delta,
+        p0=p0,
+        bounds=bounds,
+        method="trf",  # better for constrained fitting
+        maxfev=20000
+    )
+
+    K1_est, K2_est, dG_est, dHG_est, dHG2_est = popt
+
+    assert np.isclose(K1_est, K1, rtol=0.1)
+    assert np.isclose(K2_est, K2, rtol=0.1)
+    assert np.isclose(dG_est, dG, rtol=0.1)
+    assert np.isclose(dHG_est, dHG, rtol=0.1)
+    assert np.isclose(dHG2_est, dHG2, rtol=0.1)
 
 
 def test_binding_isotherm_2_1():
