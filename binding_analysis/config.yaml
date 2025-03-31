@@ -6,10 +6,10 @@ general:
 
 models:
   "1:1":
-    initial_guess: [100, 100, 100]
+    initial_guess: [100, 100]
     bounds:
-      lower: [0, -1e6, -1e6]
-      upper: [1e6, 1e6, 1e6]
+      lower: [0, 0]
+      upper: [1e6, 1e6]
 
   "1:2":
     initial_guess: [100, 100, 100, 100]
