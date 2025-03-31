@@ -6,8 +6,10 @@ from utils import delete_old_result_files
 from datetime import datetime
 import yaml
 
-def load_config(path="config.yaml"):
-    with open(path, "r") as f:
+def load_config(filename="config.yaml"):
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    config_path = os.path.join(base_path, filename)
+    with open(config_path, "r") as f:
         return yaml.safe_load(f)
 
 def log_uncaught_exceptions(exc_type, exc_value, exc_traceback):
