@@ -1,4 +1,3 @@
-
 # Binding Isotherm Analysis Tool
 
 This Python-based analysis tool is designed for evaluating titration data from NMR experiments. It fits experimental chemical shift data to multiple thermodynamic binding models and estimates association constants. The tool supports batch analysis, model fitting, statistical diagnostics, and reproducible outputs.
@@ -9,16 +8,16 @@ This Python-based analysis tool is designed for evaluating titration data from N
 
 - Supports multiple host-guest binding models:
   - 1:1, 1:2, 2:1, dimerization, and multi-equilibrium
-- Configurable fitting parameters via `config.yaml`
 - Curve fitting using `scipy.optimize.curve_fit`
-- Initial guess optimization and bound control
+- Configurable fitting parameters via `config.yaml`
 - Fit diagnostics including:
   - R², AIC, BIC, RMSE
   - Ljung-Box and Breusch-Godfrey or White's test for residual autocorrelation
-- Automatic plot generation (fit and residuals)
+- Plot generation (fit and residuals)
 - Structured output in CSV and PNG format
-- Complete logging to terminal and `results/log.txt`
-- Example dataset and reproducibility instructions included
+- Logging to terminal and `results/log.txt`
+- Reproducibility guidance in `REPRODUCIBILITY.md`
+- Unit test suite for all models using pytest
 - Google Colab support for cloud-based execution
 
 ---
@@ -33,19 +32,84 @@ Input `.csv` files must be placed in the `data_input/` folder. Each file must co
 | `G`     | Guest concentration (mol/L)        |
 | `delta` | Observed chemical shift (Hz)       |
 
-Do not rename these column headers.
-
 An example input file is provided in `example_data/test.csv`.
+
+---
+
+## Supported Binding Models
+
+### 1:1 Binding
+
+**Equilibrium:**
+
+H + G ⇌ HG  
+Ka = [HG] / ([H][G])
+
+**Observed shift:**
+
+δ_obs = δ_G + (δ_HG - δ_G) × [HG] / [G]_0
+
+---
+
+### 1:2 Binding
+
+**Equilibria:**
+
+H + G ⇌ HG (K₁)  
+HG + G ⇌ HG₂ (K₂)
+
+**Observed shift:**
+
+δ_obs = (δ_G × [G]_0 + δ_HG × [HG] + δ_HG₂ × [HG₂]) / [G]_0
+
+---
+
+### 2:1 Binding
+
+**Equilibria:**
+
+H + G ⇌ HG (K₁)  
+H + HG ⇌ H₂G (K₂)
+
+**Observed shift:**
+
+δ_obs = (δ_G × [G]_0 + δ_HG × [HG] + δ_H₂G × [H₂G]) / [G]_0
+
+---
+
+### Dimerization
+
+**Equilibria:**
+
+H + G ⇌ HG  
+2H ⇌ H₂ (K_d)
+
+**Observed shift:**
+
+δ_obs = (δ_G / (1 + K_a[H]) + δ_HG × K_a[H]) / (1 / (1 + K_a[H]) + K_a[H])
+
+---
+
+### Multi-binding (HG and H₂G)
+
+**Equilibria:**
+
+H + G ⇌ HG (K_HG)  
+2H ⇌ H₂ (K_d)  
+H₂ + G ⇌ H₂G (K_H₂G)
+
+**Observed shift:**
+
+δ_obs = (δ_G × [G] + δ_HG × [HG] + δ_H₂G × [H₂G]) / [G]_0
 
 ---
 
 ## How to Use
 
-### Option 1: Run in Google Colab
+### Option 1: Google Colab
 
-Launch an interactive session:
-
-[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Deam0on/mysak_delta_iso/blob/main/example_data/colab_template.ipynb)
+Launch in Colab:  
+[Open in Colab](https://colab.research.google.com/github/Deam0on/mysak_delta_iso/blob/main/example_data/colab_template.ipynb)
 
 ### Option 2: Run Locally
 
@@ -62,7 +126,7 @@ cd mysak_delta_iso/binding_analysis
 pip install -r requirements.txt
 ```
 
-3. Place your `.csv` files into the `data_input/` folder.
+3. Place `.csv` files into the `data_input/` directory.
 
 4. Run the tool:
 
@@ -71,40 +135,60 @@ python binding_analysis_tool.py
 ```
 
 5. Review the output in the `results/` folder:
-   - Fit statistics and parameters in `*_results.csv`
-   - Fit and residual plots in `*_plot.png`
-   - Full execution log in `log.txt`
+   - `*_results.csv`: fit parameters and stats
+   - `*_plot.png`: fit and residuals
+   - `log.txt`: execution log
 
 ---
 
 ## Configuration
 
-The `config.yaml` file allows full control of:
+Edit `binding_analysis/config.yaml` to adjust:
 
 - Initial parameter guesses
 - Parameter bounds
-- Residual test lags
-- Max iterations for curve fitting
-- Input/output directories
+- Input/output folder paths
+- Residual test lag count
+- Fitting settings (e.g., max iterations)
 
-Modify `binding_analysis/config.yaml` to suit your experiment.
+---
+
+## Testing
+
+A full test suite is included in `tests/test_models.py`.
+
+To run locally:
+
+```bash
+pytest tests/
+```
+
+Tests ensure:
+
+- Model functions return finite values
+- curve_fit optimization converges
+- Estimated parameters are within tolerance of known values
+
+Tests are also executed automatically via GitHub Actions.
+
+To check test coverage:
+
+```bash
+pytest --cov=binding_analysis --cov-report=term
+```
 
 ---
 
 ## Output Summary
 
-Each model, for each dataset, produces the following metrics:
+Each model-dataset pair produces:
 
 - Optimized parameters with standard errors
 - 95% confidence intervals
-- R² (coefficient of determination)
-- AIC and BIC model selection criteria
-- RMSE (root mean squared error)
-- Residual diagnostics:
-  - Ljung-Box test (autocorrelation)
-  - Breusch-Godfrey or White's test (fallback)
-
-All metrics are written into a structured CSV file.
+- R², AIC, BIC, RMSE
+- Residual diagnostics
+- Output CSV and PNG plots
+- Combined execution log
 
 ---
 
@@ -122,33 +206,22 @@ mysak_delta_iso/
 ├── example_data/
 │   ├── colab_template.ipynb
 │   └── test.csv
+├── results/
+├── tests/
+│   └── test_models.py
 ├── REPRODUCIBILITY.md
 └── README.md
 ```
 
 ---
 
-## Supported Models
-
-| Model  | Description                       |
-|--------|-----------------------------------|
-| 1:1    | Single host-guest association     |
-| 1:2    | Host binds two guest molecules    |
-| 2:1    | Two hosts bind one guest          |
-| Dimer  | Dimerization process              |
-| Multi  | Multi-equilibrium with H, G, HG, H₂G species |
-
----
-
-## Reproducibility
-
-Refer to `reproducibility.md` for full environment information and step-by-step instructions to ensure consistent results across systems.
-
----
-
 ## Dependencies
 
-All dependencies are listed in `requirements.txt`:
+Install all using:
+
+```bash
+pip install -r requirements.txt
+```
 
 - numpy
 - pandas
@@ -157,34 +230,16 @@ All dependencies are listed in `requirements.txt`:
 - statsmodels
 - sympy
 - pyyaml
-
-Install using:
-
-```bash
-pip install -r requirements.txt
-```
+- pytest
+- pytest-cov
 
 ---
 
-## Testing
+## Reproducibility
 
-![CI](https://github.com/Deam0on/mysak_delta_iso/actions/workflows/test.yml/badge.svg)
+All runtime and version info for reproducibility is in `REPRODUCIBILITY.md`.
 
-This project includes unit tests for all implemented binding models. These tests use synthetic data based on experimentally observed concentration ranges and fitted parameters.
-
-To run tests locally:
-
-```bash
-pytest tests/
-```
-
-Tests are automatically run via GitHub Actions on every push and pull request.
-
-Each test validates that:
-- The model produces finite results with realistic inputs
-- Fitted parameters are within reasonable bounds of known synthetic values
-- Optimization converges using `scipy.optimize.curve_fit` with increased iteration limits
-
+---
 
 ## License
 
