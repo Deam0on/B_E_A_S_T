@@ -109,9 +109,9 @@ def model_definitions(H0, G0, d_delta_exp):
     return {
         "1:1": {
             "function": binding_isotherm_1_1,
-            "initial_guess": [100, 100, 100],  # Ka, d_free, d_inf
-            "bounds": ([0, -np.inf, -np.inf], [np.inf, np.inf, np.inf]),
-            "lambda": lambda H0, Ka, d_free, d_inf: binding_isotherm_1_1(H0, G0, d_delta_exp, Ka, d_inf)
+            "initial_guess": [100, 100],
+            "bounds": ([0, 0], [np.inf, np.inf]),
+            "lambda": lambda H0, Ka, d_inf: binding_isotherm_1_1(H0, G0, d_delta_exp, Ka, d_inf)
         },
         "1:2": {
             "function": binding_isotherm_1_2,
