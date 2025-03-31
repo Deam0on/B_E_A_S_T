@@ -98,21 +98,21 @@ def model_definitions(H0, G0, d_delta_exp):
     return {
         "1:1": {
             "function": binding_isotherm_1_1,
-            "initial_guess": [100, 100],
-            "bounds": ([0, 0], [np.inf, np.inf]),
-            "lambda": lambda H0, Ka, d_inf: binding_isotherm_1_1(H0, G0, d_delta_exp, Ka, d_inf)
+            "initial_guess": [100, 100, 100],
+            "bounds": ([0, -np.inf, -np.inf], [np.inf, np.inf, np.inf]),
+            "lambda": lambda H0, Ka, dG, dHG: binding_isotherm_1_1(H0, G0, Ka, dG, dHG)
         },
         "1:2": {
             "function": binding_isotherm_1_2,
-            "initial_guess": [100, 100, 100, 100],
-            "bounds": ([0, 0, -np.inf, -np.inf], [np.inf, np.inf, np.inf, np.inf]),
-            "lambda": lambda H0, Ka, Kd, d_inf_1, d_inf_2: binding_isotherm_1_2(H0, G0, Ka, Kd, d_inf_1, d_inf_2)
+            "initial_guess": [100, 100, 100, 100, 100],
+            "bounds": ([0, 0, -np.inf, -np.inf, -np.inf], [np.inf, np.inf, np.inf, np.inf, np.inf]),
+            "lambda": lambda H0, K1, K2, dG, dHG, dHG2: binding_isotherm_1_2(H0, G0, K1, K2, dG, dHG, dHG2)
         },
         "2:1": {
             "function": binding_isotherm_2_1,
-            "initial_guess": [100, 100, 100, 100],
-            "bounds": ([0, 0, -np.inf, -np.inf], [np.inf, np.inf, np.inf, np.inf]),
-            "lambda": lambda H0, Ka, Kd, d_inf_1, d_inf_2: binding_isotherm_2_1(H0, G0, Ka, Kd, d_inf_1, d_inf_2)
+            "initial_guess": [100, 100, 100, 100, 100],
+            "bounds": ([0, 0, -np.inf, -np.inf, -np.inf], [np.inf, np.inf, np.inf, np.inf, np.inf]),
+            "lambda": lambda H0, K1, K2, dG, dHG, dH2G: binding_isotherm_2_1(H0, G0, K1, K2, dG, dHG, dH2G)
         },
         "dimer": {
             "function": binding_dimer,
