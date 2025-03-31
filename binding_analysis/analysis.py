@@ -53,7 +53,7 @@ def process_csv_files_in_folder(config):
                 bounds = model['bounds']
                 func = model['lambda']
                 
-                params, cov = curve_fit(func, H0, d_delta_exp, p0=initial_guess, bounds=bounds, maxfev=maxfev)
+                params, cov = curve_fit(func, H0, d_delta_exp, p0=guess, bounds=bounds, maxfev=maxfev)
                 fit_vals = func(H0, *params)
                 residuals = fit_vals - d_delta_exp
 
