@@ -2,19 +2,13 @@
 import numpy as np
 
 def binding_isotherm_1_1(H0, G0, Ka, dG, dHG):
-    d_obs = np.zeros_like(H0)
-    epsilon = 1e-10
-    for i in range(len(H0)):
-        a = Ka
-        b = -Ka * (H0[i] + G0[i])
-        c = Ka * H0[i] * G0[i]
-        roots = np.roots([a, b, c])
-        real_roots = roots[np.isreal(roots)].real
-        HG = np.max(real_roots[real_roots > epsilon]) if len(real_roots[real_roots > epsilon]) > 0 else epsilon
-        G = G0[i] - HG
-        d_obs[i] = (G * dG + HG * dHG) / G0[i]
+    term = G0 + H0 + (1 / Ka)
+    sqrt_term = np.sqrt(term**2 - 4 * H0 * G0)
+    HG = 0.5 * (term - sqrt_term)
+    G_free = G0 - HG
+    d_obs = (dG * (G_free / G0)) + (dHG * (HG / G0))
     return d_obs
-
+    
 def binding_isotherm_1_2(H0, G0, K1, K2, dG, dHG, dHG2):
     d_obs = np.zeros_like(H0)
     epsilon = 1e-10
