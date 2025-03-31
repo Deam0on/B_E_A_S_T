@@ -94,7 +94,7 @@ def multi_model(H0, G0, KHG, Kd, KH2G, dG, dHG, dH2G, max_iter=100, tol=1e-6):
         d_obs[i] = numerator / denominator
     return d_obs
 
-def model_definitions(H0, G0, d_delta_exp):
+def model_definitions(H0, G0):
     return {
         "1:1": {
             "function": binding_isotherm_1_1,
