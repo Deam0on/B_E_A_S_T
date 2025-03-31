@@ -35,29 +35,24 @@ def process_csv_files_in_folder(config):
             logging.error(f"Skipping {filename} due to validation error.")
             continue
 
-        H0 = df["H"].astype(float).to_numpy()
-        G0 = df["G"].astype(float).to_numpy()
-        delta = df["delta"].astype(float).to_numpy()
+        H0, G0, d_delta_exp = np.genfromtxt(full_path, delimiter=',', names=True, unpack=True)
+        H0 = np.array(H0, dtype=float)
+        G0 = np.array(G0, dtype=float)
+        delta = np.array(d_delta_exp, dtype=float)
         d_delta_exp = np.abs(delta - delta[0])
         d_delta_exp[0] = 0
 
+        models = model_definitions(H0, G0, d_delta_exp)
         results = {}
         output_rows = []
 
         for model_name in config["models"]:
             try:
                 logging.info(f"Evaluating model: {model_name}")
-
-                model_config = config["models"][model_name]
-                initial_guess = model_config["initial_guess"]
-                bounds = (
-                    model_config["bounds"]["lower"],
-                    model_config["bounds"]["upper"]
-                )
-
-                models = model_definitions(H0, G0, d_delta_exp)
-                func = models[model_name]["lambda"]
-
+                guess = model['initial_guess']
+                bounds = model['bounds']
+                func = model['lambda']
+                
                 params, cov = curve_fit(func, H0, d_delta_exp, p0=initial_guess, bounds=bounds, maxfev=maxfev)
                 fit_vals = func(H0, *params)
                 residuals = fit_vals - d_delta_exp
