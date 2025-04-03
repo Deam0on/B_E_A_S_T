@@ -2,37 +2,46 @@ import numpy as np
 
 def binding_isotherm_1_1(H0, G0, d_delta_exp, Ka, d_inf):
     term = G0 + H0 + (1 / Ka)
-    sqrt_term = np.sqrt(term ** 2 - 4 * G0 * H0)
+    sqrt_term = np.sqrt(term * term - 4 * G0 * H0)
     HG = 0.5 * (term - sqrt_term)
     d_free = d_delta_exp[0]
-    return (d_free * (HG - G0) / G0) + (d_inf * (HG / G0))
+    d_delta_comp = (d_free * (HG - G0) / G0) + (d_inf * (HG / G0))
+    return d_delta_comp
 
 def binding_isotherm_1_2(H0, G0, Ka, Kd, d_inf_1, d_inf_2):
     d_delta_comp = np.zeros_like(H0)
-    epsilon = 1e-10
     for i in range(len(H0)):
-        a = Ka * Kd
-        b = Ka * ((2 * Kd * H0[i]) - (Kd * G0[i]) + 1)
-        c = Ka * (H0[i] - G0[i]) + 1
-        d = -G0[i]
-        roots = np.roots([a, b, c, d])
+        epsilon = 1e-10
+        H0_i = H0[i]
+        G0_i = G0[i]
+        a = (Ka * Kd)
+        b = (Ka * ((2 * Kd * H0_i) - (Kd * G0_i) + 1))
+        c = (Ka * (H0_i - G0_i) + 1)
+        d = -1 * G0_i
+        coefficients = [a, b, c, d]
+        roots = np.roots(coefficients)
         real_roots = roots[np.isreal(roots)].real
-        G_free = np.min(real_roots[real_roots > epsilon]) if len(real_roots[real_roots > epsilon]) > 0 else epsilon
-        d_delta_comp[i] = ((d_inf_1 * G0[i] * Ka * G_free) + (d_inf_2 * G0[i] * Ka * Kd * G_free ** 2)) /                           (1 + (Ka * G_free) + (Ka * Kd * G_free ** 2))
+        positive_real_roots = real_roots[real_roots > epsilon]
+        G_free = np.min(positive_real_roots) if len(positive_real_roots) > 0 else epsilon
+        d_delta_comp[i] = ((d_inf_1 * G0_i * Ka * G_free) + (d_inf_2 * G0_i * Ka * Kd * G_free**2)) / (1 + (Ka * G_free) + (Ka * Kd * G_free**2))
     return d_delta_comp
 
 def binding_isotherm_2_1(H0, G0, Ka, Kd, d_inf_1, d_inf_2):
     d_delta_comp = np.zeros_like(H0)
-    epsilon = 1e-10
     for i in range(len(H0)):
-        a = Ka * Kd
-        b = Ka * ((2 * Kd * G0[i]) - (Kd * H0[i]) + 1)
-        c = Ka * (G0[i] - H0[i]) + 1
-        d = -H0[i]
-        roots = np.roots([a, b, c, d])
+        epsilon = 1e-10
+        H0_i = H0[i]
+        G0_i = G0[i]
+        a = (Ka * Kd)
+        b = (Ka * ((2 * Kd * G0_i) - (Kd * H0_i) + 1))
+        c = (Ka * (G0_i - H0_i) + 1)
+        d = -H0_i
+        coefficients = [a, b, c, d]
+        roots = np.roots(coefficients)
         real_roots = roots[np.isreal(roots)].real
-        H_free = np.min(real_roots[real_roots > epsilon]) if len(real_roots[real_roots > epsilon]) > 0 else epsilon
-        d_delta_comp[i] = ((d_inf_1 * G0[i] * Ka * H_free) + (2 * d_inf_2 * G0[i] * Ka * Kd * H_free ** 2)) /                           (G0[i] * (1 + (Ka * H_free) + (Ka * Kd * H_free ** 2)))
+        positive_real_roots = real_roots[real_roots > epsilon]
+        H_free = np.min(positive_real_roots) if len(positive_real_roots) > 0 else epsilon
+        d_delta_comp[i] = ((d_inf_1 * G0_i * Ka * H_free) + (2 * d_inf_2 * G0_i * Ka * Kd * H_free**2)) / (G0_i * (1 + (Ka * H_free) + (Ka * Kd* H_free**2)))
     return d_delta_comp
 
 def binding_dimer(H0, G0, Ka, Kd, d_inf_1, d_inf_2):
