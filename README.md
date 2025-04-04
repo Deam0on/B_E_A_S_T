@@ -270,7 +270,9 @@ K_{HG} H_\text{free} G_\text{free} +
 K_{H_2G} K_d H_\text{free}^2 G_\text{free}
 }
 $$
+
 ---
+
 ## Initial Guess Handling
 
 Each model in the tool defines its own **initial guess** and **parameter bounds** directly within the `model_definitions(...)` structure.
