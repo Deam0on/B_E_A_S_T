@@ -29,6 +29,7 @@ def custom_residual_pattern_test(residuals):
     spectral_ratio = low_freq_energy / total_energy if total_energy > 0 else 0
 
     # Rolling R² (linear fit on residual windows)
+    window = min(5, len(residuals) - 2)
     rolling_r2 = []
     for i in range(n - window + 1):
         x = np.arange(window)
