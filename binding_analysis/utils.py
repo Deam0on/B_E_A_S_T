@@ -171,15 +171,19 @@ def delete_old_result_files(folder_path):
 def save_combined_csv(results, output_file):
     rows = []
     for result in results:
-        for i, (fitted, resid, ratio, norm_resid) in enumerate(zip(result["fitted_values"], result["residuals"], result["H_over_G"], result["normalized_residuals"])):
-            rows.append({
+        num_points = len(result["fitted_values"])
+        for i in range(num_points):
+            row = {
                 "file": result["file"],
                 "model": result["model"],
-                "H/G": ratio,
-                "fitted_value": fitted,
-                "residual": resid,
-                "normalized_residual": norm_resid
-            })
+                "H/G": result["H_over_G"][i],
+                "fitted_value": result["fitted_values"][i],
+                "residual": result["residuals"][i]
+            }
+            if result.get("normalized_residuals"):
+                row["normalized_residual"] = result["normalized_residuals"][i]
+            rows.append(row)
+
         for i, param in enumerate(result["parameters"]):
             rows.append({
                 "file": result["file"],
