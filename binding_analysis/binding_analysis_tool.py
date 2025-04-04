@@ -38,10 +38,12 @@ def setup_logging():
     logging.info(f"Timestamp: {datetime.now().isoformat()}")
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Run NMR binding model analysis.")
-    parser.add_argument("--config", type=str, default="config.yaml", help="Path to YAML configuration file")
-    parser.add_argument("--skip_tests", action="store_true", help="Skip residual statistical diagnostics")
-    parser.add_argument("--no_normalized", action="store_true", help="Skip normalized residual plotting")
+    parser = argparse.ArgumentParser(description="Binding Isotherm CLI Tool")
+    parser.add_argument("--config", type=str, default="config.yaml", help="Path to config YAML file.")
+    parser.add_argument("--skip_tests", action="store_true", help="Disable residual diagnostic tests.")
+    parser.add_argument("--no_normalized", action="store_true", help="Do not show/save normalized residual plots.")
+    parser.add_argument("--input_dir", type=str, help="Override input directory (default: from config)")
+    parser.add_argument("--output_dir", type=str, help="Override output directory (default: from config)")
     return parser.parse_args()
 
 def main():
@@ -49,20 +51,32 @@ def main():
     args = parse_args()
     config = load_config(args.config)
 
-    # Inject CLI flags into config
+    # Override input/output directory if provided via CLI
+    input_dir = args.input_dir or config.get("general", {}).get("input_dir", "data_input")
+    output_dir = args.output_dir or config.get("general", {}).get("results_dir", "results")
+
+    # Update config with final values
+    config["general"]["input_dir"] = input_dir
+    config["general"]["results_dir"] = output_dir
+
+    # Store CLI flags in config
     config["cli_flags"] = {
         "skip_tests": args.skip_tests,
         "no_normalized": args.no_normalized
     }
 
-    input_folder = config.get("general", {}).get("input_dir", "data_input")
-    output_folder = config.get("general", {}).get("results_dir", "results")
+    os.makedirs(output_dir, exist_ok=True)
+    delete_old_result_files(output_dir)
 
-    os.makedirs(output_folder, exist_ok=True)
-    delete_old_result_files(output_folder)
-    process_csv_files_in_folder(config)
+    # Pass CLI flags explicitly to the analysis function
+    process_csv_files_in_folder(
+        config,
+        skip_tests=args.skip_tests,
+        plot_normalized=not args.no_normalized
+    )
 
     logging.info("Analysis completed. Results and log saved to /results.")
+
 
 if __name__ == "__main__":
     main()

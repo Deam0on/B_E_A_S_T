@@ -109,7 +109,7 @@ def advanced_residual_diagnostics(H0, residuals, model_name, enable_tests=True):
         "normality_pass": normality_pass
     }
 
-def process_csv_files_in_folder(config):
+def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False):
     input_folder = config["general"]["input_dir"]
     output_folder = config["general"]["results_dir"]
     maxfev = config["general"]["maxfev"]
