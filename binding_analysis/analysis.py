@@ -48,16 +48,16 @@ def compare_models_by_metric(output_rows, metric="AIC"):
         rmse = row["RMSE"]
         wrmse = row.get("weighted_RMSE", None)
 
-        # ljung_raw = row.get("ljung_failed")
-        # bg_raw = row.get("bg_failed")
-        # norm_raw = row.get("normality_pass", True)
+        ljung_raw = row.get("ljung_failed")
+        bg_raw = row.get("bg_failed")
+        norm_raw = row.get("normality_pass", True)
 
-        # ljung = "✓" if ljung_raw is False else ("⚠️" if ljung_raw is True else "–")
-        # bg = "✓" if bg_raw is False else ("⚠️" if bg_raw is True else "–")
-        # norm = "✓" if norm_raw is True else ("⚠️" if norm_raw is False else "–")
+        ljung = "✓" if ljung_raw is False else ("⚠️" if ljung_raw is True else "–")
+        bg = "✓" if bg_raw is False else ("⚠️" if bg_raw is True else "–")
+        norm = "✓" if norm_raw is True else ("⚠️" if norm_raw is False else "–")
 
-        # zc_sim = row.get("zero_crossing_similarity", None)
-        # zc_str = f"{zc_sim:.1f}%" if isinstance(zc_sim, (int, float)) else zc_sim or "n/a"
+        zc_sim = row.get("zero_crossing_similarity", None)
+        zc_str = f"{zc_sim:.1f}%" if isinstance(zc_sim, (int, float)) else zc_sim or "n/a"
 
         logging.info(f"{rank}. {model}")
         logging.info(f"    R² = {r2:.4f} | RMSE = {rmse:.4f}" + (f" | wRMSE = {wrmse:.4f}" if wrmse is not None else ""))
