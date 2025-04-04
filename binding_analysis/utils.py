@@ -66,7 +66,7 @@ def autocorrelation_tests(H0, residuals, model_name, lags=10):
     n = len(H0)
     X = sm.add_constant(H0)
 
-    lags= = min(10, n // 5)
+    lags = min(10, n // 5)
 
     logging.info("-" * 70)
     logging.info(f"Residual diagnostics for model: {model_name}")
