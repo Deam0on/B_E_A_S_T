@@ -70,6 +70,19 @@ def compare_models_by_metric(output_rows, metric="AIC"):
         logging.info(f"    Skewness = {row.get('skewness', 'n/a'):.2f} | Kurtosis = {row.get('kurtosis', 'n/a'):.2f} | Zero-crossing noise similarity = {zc_str}")
         logging.info(f"    Custom Corr [{custom_corr_symbol}]")
 
+        # Custom residual check
+        custom_corr_flagged = row.get("custom_corr_flagged")
+        custom_corr_stats = row.get("custom_corr_stat")
+        
+        if custom_corr_flagged is not None:
+            flag = "⚠️" if custom_corr_flagged else "✓"
+            stats_str = (
+                f"Std(diff)={custom_corr_stats['std_diff']:.4f}, "
+                f"Mean|2nd diff|={custom_corr_stats['mean_abs_2nd_diff']:.4f}, "
+                f"SignChg={custom_corr_stats['sign_change_ratio']:.2%}"
+            )
+            logging.info(f"    Custom residual pattern check: {flag} ({stats_str})")
+
     return sorted_models
 
 def advanced_residual_diagnostics(H0, residuals, model_name, enable_tests=True, enable_custom_corr=True):
