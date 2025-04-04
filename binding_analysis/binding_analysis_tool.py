@@ -45,6 +45,7 @@ def parse_args():
     parser.add_argument("--input_dir", type=str, help="Override input directory (default: from config)")
     parser.add_argument("--output_dir", type=str, help="Override output directory (default: from config)")
     parser.add_argument("--global_norm", action="store_true", help="Normalize residuals using global max Δδ.")
+    parser.add_argument("--custom_residual_check", action="store_true", help="Enable custom pattern-based residual test.")
     return parser.parse_args()
 
 def main():
