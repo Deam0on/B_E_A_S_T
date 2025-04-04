@@ -66,6 +66,8 @@ def autocorrelation_tests(H0, residuals, model_name, lags=10):
     n = len(H0)
     X = sm.add_constant(H0)
 
+    lags= = min(10, n // 5)
+
     logging.info("-" * 70)
     logging.info(f"Residual diagnostics for model: {model_name}")
 
@@ -107,7 +109,7 @@ def autocorrelation_tests(H0, residuals, model_name, lags=10):
     logging.info(f"{bg_name}: stat = {bg_stat:.3f}, p = {bg_p:.4f}")
 
     # Ramsey RESET test
-    if n >= 20:
+    if n >= 15:
         try:
             from statsmodels.stats.diagnostic import linear_reset
             reset_test = linear_reset(model, power=2, use_f=True)
