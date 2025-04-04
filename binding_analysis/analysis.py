@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from statsmodels.api import OLS, add_constant
 from statsmodels.stats.diagnostic import acorr_ljungbox, acorr_breusch_godfrey, het_white
-from utils import find_global_delta_range
+from utils import collect_global_max_deltadelta
 from utils import autocorrelation_tests, validate_data, custom_residual_pattern_test
 
 from models import model_definitions
