@@ -117,8 +117,13 @@ def advanced_residual_diagnostics(H0, residuals, model_name, enable_tests=True, 
     if enable_custom_corr:
         custom = custom_residual_pattern_test(residuals)
         result.update(custom)
+        stats = custom["custom_corr_stat"]
+        logging.info("Custom residual pattern test:")
+        logging.info(f"  Std of diff = {stats['std_diff']:.4f}")
+        logging.info(f"  Mean |2nd diff| = {stats['mean_abs_2nd_diff']:.4f}")
+        logging.info(f"  Sign change ratio = {stats['sign_change_ratio']:.2%}")
         if custom["custom_corr_flagged"]:
-            logging.warning(f"⚠️ Residual pattern flagged as non-random by custom test.")
+            logging.warning("⚠️ Residual pattern flagged as non-random by custom test.")
         else:
             logging.info("✓ Custom residual pattern test passed.")
 
