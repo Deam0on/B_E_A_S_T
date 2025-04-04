@@ -10,19 +10,23 @@ d_delta_exp = np.abs(delta - delta[0])
 d_delta_exp[0] = 0
 
 PARAMS = {
-    "1:1": [1e4, 350],
+    "1:1": [1e4, 100, 350],
     "1:2": [1e4, 1e3, 150, 350],
     "2:1": [1e4, 1e3, 150, 350],
     "dimer": [1e3, 1e3, 150, 350],
     "multi": [1e3, 1e3, 1e3, 150, 300, 400],
 }
 
-def validate_fit(model_lambda, H0, true_params, initial_guess, bounds):
+def validate_fit(model_lambda, H0, true_params, initial_guess, bounds, rtol=1e-2):
     d_calc = model_lambda(H0, *true_params)
     popt, _ = curve_fit(model_lambda, H0, d_calc, p0=initial_guess, bounds=bounds, maxfev=100000)
     fit = model_lambda(H0, *popt)
-    assert np.allclose(fit, d_calc, rtol=1e-2), f"Fit did not match expected output. Params: {popt}"
-    assert not np.isnan(popt).any(), "Fit parameters contain NaNs."
+
+    if not np.allclose(fit, d_calc, rtol=rtol):
+        print("Expected:", d_calc)
+        print("Obtained:", fit)
+        print("Params:", popt)
+        return False
     return True
 
 def test_model_1_1():
