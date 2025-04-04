@@ -215,9 +215,11 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
                 results[model_name] = (fit_vals, residuals)
 
                 diagnostics = advanced_residual_diagnostics(
-                    H0, residuals, model_name,
+                    H0,
+                    residuals,
+                    model_name,
                     enable_tests=not skip_tests,
-                    enable_custom_corr=custom_corr_enabled
+                    enable_custom_corr=True  
                 )
 
                 output_rows.append({
