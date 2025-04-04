@@ -119,8 +119,10 @@ $$
 #### Equilibria
 
 $$
+\begin{align*}
 H + G \leftrightarrow HG \quad K_a = \frac{[HG]}{[H][G]} \\
 HG + G \leftrightarrow HG_2 \quad K_d = \frac{[HG_2]}{[HG][G]}
+\end{align*}
 $$
 
 #### Cubic equation for $G_\text{free}$
@@ -158,8 +160,10 @@ $$
 #### Equilibria
 
 $$
+\begin{align*}
 H + G \leftrightarrow HG \quad K_a = \frac{[HG]}{[H][G]} \\
 HG + H \leftrightarrow H_2G \quad K_d = \frac{[H_2G]}{[HG][H]}
+\end{align*}
 $$
 
 #### Cubic equation for $H_\text{free}$
@@ -197,8 +201,10 @@ $$
 #### Equilibria
 
 $$
+\begin{align*}
 2H \leftrightarrow H_2 \quad K_d = \frac{[H_2]}{[H]^2} \\
 H + G \leftrightarrow HG \quad K_a = \frac{[HG]}{[H][G]}
+\end{align*}
 $$
 
 #### Quadratic equation for $H_\text{free}$
@@ -226,9 +232,11 @@ $$
 #### Equilibria
 
 $$
+\begin{align*}
 2H \leftrightarrow H_2 \quad K_d = \frac{[H_2]}{[H]^2} \\
 H + G \leftrightarrow HG \quad K_{HG} = \frac{[HG]}{[H][G]} \\
 H_2 + G \leftrightarrow H_2G \quad K_{H_2G} = \frac{[H_2G]}{[H_2][G]}
+\end{align*}
 $$
 
 #### Iterative solution
