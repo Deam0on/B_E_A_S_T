@@ -64,7 +64,8 @@ def main():
     # Store CLI flags in config
     config["cli_flags"] = {
         "skip_tests": args.skip_tests,
-        "no_normalized": args.no_normalized
+        "no_normalized": args.no_normalized,
+        "custom_residual_check": args.custom_residual_check
     }
 
     os.makedirs(output_dir, exist_ok=True)
