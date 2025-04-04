@@ -1,4 +1,3 @@
-
 import os
 import pandas as pd
 import logging
@@ -8,10 +7,8 @@ from statsmodels.stats.diagnostic import acorr_ljungbox, acorr_breusch_godfrey, 
 from scipy.optimize import curve_fit
 from scipy.stats import skew, kurtosis, normaltest
 
+
 def smart_initial_guess(model_func, H0, d_delta_exp, default_guess, bounds, max_iter=5, perturbation=0.1):
-    """
-    Attempts to find a better initial guess by perturbing parameters randomly
-    """
     best_guess = default_guess
     best_score = np.inf
 
@@ -29,10 +26,8 @@ def smart_initial_guess(model_func, H0, d_delta_exp, default_guess, bounds, max_
 
     return best_guess
 
+
 def compare_models_by_metric(output_rows, metric="AIC"):
-    """
-    Logs a sorted list of models based on the given metric (e.g. AIC, BIC)
-    """
     try:
         model_metrics = [(row["model"], row[metric]) for row in output_rows]
         sorted_models = sorted(model_metrics, key=lambda x: x[1])
@@ -42,10 +37,8 @@ def compare_models_by_metric(output_rows, metric="AIC"):
     except Exception as e:
         logging.warning(f"Model comparison skipped due to: {e}")
 
+
 def advanced_residual_diagnostics(residuals, model_name):
-    """
-    Provides skewness, kurtosis, and normality diagnostics
-    """
     try:
         s = skew(residuals)
         k = kurtosis(residuals)
@@ -55,6 +48,7 @@ def advanced_residual_diagnostics(residuals, model_name):
     except Exception as e:
         logging.warning(f"Residual diagnostics for {model_name} skipped due to: {e}")
         return {}
+
 
 def validate_data(df):
     required_cols = ['H', 'G', 'delta']
@@ -66,16 +60,8 @@ def validate_data(df):
         logging.warning("Detected NaNs in input data.")
     return True
 
-def autocorrelation_tests(H0, residuals, model_name, lags=10):
-    """
-    Performs diagnostic tests on residuals:
-    - Ljung-Box (autocorrelation)
-    - Breusch-Godfrey or White's (alternative heteroskedasticity/autocorr)
-    - Ramsey RESET (misspecification)
-    - Cook's distance (influential points)
 
-    Returns a dict of all stats. Conditionally skips tests on small datasets.
-    """
+def autocorrelation_tests(H0, residuals, model_name, lags=10):
     results = {}
     n = len(H0)
     X = sm.add_constant(H0)
@@ -83,7 +69,7 @@ def autocorrelation_tests(H0, residuals, model_name, lags=10):
     logging.info("-" * 70)
     logging.info(f"Residual diagnostics for model: {model_name}")
 
-    # Ljung-Box (if enough data)
+    # Ljung-Box
     if n >= 2 * lags + 1:
         lb_test = acorr_ljungbox(residuals, lags=[min(lags, n - 2)], return_df=True)
         lb_stat = lb_test["lb_stat"].values[0]
@@ -120,7 +106,7 @@ def autocorrelation_tests(H0, residuals, model_name, lags=10):
     })
     logging.info(f"{bg_name}: stat = {bg_stat:.3f}, p = {bg_p:.4f}")
 
-    # Ramsey RESET test (optional, for linear residual regressions)
+    # Ramsey RESET test
     if n >= 20:
         try:
             from statsmodels.stats.diagnostic import linear_reset
@@ -153,6 +139,21 @@ def autocorrelation_tests(H0, residuals, model_name, lags=10):
     else:
         logging.info("Cook’s Distance skipped (too few data points).")
 
+    # Zero-crossing randomness test
+    try:
+        zero_crossings = np.sum(np.diff(np.sign(residuals)) != 0)
+        simulated_crossings = []
+        for _ in range(1000):
+            sim = np.random.normal(0, 1, n)
+            simulated_crossings.append(np.sum(np.diff(np.sign(sim)) != 0))
+        sim_mean = np.mean(simulated_crossings)
+        similarity = 100 * (1 - abs(zero_crossings - sim_mean) / sim_mean)
+        results["zero_crossings"] = zero_crossings
+        results["crossing_similarity"] = similarity
+        logging.info(f"Zero-crossings: {zero_crossings} | Similarity to white noise: {similarity:.2f}%")
+    except Exception as e:
+        logging.warning(f"Zero-crossing similarity test failed: {e}")
+
     logging.info("-" * 70)
     return results
 
@@ -166,16 +167,18 @@ def delete_old_result_files(folder_path):
             except Exception as e:
                 logging.warning(f"Failed to delete {f}: {e}")
 
+
 def save_combined_csv(results, output_file):
     rows = []
     for result in results:
-        for i, (fitted, resid, ratio) in enumerate(zip(result["fitted_values"], result["residuals"], result["H_over_G"])):
+        for i, (fitted, resid, ratio, norm_resid) in enumerate(zip(result["fitted_values"], result["residuals"], result["H_over_G"], result["normalized_residuals"])):
             rows.append({
                 "file": result["file"],
                 "model": result["model"],
                 "H/G": ratio,
                 "fitted_value": fitted,
                 "residual": resid,
+                "normalized_residual": norm_resid
             })
         for i, param in enumerate(result["parameters"]):
             rows.append({
@@ -190,13 +193,21 @@ def save_combined_csv(results, output_file):
                 "AIC": result["AIC"],
                 "BIC": result["BIC"],
                 "RMSE": result["RMSE"],
+                "weighted_RMSE": result.get("weighted_RMSE"),
                 "ljung_stat": result.get("ljung_stat"),
                 "ljung_p": result.get("ljung_p"),
                 "ljung_failed": result.get("ljung_failed"),
                 "bg_test": result.get("bg_test"),
                 "bg_stat": result.get("bg_stat"),
                 "bg_p": result.get("bg_p"),
-                "bg_failed": result.get("bg_failed")
+                "bg_failed": result.get("bg_failed"),
+                "reset_stat": result.get("reset_stat"),
+                "reset_p": result.get("reset_p"),
+                "reset_failed": result.get("reset_failed"),
+                "cooks_max": result.get("cooks_max"),
+                "cooks_extreme": result.get("cooks_extreme"),
+                "crossing_similarity": result.get("crossing_similarity"),
+                "zero_crossings": result.get("zero_crossings")
             })
 
     pd.DataFrame(rows).to_csv(output_file, index=False)

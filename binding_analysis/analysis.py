@@ -37,10 +37,38 @@ def smart_initial_guess(model_func, guess, bounds, H0, d_delta_exp, step=10, max
     return best_guess
 
 def compare_models_by_metric(output_rows, metric="AIC"):
+    """
+    Enhanced model comparison based on multiple diagnostics:
+    - Sorts by AIC (or user-defined metric)
+    - Logs RMSE and weighted RMSE
+    - Flags skewness, kurtosis, and residual normality issues
+    - Flags autocorrelation issues (Ljung-Box and BG/White)
+    """
     sorted_models = sorted(output_rows, key=lambda r: r[metric])
-    logging.info("\nModel ranking by %s:" % metric)
+    logging.info("\nModel ranking by %s (lower is better):", metric)
+
     for rank, row in enumerate(sorted_models, 1):
-        logging.info(f"{rank}. {row['model']} | {metric} = {row[metric]:.2f} | RMSE = {row['RMSE']:.4f}")
+        model = row["model"]
+        aic = row["AIC"]
+        bic = row["BIC"]
+        r2 = row["r_squared"]
+        rmse = row["RMSE"]
+        wrmse = row.get("weighted_RMSE", None)
+
+        ljung = "⚠️" if row.get("ljung_failed") else "✓"
+        bg = "⚠️" if row.get("bg_failed") else "✓"
+        norm = "⚠️" if not row.get("normality_pass", True) else "✓"
+
+        logging.info(f"{rank}. {model}")
+        logging.info(f"    R² = {r2:.4f} | RMSE = {rmse:.4f}" + (f" | wRMSE = {wrmse:.4f}" if wrmse is not None else ""))
+        logging.info(f"    AIC = {aic:.2f} | BIC = {bic:.2f}")
+        zc_sim = row.get("zero_crossing_similarity", None)
+        zc_str = f"{zc_sim:.1f}%" if zc_sim is not None else "n/a"
+
+        logging.info(f"    Residuals: Ljung-Box [{ljung}], {row['bg_test']} [{bg}], Normality [{norm}]")
+        logging.info(f"    Skewness = {row.get('skewness', 'n/a'):.2f} | Kurtosis = {row.get('kurtosis', 'n/a'):.2f} | Zero-crossing noise similarity = {zc_str}")
+
+
     return sorted_models
 
 def advanced_residual_diagnostics(H0, residuals, model_name):
@@ -158,16 +186,24 @@ def process_csv_files_in_folder(config):
         save_combined_csv(sorted_models, output_file)
 
         plot_path = os.path.join(output_folder, filename.replace(".csv", "_plot.png"))
-        plot_results(H0, G0, d_delta_exp, results, plot_path)
+        plot_results(H0, G0, d_delta_exp, results, plot_path, file_title=filename)
 
-def plot_results(H0, G0, d_delta_exp, model_results, filename):
+
+def plot_results(H0, G0, d_delta_exp, model_results, filename, file_title=None):
     fig, axes = plt.subplots(nrows=5, ncols=3, figsize=(18, 14))
     model_names = list(model_results.keys())
+
+    if file_title:
+        fig.suptitle(f"Model Fits for: {file_title}", fontsize=16, y=1.02)
 
     for i, model in enumerate(model_names):
         fitted, residuals = model_results[model]
         x = H0 / G0
-        norm_residuals = residuals / (np.max(d_delta_exp) - np.min(d_delta_exp))
+
+        # Normalizations
+        delta_range = np.max(d_delta_exp) - np.min(d_delta_exp)
+        delta_max = np.max(np.abs(d_delta_exp))
+        norm_residuals = residuals / delta_range if delta_range > 0 else residuals
 
         # Fit
         axes[i, 0].scatter(x, d_delta_exp, label='Experimental')
@@ -189,8 +225,9 @@ def plot_results(H0, G0, d_delta_exp, model_results, filename):
         axes[i, 2].axhline(0, linestyle='--')
         axes[i, 2].set_title(f'{model} Normalized Residuals')
         axes[i, 2].set_xlabel('[H]/[G]')
-        axes[i, 2].set_ylabel('Normalized Residual')
+        axes[i, 2].set_ylabel('Residual / Range')
 
-    plt.tight_layout()
+    plt.tight_layout(rect=[0, 0, 1, 0.97])  # Reserve space for suptitle
+    plt.subplots_adjust(top=0.93)
     plt.savefig(filename)
     plt.close()
