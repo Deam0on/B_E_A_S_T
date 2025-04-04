@@ -57,7 +57,27 @@ pip install -r requirements.txt
 4. Run the tool:
 
 ```bash
-python binding_analysis_tool.py
+python binding_analysis_tool.py [OPTIONS]
+```
+
+### Available Options:
+
+| Argument            | Description |
+|---------------------|-------------|
+| `--config PATH`     | Path to custom `config.yaml` file (default: `config.yaml`) |
+| `--input_dir DIR`   | Override input folder path (default: `data_input`) |
+| `--output_dir DIR`  | Override output folder path (default: `results`) |
+| `--skip_tests`      | Disable residual diagnostics like Ljung-Box, BG/White, RESET, Cook’s Distance |
+| `--no_normalized`   | Suppress normalized residual plots (Δδ-relative) from output |
+
+### Example:
+
+```bash
+python binding_analysis_tool.py \
+  --input_dir custom_data \
+  --output_dir custom_results \
+  --skip_tests \
+  --no_normalized
 ```
 
 5. Review the output in the `results/` folder:
@@ -315,7 +335,16 @@ $$
 Use these steps as a checklist to pick the best-fitting model per dataset.
 
 ---
+## Zero-Crossing Similarity
 
+The tool computes the similarity between model residuals and white noise by comparing zero-crossings:
+
+- **Zero-crossings**: Number of sign changes in residuals.
+- **Similarity to white noise**: % overlap with simulated normal noise.
+
+This metric is logged and saved in the results file. High similarity (>80%) suggests good model randomness.
+
+---
 ## Configuration
 
 Edit `binding_analysis/config.yaml` to adjust:
@@ -338,6 +367,11 @@ Each model-dataset pair produces:
 - Residual diagnostics
 - Output CSV and PNG plots
 - Combined execution log
+- Ljung-Box statistics and pass/fail
+- BG/White statistics and pass/fail
+- Cook’s Distance max and extreme counts
+- Ramsey RESET test (if applicable)
+- Zero-crossing similarity (%)
 
 ---
 
