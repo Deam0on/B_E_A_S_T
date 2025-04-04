@@ -134,7 +134,7 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
     skip_normres = config.get("cli_flags", {}).get("no_normalized", False)
     custom_corr_enabled = config.get("cli_flags", {}).get("custom_residual_check", False)
 
-    global_delta_range = find_global_delta_range(input_folder)
+    global_delta_range = collect_global_max_deltadelta(input_folder)
     if global_delta_range is None:
         logging.warning("Global Δδ range could not be determined. Normalized residuals may be inaccurate.")
 
