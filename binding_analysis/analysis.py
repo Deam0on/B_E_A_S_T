@@ -45,46 +45,43 @@ def compare_models_by_metric(output_rows, metric="AIC"):
     logging.info("\nModel ranking by %s (lower is better):", metric)
 
     for rank, row in enumerate(sorted_models, 1):
-        model = row["model"]
-        aic = row["AIC"]
-        bic = row["BIC"]
-        r2 = row["r_squared"]
-        rmse = row["RMSE"]
-        wrmse = row.get("weighted_RMSE", None)
+    model = row["model"]
+    aic = row["AIC"]
+    bic = row["BIC"]
+    r2 = row["r_squared"]
+    rmse = row["RMSE"]
+    wrmse = row.get("weighted_RMSE", None)
 
-        ljung_raw = row.get("ljung_failed")
-        bg_raw = row.get("bg_failed")
-        norm_raw = row.get("normality_pass", True)
+    ljung_raw = row.get("ljung_failed")
+    bg_raw = row.get("bg_failed")
+    norm_raw = row.get("normality_pass", True)
 
-        ljung = "✓" if ljung_raw is False else ("⚠️" if ljung_raw is True else "–")
-        bg = "✓" if bg_raw is False else ("⚠️" if bg_raw is True else "–")
-        norm = "✓" if norm_raw is True else ("⚠️" if norm_raw is False else "–")
+    ljung = "✓" if ljung_raw is False else ("⚠️" if ljung_raw is True else "–")
+    bg = "✓" if bg_raw is False else ("⚠️" if bg_raw is True else "–")
+    norm = "✓" if norm_raw is True else ("⚠️" if norm_raw is False else "–")
 
-        zc_sim = row.get("crossing_similarity", None)
-        zc_str = f"{zc_sim:.1f}%" if isinstance(zc_sim, (int, float)) else zc_sim or "n/a"
+    zc_sim = row.get("crossing_similarity", None)
+    zc_str = f"{zc_sim:.1f}%" if isinstance(zc_sim, (int, float)) else zc_sim or "n/a"
 
-        logging.info(f"{rank}. {model}")
-        logging.info(f"    R² = {r2:.4f} | RMSE = {rmse:.4f}" + (f" | wRMSE = {wrmse:.4f}" if wrmse is not None else ""))
-        logging.info(f"    AIC = {aic:.2f} | BIC = {bic:.2f}")
-        # logging.info(f"    Residuals: Ljung-Box [{ljung}], {row.get('bg_test', 'BG?')} [{bg}], Normality [{norm}]")
-        logging.info(f"    Skewness = {row.get('skewness', 'n/a'):.2f} | Kurtosis = {row.get('kurtosis', 'n/a'):.2f} | Zero-crossing noise similarity = {zc_str}")
-        logging.info(f"    Custom Corr [{custom_corr_symbol}]")
+    # Make sure this is defined early
+    custom_corr_flagged = row.get("composite_flagged")
+    custom_corr_symbol = "✓" if custom_corr_flagged is False else ("⚠️" if custom_corr_flagged is True else "–")
 
-        # Custom residual check
-        comp_flagged = row.get("composite_flagged")
-        comp_stats = row.get("composite_stats", {})
-        custom_corr_flagged = row.get("custom_corr_flagged")
-        custom_corr_symbol = "✓" if custom_corr_flagged is False else ("⚠️" if custom_corr_flagged is True else "–")
-        logging.info(f"    Custom Corr [{custom_corr_symbol}]")
+    logging.info(f"{rank}. {model}")
+    logging.info(f"    R² = {r2:.4f} | RMSE = {rmse:.4f}" + (f" | wRMSE = {wrmse:.4f}" if wrmse is not None else ""))
+    logging.info(f"    AIC = {aic:.2f} | BIC = {bic:.2f}")
+    logging.info(f"    Skewness = {row.get('skewness', 'n/a'):.2f} | Kurtosis = {row.get('kurtosis', 'n/a'):.2f} | Zero-crossing noise similarity = {zc_str}")
+    logging.info(f"    Custom Corr [{custom_corr_symbol}]")
 
-        if comp_stats:
-            logging.info(f"    Composite stats: "
-                         f"Pearson = {comp_stats['pearson_corr']:.2f}, "
-                         f"Spearman = {comp_stats['spearman_corr']:.2f}, "
-                         f"Spectral = {comp_stats['spectral_ratio']:.2f}, "
-                         f"R² = {comp_stats['avg_rolling_r2']:.2f}, "
-                         f"Run ratio = {comp_stats['run_ratio']:.2f}")
-
+    comp_stats = row.get("composite_stats", {})
+    if comp_stats:
+        logging.info(f"    Composite stats: "
+                     f"Pearson = {comp_stats['pearson_corr']:.2f}, "
+                     f"Spearman = {comp_stats['spearman_corr']:.2f}, "
+                     f"Spectral = {comp_stats['spectral_ratio']:.2f}, "
+                     f"R² = {comp_stats['avg_rolling_r2']:.2f}, "
+                     f"Run ratio = {comp_stats['run_ratio']:.2f}")
+        
     return sorted_models
 
 def advanced_residual_diagnostics(H0, residuals, model_name, enable_tests=True, enable_custom_corr=True):
