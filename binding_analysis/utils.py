@@ -51,11 +51,11 @@ def custom_residual_pattern_test(residuals):
 
     # Heuristic thresholds
     flagged = (
-        abs(pearson_corr) > 0.3 or
-        abs(spearman_corr) > 0.3 or
-        spectral_ratio > 0.25 or
-        avg_r2 > 0.3 or
-        run_ratio < 0.7 or run_ratio > 1.3
+        abs(pearson_corr) > 0.35 or
+        abs(spearman_corr) > 0.35 or
+        spectral_ratio > 0.3 or
+        avg_r2 > 0.35 or
+        run_ratio < 0.65 or run_ratio > 1.35
     )
 
     return {
