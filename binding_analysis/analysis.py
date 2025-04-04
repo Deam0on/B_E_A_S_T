@@ -8,6 +8,7 @@ from scipy.optimize import curve_fit
 from statsmodels.api import OLS, add_constant
 from statsmodels.stats.diagnostic import acorr_ljungbox, acorr_breusch_godfrey, het_white
 from utils import find_global_delta_range
+from utils import autocorrelation_tests, validate_data, custom_residual_pattern_test
 
 from models import model_definitions
 from utils import save_combined_csv, autocorrelation_tests, validate_data
@@ -56,6 +57,8 @@ def compare_models_by_metric(output_rows, metric="AIC"):
         ljung = "✓" if ljung_raw is False else ("⚠️" if ljung_raw is True else "–")
         bg = "✓" if bg_raw is False else ("⚠️" if bg_raw is True else "–")
         norm = "✓" if norm_raw is True else ("⚠️" if norm_raw is False else "–")
+        custom_corr_flagged = row.get("custom_corr_flagged")
+        custom_corr_symbol = "✓" if custom_corr_flagged is False else ("⚠️" if custom_corr_flagged is True else "–")
 
         zc_sim = row.get("crossing_similarity", None)
         zc_str = f"{zc_sim:.1f}%" if isinstance(zc_sim, (int, float)) else zc_sim or "n/a"
@@ -65,6 +68,7 @@ def compare_models_by_metric(output_rows, metric="AIC"):
         logging.info(f"    AIC = {aic:.2f} | BIC = {bic:.2f}")
         # logging.info(f"    Residuals: Ljung-Box [{ljung}], {row.get('bg_test', 'BG?')} [{bg}], Normality [{norm}]")
         logging.info(f"    Skewness = {row.get('skewness', 'n/a'):.2f} | Kurtosis = {row.get('kurtosis', 'n/a'):.2f} | Zero-crossing noise similarity = {zc_str}")
+        logging.info(f"    Custom Corr [{custom_corr_symbol}]")
 
     return sorted_models
 
@@ -103,12 +107,22 @@ def advanced_residual_diagnostics(H0, residuals, model_name, enable_tests=True):
     if not normality_pass:
         logging.warning("Residuals may not be normally distributed (outliers or heavy tails).")
 
-    return {
+    result = {
         **autocorr,
         "skewness": skewness,
         "kurtosis": kurtosis,
         "normality_pass": normality_pass
     }
+
+    if enable_custom_corr:
+        custom = custom_residual_pattern_test(residuals)
+        result.update(custom)
+        if custom["custom_corr_flagged"]:
+            logging.warning(f"⚠️ Residual pattern flagged as non-random by custom test.")
+        else:
+            logging.info("✓ Custom residual pattern test passed.")
+
+    return result
 
 def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False):
     input_folder = config["general"]["input_dir"]
@@ -118,6 +132,7 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
 
     skip_tests = config.get("cli_flags", {}).get("skip_tests", False)
     skip_normres = config.get("cli_flags", {}).get("no_normalized", False)
+    custom_corr_enabled = config.get("cli_flags", {}).get("custom_residual_check", False)
 
     global_delta_range = find_global_delta_range(input_folder)
     if global_delta_range is None:
@@ -184,7 +199,11 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
 
                 results[model_name] = (fit_vals, residuals)
 
-                diagnostics = advanced_residual_diagnostics(H0, residuals, model_name, enable_tests=not skip_tests)
+                diagnostics = advanced_residual_diagnostics(
+                    H0, residuals, model_name,
+                    enable_tests=not skip_tests,
+                    enable_custom_corr=custom_corr_enabled
+                )
 
                 output_rows.append({
                     "file": filename,
