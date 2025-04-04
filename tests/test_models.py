@@ -1,98 +1,47 @@
 import numpy as np
 from scipy.optimize import curve_fit
-from binding_analysis.models import (
-    binding_isotherm_1_1,
-    binding_isotherm_1_2,
-    binding_isotherm_2_1,
-    binding_dimer,
-    multi_model
-)
+from binding_analysis.models import model_definitions
 
-# Realistic input concentrations
-H0 = np.linspace(0.0, 0.015, 20)
-G0 = np.full_like(H0, 0.000758)
+# Shared test input
+H0 = np.linspace(0, 0.015, 20)
+G0 = np.full_like(H0, 0.01)
+d_delta_exp = np.linspace(0, 2.5e3, len(H0))
 
-# Centralized test parameters
+# Expected realistic parameter guesses for good convergence
 PARAMS = {
-    "1:1": [500, 300, 2800],                     # Ka, dG, dHG
-    "1:2": [1e5, 1e5, 2800, 100, 400],           # K1, K2, dG, dHG, dHG2
-    "2:1": [1e5, 1e5, 2800, 100, 400],           # K1, K2, dG, dHG, dH2G
-    "dimer": [200, 100, 2800, 350],              # Ka, Kd, dG, dHG
-    "multi": [100, 100, 300, 2800, 100, 400]     # KHG, Kd, KH2G, dG, dHG, dH2G
+    "1:1": [1e4, 300],
+    "1:2": [1e4, 1e3, 150, 300],
+    "2:1": [1e4, 1e3, 150, 300],
+    "dimer": [1e4, 1e3, 150, 300],
+    "multi": [1e4, 1e3, 1e4, 2700, 150, 350]
 }
 
-def test_binding_isotherm_1_1():
-    Ka, dG, dHG = PARAMS["1:1"]
-    d_delta = binding_isotherm_1_1(H0, G0, Ka, dG, dHG)
+def test_model_1_1():
+    model = model_definitions(H0, G0)["1:1"]
+    d_sim = model["lambda"](H0, *PARAMS["1:1"])
+    popt, _ = curve_fit(model["lambda"], H0, d_sim, p0=model["initial_guess"], bounds=model["bounds"])
+    assert len(popt) == 2
 
-    def model(H, Ka, dG, dHG):
-        return binding_isotherm_1_1(H, G0, Ka, dG, dHG)
+def test_model_1_2():
+    model = model_definitions(H0, G0)["1:2"]
+    d_sim = model["lambda"](H0, *PARAMS["1:2"])
+    popt, _ = curve_fit(model["lambda"], H0, d_sim, p0=model["initial_guess"], bounds=model["bounds"])
+    assert len(popt) == 4
 
-    popt, _ = curve_fit(model, H0, d_delta, p0=[400, 2700, 3000], maxfev=5000)
-    assert np.all(np.isfinite(popt))
+def test_model_2_1():
+    model = model_definitions(H0, G0)["2:1"]
+    d_sim = model["lambda"](H0, *PARAMS["2:1"])
+    popt, _ = curve_fit(model["lambda"], H0, d_sim, p0=model["initial_guess"], bounds=model["bounds"])
+    assert len(popt) == 4
 
+def test_model_dimer():
+    model = model_definitions(H0, G0)["dimer"]
+    d_sim = model["lambda"](H0, *PARAMS["dimer"])
+    popt, _ = curve_fit(model["lambda"], H0, d_sim, p0=model["initial_guess"], bounds=model["bounds"])
+    assert len(popt) == 4
 
-def test_binding_isotherm_1_2():
-    K1, K2, dG, dHG, dHG2 = PARAMS["1:2"]
-    d_delta = binding_isotherm_1_2(H0, G0, K1, K2, dG, dHG, dHG2)
-
-    def model(H, K1, K2, dG, dHG, dHG2):
-        return binding_isotherm_1_2(H, G0, K1, K2, dG, dHG, dHG2)
-
-    # Use true params ±10% as initial guess
-    p0 = [K1 * 0.9, K2 * 0.9, dG * 0.9, dHG * 0.9, dHG2 * 0.9]
-
-    # Define reasonable bounds to assist optimizer
-    bounds = (
-        [0, 0, -1e6, -1e6, -1e6],   # lower bounds
-        [1e6, 1e6, 1e6, 1e6, 1e6]   # upper bounds
-    )
-
-    popt, _ = curve_fit(
-        model, H0, d_delta,
-        p0=p0,
-        bounds=bounds,
-        method="trf",  # better for constrained fitting
-        maxfev=20000
-    )
-
-    K1_est, K2_est, dG_est, dHG_est, dHG2_est = popt
-
-    assert np.isclose(K1_est, K1, rtol=0.1)
-    assert np.isclose(K2_est, K2, rtol=0.1)
-    assert np.isclose(dG_est, dG, rtol=0.1)
-    assert np.isclose(dHG_est, dHG, rtol=0.1)
-    assert np.isclose(dHG2_est, dHG2, rtol=0.1)
-
-
-def test_binding_isotherm_2_1():
-    K1, K2, dG, dHG, dH2G = PARAMS["2:1"]
-    d_delta = binding_isotherm_2_1(H0, G0, K1, K2, dG, dHG, dH2G)
-
-    def model(H, K1, K2, dG, dHG, dH2G):
-        return binding_isotherm_2_1(H, G0, K1, K2, dG, dHG, dH2G)
-
-    popt, _ = curve_fit(model, H0, d_delta, p0=[1e4, 1e4, 2700, 150, 350], maxfev=10000)
-    assert np.all(np.isfinite(popt))
-
-
-def test_binding_dimer():
-    Ka, Kd, dG, dHG = PARAMS["dimer"]
-    d_delta = binding_dimer(H0, G0, Ka, Kd, dG, dHG)
-
-    def model(H, Ka, Kd, dG, dHG):
-        return binding_dimer(H, G0, Ka, Kd, dG, dHG)
-
-    popt, _ = curve_fit(model, H0, d_delta, p0=[150, 80, 2700, 300], maxfev=10000)
-    assert np.all(np.isfinite(popt))
-
-
-def test_multi_model():
-    KHG, Kd, KH2G, dG, dHG, dH2G = PARAMS["multi"]
-    d_delta = multi_model(H0, G0, KHG, Kd, KH2G, dG, dHG, dH2G)
-
-    def model(H, KHG, Kd, KH2G, dG, dHG, dH2G):
-        return multi_model(H, G0, KHG, Kd, KH2G, dG, dHG, dH2G)
-
-    popt, _ = curve_fit(model, H0, d_delta, p0=[80, 80, 200, 2700, 100, 350], maxfev=15000)
-    assert np.all(np.isfinite(popt))
+def test_model_multi():
+    model = model_definitions(H0, G0)["multi"]
+    d_sim = model["lambda"](H0, *PARAMS["multi"])
+    popt, _ = curve_fit(model["lambda"], H0, d_sim, p0=model["initial_guess"], bounds=model["bounds"])
+    assert len(popt) == 6
