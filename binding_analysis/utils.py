@@ -293,11 +293,8 @@ def save_combined_csv(results, output_file):
                 "cooks_extreme": result.get("cooks_extreme"),
                 "crossing_similarity": result.get("crossing_similarity"),
                 "zero_crossings": result.get("zero_crossings"),
-                "custom_corr_flagged": result.get("custom_corr_flagged"),
-                "custom_corr_stat": result.get("custom_corr_stat"),
-                "std_diff": result.get("custom_corr_stat", {}).get("std_diff"),
-                "mean_abs_2nd_diff": result.get("custom_corr_stat", {}).get("mean_abs_2nd_diff"),
-                "sign_change_ratio": result.get("custom_corr_stat", {}).get("sign_change_ratio")
+                "composite_flagged": result.get("composite_flagged"),
+                "composite_stats": str(result.get("composite_stats"))
             })
 
     pd.DataFrame(rows).to_csv(output_file, index=False)
