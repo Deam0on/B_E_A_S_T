@@ -57,8 +57,6 @@ def compare_models_by_metric(output_rows, metric="AIC"):
         ljung = "✓" if ljung_raw is False else ("⚠️" if ljung_raw is True else "–")
         bg = "✓" if bg_raw is False else ("⚠️" if bg_raw is True else "–")
         norm = "✓" if norm_raw is True else ("⚠️" if norm_raw is False else "–")
-        custom_corr_flagged = row.get("custom_corr_flagged")
-        custom_corr_symbol = "✓" if custom_corr_flagged is False else ("⚠️" if custom_corr_flagged is True else "–")
 
         zc_sim = row.get("crossing_similarity", None)
         zc_str = f"{zc_sim:.1f}%" if isinstance(zc_sim, (int, float)) else zc_sim or "n/a"
@@ -71,17 +69,19 @@ def compare_models_by_metric(output_rows, metric="AIC"):
         logging.info(f"    Custom Corr [{custom_corr_symbol}]")
 
         # Custom residual check
-        custom_corr_flagged = row.get("custom_corr_flagged")
-        custom_corr_stats = row.get("custom_corr_stat")
-        
-        if custom_corr_flagged is not None:
-            flag = "⚠️" if custom_corr_flagged else "✓"
-            stats_str = (
-                f"Std(diff)={custom_corr_stats['std_diff']:.4f}, "
-                f"Mean|2nd diff|={custom_corr_stats['mean_abs_2nd_diff']:.4f}, "
-                f"SignChg={custom_corr_stats['sign_change_ratio']:.2%}"
-            )
-            logging.info(f"    Custom residual pattern check: {flag} ({stats_str})")
+        comp_flagged = row.get("composite_flagged")
+        comp_stats = row.get("composite_stats", {})
+        comp_status = "✓" if comp_flagged is False else ("⚠️" if comp_flagged is True else "–")
+
+        logging.info(f"    Residuals: Ljung-Box [{ljung}], {row.get('bg_test', 'BG?')} [{bg}], Normality [{norm}], Composite [{comp_status}]")
+
+        if comp_stats:
+            logging.info(f"    Composite stats: "
+                         f"Pearson = {comp_stats['pearson_corr']:.2f}, "
+                         f"Spearman = {comp_stats['spearman_corr']:.2f}, "
+                         f"Spectral = {comp_stats['spectral_ratio']:.2f}, "
+                         f"R² = {comp_stats['avg_rolling_r2']:.2f}, "
+                         f"Run ratio = {comp_stats['run_ratio']:.2f}")
 
     return sorted_models
 
@@ -129,16 +129,24 @@ def advanced_residual_diagnostics(H0, residuals, model_name, enable_tests=True, 
 
     if enable_custom_corr:
         custom = custom_residual_pattern_test(residuals)
-        result.update(custom)
-        stats = custom["custom_corr_stat"]
-        logging.info("Custom residual pattern test:")
-        logging.info(f"  Std of diff = {stats['std_diff']:.4f}")
-        logging.info(f"  Mean |2nd diff| = {stats['mean_abs_2nd_diff']:.4f}")
-        logging.info(f"  Sign change ratio = {stats['sign_change_ratio']:.2%}")
-        if custom["custom_corr_flagged"]:
-            logging.warning("⚠️ Residual pattern flagged as non-random by custom test.")
+        result.update({
+            "composite_flagged": custom.get("composite_flagged"),
+            "composite_stats": custom.get("composite_stats")
+        })
+
+        stats = custom["composite_stats"]
+        if stats:
+            logging.info("Composite residual correlation test:")
+            logging.info(f"  Lag-1 Pearson = {stats['pearson_corr']:.3f}")
+            logging.info(f"  Lag-1 Spearman = {stats['spearman_corr']:.3f}")
+            logging.info(f"  Spectral ratio = {stats['spectral_ratio']:.3f}")
+            logging.info(f"  Avg rolling R² = {stats['avg_rolling_r2']:.3f}")
+            logging.info(f"  Run ratio = {stats['run_ratio']:.3f}")
+
+        if custom["composite_flagged"]:
+            logging.warning("⚠️ Residuals flagged as correlated by composite test.")
         else:
-            logging.info("✓ Custom residual pattern test passed.")
+            logging.info("✓ Composite test: residuals appear uncorrelated.")
 
     return result
 
