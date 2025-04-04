@@ -157,8 +157,9 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
                 fit_vals = func(H0, *params)
                 residuals = fit_vals - d_delta_exp
 
-                normalized_residuals = residuals / np.max(np.abs(d_delta_exp)) if not skip_normres else [None] * len(residuals)
-                weighted_rmse = np.sqrt(np.mean((normalized_residuals if not skip_normres else residuals) ** 2))
+                delta_max = np.max(np.abs(d_delta_exp)) if np.max(np.abs(d_delta_exp)) > 0 else 1
+                normalized_residuals = residuals / delta_max
+                weighted_rmse = np.sqrt(np.mean(normalized_residuals ** 2))
 
                 std_err = np.sqrt(np.diag(cov))
                 rss = np.sum(residuals**2)
