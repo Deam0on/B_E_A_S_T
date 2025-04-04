@@ -163,8 +163,14 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
                 residuals = fit_vals - d_delta_exp
 
                 delta_max = np.max(np.abs(d_delta_exp)) if np.max(np.abs(d_delta_exp)) > 0 else 1
-                normalized_residuals = residuals / global_max_ddelta
-                weighted_rmse = np.sqrt(np.mean(normalized_residuals ** 2))
+                if not skip_normres and global_delta_range:
+                    normalized_residuals = residuals / global_delta_range
+                    weighted_rmse = np.sqrt(np.mean(normalized_residuals ** 2))
+                else:
+                    normalized_residuals = residuals
+                    weighted_rmse = np.sqrt(np.mean(normalized_residuals ** 2))
+                    logging.warning("Normalized residuals not calculated.")
+                
 
                 std_err = np.sqrt(np.diag(cov))
                 rss = np.sum(residuals**2)
