@@ -118,6 +118,8 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
     skip_tests = config.get("cli_flags", {}).get("skip_tests", False)
     skip_normres = config.get("cli_flags", {}).get("no_normalized", False)
 
+    global_max_ddelta = collect_global_max_deltadelta(input_folder)
+
     for filename in os.listdir(input_folder):
         if not filename.endswith(".csv"):
             continue
@@ -158,7 +160,7 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
                 residuals = fit_vals - d_delta_exp
 
                 delta_max = np.max(np.abs(d_delta_exp)) if np.max(np.abs(d_delta_exp)) > 0 else 1
-                normalized_residuals = residuals / delta_max
+                normalized_residuals = residuals / global_max_ddelta
                 weighted_rmse = np.sqrt(np.mean(normalized_residuals ** 2))
 
                 std_err = np.sqrt(np.diag(cov))
