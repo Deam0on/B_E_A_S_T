@@ -17,32 +17,30 @@ PARAMS = {
     "multi": [1e3, 1e3, 1e3, 150, 300, 400],
 }
 
+def validate_fit(model_lambda, H0, true_params, initial_guess, bounds):
+    d_calc = model_lambda(H0, *true_params)
+    popt, _ = curve_fit(model_lambda, H0, d_calc, p0=initial_guess, bounds=bounds, maxfev=100000)
+    fit = model_lambda(H0, *popt)
+    assert np.allclose(fit, d_calc, rtol=1e-2), f"Fit did not match expected output. Params: {popt}"
+    assert not np.isnan(popt).any(), "Fit parameters contain NaNs."
+    return True
+
 def test_model_1_1():
     model = model_definitions(H0, G0, d_delta_exp)["1:1"]
-    d_calc = model["lambda"](H0, *PARAMS["1:1"])
-    popt, _ = curve_fit(model["lambda"], H0, d_calc, p0=model["initial_guess"], bounds=model["bounds"])
-    assert np.allclose(model["lambda"](H0, *popt), d_calc, rtol=1e-2)
+    assert validate_fit(model["lambda"], H0, PARAMS["1:1"], model["initial_guess"], model["bounds"])
 
 def test_model_1_2():
     model = model_definitions(H0, G0, d_delta_exp)["1:2"]
-    d_calc = model["lambda"](H0, *PARAMS["1:2"])
-    popt, _ = curve_fit(model["lambda"], H0, d_calc, p0=model["initial_guess"], bounds=model["bounds"], maxfev=100000)
-    assert np.allclose(model["lambda"](H0, *popt), d_calc, rtol=1e-2)
+    assert validate_fit(model["lambda"], H0, PARAMS["1:2"], model["initial_guess"], model["bounds"])
 
 def test_model_2_1():
     model = model_definitions(H0, G0, d_delta_exp)["2:1"]
-    d_calc = model["lambda"](H0, *PARAMS["2:1"])
-    popt, _ = curve_fit(model["lambda"], H0, d_calc, p0=model["initial_guess"], bounds=model["bounds"], maxfev=100000)
-    assert np.allclose(model["lambda"](H0, *popt), d_calc, rtol=1e-2)
+    assert validate_fit(model["lambda"], H0, PARAMS["2:1"], model["initial_guess"], model["bounds"])
 
 def test_model_dimer():
     model = model_definitions(H0, G0, d_delta_exp)["dimer"]
-    d_calc = model["lambda"](H0, *PARAMS["dimer"])
-    popt, _ = curve_fit(model["lambda"], H0, d_calc, p0=model["initial_guess"], bounds=model["bounds"], maxfev=100000)
-    assert np.allclose(model["lambda"](H0, *popt), d_calc, rtol=1e-2)
+    assert validate_fit(model["lambda"], H0, PARAMS["dimer"], model["initial_guess"], model["bounds"])
 
 def test_model_multi():
     model = model_definitions(H0, G0, d_delta_exp)["multi"]
-    d_calc = model["lambda"](H0, *PARAMS["multi"])
-    popt, _ = curve_fit(model["lambda"], H0, d_calc, p0=model["initial_guess"], bounds=model["bounds"], maxfev=100000)
-    assert np.allclose(model["lambda"](H0, *popt), d_calc, rtol=1e-2)
+    assert validate_fit(model["lambda"], H0, PARAMS["multi"], model["initial_guess"], model["bounds"])
