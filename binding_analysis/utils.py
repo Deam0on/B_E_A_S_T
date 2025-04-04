@@ -5,6 +5,56 @@ import logging
 import numpy as np
 import statsmodels.api as sm
 from statsmodels.stats.diagnostic import acorr_ljungbox, acorr_breusch_godfrey, het_white
+from scipy.optimize import curve_fit
+from scipy.stats import skew, kurtosis, normaltest
+
+def smart_initial_guess(model_func, H0, d_delta_exp, default_guess, bounds, max_iter=5, perturbation=0.1):
+    """
+    Attempts to find a better initial guess by perturbing parameters randomly
+    """
+    best_guess = default_guess
+    best_score = np.inf
+
+    for _ in range(max_iter):
+        guess = [p * (1 + np.random.uniform(-perturbation, perturbation)) for p in default_guess]
+        try:
+            popt, _ = curve_fit(model_func, H0, d_delta_exp, p0=guess, bounds=bounds, maxfev=100000)
+            residuals = model_func(H0, *popt) - d_delta_exp
+            score = np.sum(residuals ** 2)
+            if score < best_score:
+                best_score = score
+                best_guess = guess
+        except Exception:
+            continue
+
+    return best_guess
+
+def compare_models_by_metric(output_rows, metric="AIC"):
+    """
+    Logs a sorted list of models based on the given metric (e.g. AIC, BIC)
+    """
+    try:
+        model_metrics = [(row["model"], row[metric]) for row in output_rows]
+        sorted_models = sorted(model_metrics, key=lambda x: x[1])
+        logging.info("Model Ranking by %s:", metric)
+        for rank, (model, val) in enumerate(sorted_models, start=1):
+            logging.info(f"{rank}. {model}: {metric} = {val:.2f}")
+    except Exception as e:
+        logging.warning(f"Model comparison skipped due to: {e}")
+
+def advanced_residual_diagnostics(residuals, model_name):
+    """
+    Provides skewness, kurtosis, and normality diagnostics
+    """
+    try:
+        s = skew(residuals)
+        k = kurtosis(residuals)
+        stat, p = normaltest(residuals)
+        logging.info(f"[{model_name}] Residual Diagnostics -> Skew: {s:.2f}, Kurtosis: {k:.2f}, Normality p = {p:.4f}")
+        return {"skew": s, "kurtosis": k, "normality_p": p}
+    except Exception as e:
+        logging.warning(f"Residual diagnostics for {model_name} skipped due to: {e}")
+        return {}
 
 def validate_data(df):
     required_cols = ['H', 'G', 'delta']
