@@ -100,7 +100,7 @@ def multi_model(H0, G0, KHG, Kd, KH2G, dG, dHG, dH2G, max_iter=100, tol=1e-6):
     d_delta_comp[0] = 0
     return d_delta_comp
 
-def model_definitions(H0, G0):
+def model_definitions(H0, G0, d_delta_exp):
     return {
         "1:1": {
             "function": binding_isotherm_1_1,
