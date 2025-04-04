@@ -72,7 +72,7 @@ def compare_models_by_metric(output_rows, metric="AIC"):
 
     return sorted_models
 
-def advanced_residual_diagnostics(H0, residuals, model_name, enable_tests=True):
+def advanced_residual_diagnostics(H0, residuals, model_name, enable_tests=True, enable_custom_corr=False):
     if not enable_tests:
         logging.info(f"Skipping residual diagnostics for {model_name} due to CLI flag.")
         return {
