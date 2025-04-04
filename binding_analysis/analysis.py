@@ -132,7 +132,7 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
 
     skip_tests = config.get("cli_flags", {}).get("skip_tests", False)
     skip_normres = config.get("cli_flags", {}).get("no_normalized", False)
-    custom_corr_enabled = config.get("cli_flags", {}).get("custom_residual_check", False)
+    custom_corr_enabled = config.get("cli_flags", {}).get("custom_residual_check", True)
 
     global_delta_range = collect_global_max_deltadelta(input_folder)
     if global_delta_range is None:
@@ -178,13 +178,10 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
                 residuals = fit_vals - d_delta_exp
 
                 delta_max = np.max(np.abs(d_delta_exp)) if np.max(np.abs(d_delta_exp)) > 0 else 1
-                if not skip_normres and global_delta_range:
-                    normalized_residuals = residuals / global_delta_range
-                    weighted_rmse = np.sqrt(np.mean(normalized_residuals ** 2))
-                else:
-                    normalized_residuals = residuals
-                    weighted_rmse = np.sqrt(np.mean(normalized_residuals ** 2))
-                    logging.warning("Normalized residuals not calculated.")
+                
+                normalized_residuals = residuals / global_delta_range
+                weighted_rmse = np.sqrt(np.mean(normalized_residuals ** 2))
+                
                 
 
                 std_err = np.sqrt(np.diag(cov))
