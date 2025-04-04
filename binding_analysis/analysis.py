@@ -43,6 +43,7 @@ def compare_models_by_metric(output_rows, metric="AIC"):
     - Logs RMSE and weighted RMSE
     - Flags skewness, kurtosis, and residual normality issues
     - Flags autocorrelation issues (Ljung-Box and BG/White)
+    - Includes zero-crossing similarity to ideal noise
     """
     sorted_models = sorted(output_rows, key=lambda r: r[metric])
     logging.info("\nModel ranking by %s (lower is better):", metric)
@@ -55,19 +56,23 @@ def compare_models_by_metric(output_rows, metric="AIC"):
         rmse = row["RMSE"]
         wrmse = row.get("weighted_RMSE", None)
 
-        ljung = "⚠️" if row.get("ljung_failed") else "✓"
-        bg = "⚠️" if row.get("bg_failed") else "✓"
-        norm = "⚠️" if not row.get("normality_pass", True) else "✓"
+        # Safe flags
+        ljung_raw = row.get("ljung_failed")
+        bg_raw = row.get("bg_failed")
+        norm_raw = row.get("normality_pass", True)
+
+        ljung = "✓" if ljung_raw is False else ("⚠️" if ljung_raw is True else "–")
+        bg = "✓" if bg_raw is False else ("⚠️" if bg_raw is True else "–")
+        norm = "✓" if norm_raw is True else ("⚠️" if norm_raw is False else "–")
+
+        zc_sim = row.get("zero_crossing_similarity", None)
+        zc_str = f"{zc_sim:.1f}%" if isinstance(zc_sim, (int, float)) else zc_sim or "n/a"
 
         logging.info(f"{rank}. {model}")
         logging.info(f"    R² = {r2:.4f} | RMSE = {rmse:.4f}" + (f" | wRMSE = {wrmse:.4f}" if wrmse is not None else ""))
         logging.info(f"    AIC = {aic:.2f} | BIC = {bic:.2f}")
-        zc_sim = row.get("zero_crossing_similarity", None)
-        zc_str = f"{zc_sim:.1f}%" if zc_sim is not None else "n/a"
-
-        logging.info(f"    Residuals: Ljung-Box [{ljung}], {row['bg_test']} [{bg}], Normality [{norm}]")
+        logging.info(f"    Residuals: Ljung-Box [{ljung}], {row.get('bg_test', 'BG?')} [{bg}], Normality [{norm}]")
         logging.info(f"    Skewness = {row.get('skewness', 'n/a'):.2f} | Kurtosis = {row.get('kurtosis', 'n/a'):.2f} | Zero-crossing noise similarity = {zc_str}")
-
 
     return sorted_models
 
@@ -128,7 +133,7 @@ def process_csv_files_in_folder(config):
 
         for model_name, model in models.items():
             try:
-                logging.info(f"Evaluating model: {model_name}")
+                logging.info(f"\nEvaluating model: {model_name}")
                 guess = smart_initial_guess(model['lambda'], model['initial_guess'], model['bounds'], H0, d_delta_exp)
                 bounds = model['bounds']
                 func = model['lambda']
@@ -194,7 +199,7 @@ def plot_results(H0, G0, d_delta_exp, model_results, filename, file_title=None):
     model_names = list(model_results.keys())
 
     if file_title:
-        fig.suptitle(f"Model Fits for: {file_title}", fontsize=16, y=1.02)
+        fig.suptitle(f"File: {file_title}", fontsize=18, fontweight='bold',color='black', y=1.02)
 
     for i, model in enumerate(model_names):
         fitted, residuals = model_results[model]
@@ -227,7 +232,7 @@ def plot_results(H0, G0, d_delta_exp, model_results, filename, file_title=None):
         axes[i, 2].set_xlabel('[H]/[G]')
         axes[i, 2].set_ylabel('Residual / Range')
 
-    plt.tight_layout(rect=[0, 0, 1, 0.97])  # Reserve space for suptitle
-    plt.subplots_adjust(top=0.93)
+    plt.tight_layout(rect=[0, 0, 1, 0.95])  # Reserve space for suptitle
+    plt.subplots_adjust(top=0.9)           # <- top margin
     plt.savefig(filename)
     plt.close()
