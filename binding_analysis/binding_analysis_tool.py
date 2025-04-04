@@ -1,6 +1,7 @@
 import sys
 import os
 import logging
+import argparse
 from analysis import process_csv_files_in_folder
 from utils import delete_old_result_files
 from datetime import datetime
@@ -36,17 +37,46 @@ def setup_logging():
     logging.info("Binding analysis started")
     logging.info(f"Timestamp: {datetime.now().isoformat()}")
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Binding Isotherm CLI Tool")
+    parser.add_argument("--config", type=str, default="config.yaml", help="Path to config YAML file.")
+    parser.add_argument("--skip_tests", action="store_true", help="Disable residual diagnostic tests.")
+    parser.add_argument("--no_normalized", action="store_true", help="Do not show/save normalized residual plots.")
+    parser.add_argument("--input_dir", type=str, help="Override input directory (default: from config)")
+    parser.add_argument("--output_dir", type=str, help="Override output directory (default: from config)")
+    return parser.parse_args()
+
 def main():
     setup_logging()
-    config = load_config()
-    input_folder = "data_input"
-    output_folder = "results"
+    args = parse_args()
+    config = load_config(args.config)
 
-    os.makedirs(output_folder, exist_ok=True)
-    delete_old_result_files(output_folder)
-    process_csv_files_in_folder(config)
+    # Override input/output directory if provided via CLI
+    input_dir = args.input_dir or config.get("general", {}).get("input_dir", "data_input")
+    output_dir = args.output_dir or config.get("general", {}).get("results_dir", "results")
+
+    # Update config with final values
+    config["general"]["input_dir"] = input_dir
+    config["general"]["results_dir"] = output_dir
+
+    # Store CLI flags in config
+    config["cli_flags"] = {
+        "skip_tests": args.skip_tests,
+        "no_normalized": args.no_normalized
+    }
+
+    os.makedirs(output_dir, exist_ok=True)
+    delete_old_result_files(output_dir)
+
+    # Pass CLI flags explicitly to the analysis function
+    process_csv_files_in_folder(
+        config,
+        skip_tests=args.skip_tests,
+        plot_normalized=not args.no_normalized
+    )
 
     logging.info("Analysis completed. Results and log saved to /results.")
+
 
 if __name__ == "__main__":
     main()

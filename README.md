@@ -7,13 +7,21 @@ This Python-based analysis tool is designed for evaluating titration data from N
 ## Features
 
 - Supports multiple host-guest binding models:
-  - 1:1, 1:2, 2:1, dimerization, and multi-equilibrium
+  - 1:1, 1:2, 2:1, dimerization, and multi-equilibrium models
+- Full decoupling of model logic from analysis code
 - Curve fitting using `scipy.optimize.curve_fit`
+- Smart initial guess refinement strategy
 - Configurable fitting parameters via `config.yaml`
 - Fit diagnostics including:
-  - R², AIC, BIC, RMSE
-  - Ljung-Box and Breusch-Godfrey or White's test for residual autocorrelation
-- Plot generation (fit and residuals)
+  - R², AIC, BIC, RMSE, Weighted RMSE
+  - Ljung-Box, Breusch-Godfrey or White's test for residual autocorrelation
+  - Ramsey RESET Test (for model misspecification)
+  - Cook's Distance (influence detection)
+  - Skewness, Kurtosis, and D’Agostino’s normality test
+- Plot generation:
+  - Fitted curves
+  - Raw residuals
+  - Normalized residuals (Δδ-relative)
 - Structured output in CSV and PNG format
 - Logging to terminal and `results/log.txt`
 - Reproducibility guidance in `REPRODUCIBILITY.md`
@@ -49,7 +57,27 @@ pip install -r requirements.txt
 4. Run the tool:
 
 ```bash
-python binding_analysis_tool.py
+python binding_analysis_tool.py [OPTIONS]
+```
+
+### Available Options:
+
+| Argument            | Description |
+|---------------------|-------------|
+| `--config PATH`     | Path to custom `config.yaml` file (default: `config.yaml`) |
+| `--input_dir DIR`   | Override input folder path (default: `data_input`) |
+| `--output_dir DIR`  | Override output folder path (default: `results`) |
+| `--skip_tests`      | Disable residual diagnostics like Ljung-Box, BG/White, RESET, Cook’s Distance |
+| `--no_normalized`   | Suppress normalized residual plots (Δδ-relative) from output |
+
+### Example:
+
+```bash
+python binding_analysis_tool.py \
+  --input_dir custom_data \
+  --output_dir custom_results \
+  --skip_tests \
+  --no_normalized
 ```
 
 5. Review the output in the `results/` folder:
@@ -57,6 +85,11 @@ python binding_analysis_tool.py
    - `*_plot.png`: fit and residuals
    - `log.txt`: execution log
 
+6. Optionally run with automatic model comparison:
+
+```bash
+python binding_analysis_tool.py --auto-select
+```
 ---
 
 ## Input File Format
@@ -265,6 +298,53 @@ K_{H_2G} K_d H_\text{free}^2 G_\text{free}
 }
 $$
 
+---
+
+## Results Interpretation Guide
+
+### Metrics and Diagnostics
+
+| Metric       | Description |
+|--------------|-------------|
+| **R²**       | Coefficient of determination — closer to 1 is better |
+| **AIC/BIC**  | Model selection criteria — lower is better |
+| **RMSE**     | Root Mean Squared Error — unnormalized residual size |
+| **Weighted RMSE** | RMSE scaled by the Δδ range — good for comparing across datasets |
+| **Ljung-Box**| Detects autocorrelation — p < 0.05 is problematic |
+| **Breusch-Godfrey / White** | Detects serial correlation / heteroscedasticity |
+| **Ramsey RESET** | Checks for non-linearity or omitted variables |
+| **Cook’s Distance** | Flags highly influential data points |
+| **Skew / Kurtosis / Normality p** | Indicates Gaussian behavior of residuals |
+
+### Cookbook for Model Evaluation
+
+1. **Start with AIC/BIC**: Prefer models with the lowest values.
+2. **Verify fit quality using RMSE & Weighted RMSE**: Smaller is better.
+3. **Check residual plots**:
+   - Look for randomness (no trends)
+   - Normalize view via “Normalized Residuals” for cross-experiment comparison
+4. **Review Ljung-Box and BG/White Tests**:
+   - If both fail → model likely poorly specified
+5. **Ramsey RESET test fails?**
+   - Try alternate model or include missing terms
+6. **Large Cook’s Distance points?**
+   - Validate or consider outlier exclusion
+7. **Skewness/Kurtosis too high or p < 0.05 in normality test?**
+   - Might indicate non-random structure → residuals not white noise
+
+Use these steps as a checklist to pick the best-fitting model per dataset.
+
+---
+## Zero-Crossing Similarity
+
+The tool computes the similarity between model residuals and white noise by comparing zero-crossings:
+
+- **Zero-crossings**: Number of sign changes in residuals.
+- **Similarity to white noise**: % overlap with simulated normal noise.
+
+This metric is logged and saved in the results file. High similarity (>80%) suggests good model randomness.
+
+---
 ## Configuration
 
 Edit `binding_analysis/config.yaml` to adjust:
@@ -274,32 +354,6 @@ Edit `binding_analysis/config.yaml` to adjust:
 - Input/output folder paths
 - Residual test lag count
 - Fitting settings (e.g., max iterations)
-
----
-
-## Testing
-
-A full test suite is included in `tests/test_models.py`.
-
-To run locally:
-
-```bash
-pytest tests/
-```
-
-Tests ensure:
-
-- Model functions return finite values
-- curve_fit optimization converges
-- Estimated parameters are within tolerance of known values
-
-Tests are also executed automatically via GitHub Actions.
-
-To check test coverage:
-
-```bash
-pytest --cov=binding_analysis --cov-report=term
-```
 
 ---
 
@@ -313,6 +367,11 @@ Each model-dataset pair produces:
 - Residual diagnostics
 - Output CSV and PNG plots
 - Combined execution log
+- Ljung-Box statistics and pass/fail
+- BG/White statistics and pass/fail
+- Cook’s Distance max and extreme counts
+- Ramsey RESET test (if applicable)
+- Zero-crossing similarity (%)
 
 ---
 

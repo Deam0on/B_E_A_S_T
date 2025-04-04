@@ -1,10 +1,9 @@
 import numpy as np
 
-def binding_isotherm_1_1(H0, G0, d_delta_exp, Ka, d_inf):
+def binding_isotherm_1_1(H0, G0, Ka, d_free, d_inf):
     term = G0 + H0 + (1 / Ka)
     sqrt_term = np.sqrt(term * term - 4 * G0 * H0)
     HG = 0.5 * (term - sqrt_term)
-    d_free = d_delta_exp[0]
     d_delta_comp = (d_free * (HG - G0) / G0) + (d_inf * (HG / G0))
     return d_delta_comp
 
@@ -63,7 +62,6 @@ def binding_dimer(H0, G0, Ka, Kd, d_inf_1, d_inf_2):
         denominator = (G0_i / (1 + Ka * H_free)) + (Ka * H_free * G0_i)
         d_obs[i] = numerator / denominator
 
-    # Convert to Δδ
     d_delta_comp = d_obs - d_obs[0]
     d_delta_comp[0] = 0
     return d_delta_comp
@@ -98,7 +96,6 @@ def multi_model(H0, G0, KHG, Kd, KH2G, dG, dHG, dH2G, max_iter=100, tol=1e-6):
         denominator = Kd * H_free**2 + KHG * H_free * G_free + KH2G * H_free**2 * G_free
         d_obs[i] = numerator / denominator
 
-    # Convert to Δδ
     d_delta_comp = d_obs - d_obs[0]
     d_delta_comp[0] = 0
     return d_delta_comp
@@ -107,9 +104,9 @@ def model_definitions(H0, G0, d_delta_exp):
     return {
         "1:1": {
             "function": binding_isotherm_1_1,
-            "initial_guess": [100, 100],
-            "bounds": ([0, 0], [np.inf, np.inf]),
-            "lambda": lambda H0, Ka, d_inf: binding_isotherm_1_1(H0, G0, d_delta_exp, Ka, d_inf)
+            "initial_guess": [100, 100, 100],  # Ka, d_free, d_inf
+            "bounds": ([0, -np.inf, -np.inf], [np.inf, np.inf, np.inf]),
+            "lambda": lambda H0, Ka, d_free, d_inf: binding_isotherm_1_1(H0, G0, Ka, d_free, d_inf)
         },
         "1:2": {
             "function": binding_isotherm_1_2,

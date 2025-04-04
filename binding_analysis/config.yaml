@@ -3,6 +3,9 @@ general:
   lags: 10
   results_dir: results
   input_dir: data_input
+  use_smart_guess: true
+  compare_models: true
+  advanced_residuals: true
 
 models:
   "1:1":
