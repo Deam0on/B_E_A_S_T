@@ -6,6 +6,7 @@ import statsmodels.api as sm
 from statsmodels.stats.diagnostic import acorr_ljungbox, acorr_breusch_godfrey, het_white
 from scipy.optimize import curve_fit
 from scipy.stats import skew, kurtosis, normaltest
+from scipy.stats import pearsonr, spearmanr
 
 def custom_residual_pattern_test(residuals):
     if len(residuals) < 9:
