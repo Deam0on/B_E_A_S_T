@@ -62,7 +62,7 @@ def compare_models_by_metric(output_rows, metric="AIC"):
         logging.info(f"{rank}. {model}")
         logging.info(f"    R² = {r2:.4f} | RMSE = {rmse:.4f}" + (f" | wRMSE = {wrmse:.4f}" if wrmse is not None else ""))
         logging.info(f"    AIC = {aic:.2f} | BIC = {bic:.2f}")
-        logging.info(f"    Residuals: Ljung-Box [{ljung}], {row.get('bg_test', 'BG?')} [{bg}], Normality [{norm}]")
+        # logging.info(f"    Residuals: Ljung-Box [{ljung}], {row.get('bg_test', 'BG?')} [{bg}], Normality [{norm}]")
         logging.info(f"    Skewness = {row.get('skewness', 'n/a'):.2f} | Kurtosis = {row.get('kurtosis', 'n/a'):.2f} | Zero-crossing noise similarity = {zc_str}")
 
     return sorted_models
