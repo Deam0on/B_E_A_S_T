@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from statsmodels.api import OLS, add_constant
 from statsmodels.stats.diagnostic import acorr_ljungbox, acorr_breusch_godfrey, het_white
+from utils import find_global_delta_range
 
 from models import model_definitions
 from utils import save_combined_csv, autocorrelation_tests, validate_data
@@ -118,7 +119,9 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
     skip_tests = config.get("cli_flags", {}).get("skip_tests", False)
     skip_normres = config.get("cli_flags", {}).get("no_normalized", False)
 
-    global_max_ddelta = collect_global_max_deltadelta(input_folder)
+    global_delta_range = find_global_delta_range(input_folder)
+    if global_delta_range is None:
+        logging.warning("Global Δδ range could not be determined. Normalized residuals may be inaccurate.")
 
     for filename in os.listdir(input_folder):
         if not filename.endswith(".csv"):
