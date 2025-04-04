@@ -270,6 +270,55 @@ K_{HG} H_\text{free} G_\text{free} +
 K_{H_2G} K_d H_\text{free}^2 G_\text{free}
 }
 $$
+---
+## Initial Guess Handling
+
+Each model in the tool defines its own **initial guess** and **parameter bounds** directly within the `model_definitions(...)` structure.
+
+### Per-Model Configuration Example
+
+```python
+"1:2": {
+    "function": binding_isotherm_1_2,
+    "initial_guess": [100, 100, 100, 100],
+    "bounds": ([0, 0, -np.inf, -np.inf], [np.inf, np.inf, np.inf, np.inf]),
+    ...
+}
+```
+
+These defaults ensure that the fitting begins from a reasonable parameter space.
+
+### Smart Optimization Logic
+
+Before fitting, the code automatically performs **initial guess refinement** using an iterative optimizer:
+
+```python
+guess = optimize_initial_guess(
+    model["lambda"],
+    model["initial_guess"],
+    model["bounds"],
+    H0,
+    G0,
+    d_delta_exp,
+)
+```
+
+This function:
+
+- Starts from the provided guess
+- Tweaks each parameter up/down (step = 10 by default)
+- Accepts the change only if it improves the RMSE (Root Mean Square Error)
+- Stops early if no further improvement is found
+
+This improves convergence while still respecting model-specific parameter structures.
+
+### Benefits
+
+- Robust against poor initial guesses
+- Reduces manual tuning of `initial_guess`
+- Keeps fitting logic modular and reusable
+
+---
 
 ## Configuration
 
@@ -280,32 +329,6 @@ Edit `binding_analysis/config.yaml` to adjust:
 - Input/output folder paths
 - Residual test lag count
 - Fitting settings (e.g., max iterations)
-
----
-
-## Testing
-
-A full test suite is included in `tests/test_models.py`.
-
-To run locally:
-
-```bash
-pytest tests/
-```
-
-Tests ensure:
-
-- Model functions return finite values
-- curve_fit optimization converges
-- Estimated parameters are within tolerance of known values
-
-Tests are also executed automatically via GitHub Actions.
-
-To check test coverage:
-
-```bash
-pytest --cov=binding_analysis --cov-report=term
-```
 
 ---
 
