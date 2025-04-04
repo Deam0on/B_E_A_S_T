@@ -7,6 +7,27 @@ from statsmodels.stats.diagnostic import acorr_ljungbox, acorr_breusch_godfrey, 
 from scipy.optimize import curve_fit
 from scipy.stats import skew, kurtosis, normaltest
 
+def custom_residual_pattern_test(residuals):
+    if len(residuals) < 3:
+        return {"custom_corr_stat": None, "custom_corr_flagged": None}
+
+    diffs = np.diff(residuals)
+    second_diffs = np.diff(diffs)
+    sgn_changes = np.sum(np.diff(np.sign(diffs)) != 0)
+
+    complexity = np.std(diffs)
+    second_order_trend = np.mean(np.abs(second_diffs))
+
+    flagged = complexity < 0.05 or second_order_trend > 0.2 or sgn_changes < len(residuals) * 0.3
+    return {
+        "custom_corr_stat": {
+            "std_diff": float(complexity),
+            "mean_abs_2nd_diff": float(second_order_trend),
+            "sign_change_ratio": float(sgn_changes) / len(residuals)
+        },
+        "custom_corr_flagged": flagged
+    }
+
 def collect_global_max_deltadelta(input_folder: str) -> float:
     """
     Scans all CSV files in the input folder and returns the maximum Δδ across all files.
