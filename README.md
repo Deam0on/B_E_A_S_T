@@ -7,17 +7,18 @@ This Python-based analysis tool is designed for evaluating titration data from N
 ## Features
 
 - Supports multiple host-guest binding models:
-  - 1:1, 1:2, 2:1, dimerization, and multi-equilibrium
+  - 1:1, 1:2, 2:1, dimerization, and multi-equilibrium models
+- Full decoupling of model logic from analysis code
 - Curve fitting using `scipy.optimize.curve_fit`
-- Configurable fitting parameters via `config.yaml`
-- Fit diagnostics including:
+- Smart initial guess optimizer (gradient-based local search)
+- Automatic model selection based on AIC, BIC, and RMSE
+- Statistical diagnostics:
   - R², AIC, BIC, RMSE
-  - Ljung-Box and Breusch-Godfrey or White's test for residual autocorrelation
-- Plot generation (fit and residuals)
-- Structured output in CSV and PNG format
-- Logging to terminal and `results/log.txt`
-- Reproducibility guidance in `REPRODUCIBILITY.md`
-- Unit test suite for all models using pytest
+  - Ljung-Box and Breusch-Godfrey/White's test for residual autocorrelation
+- Plot generation (fit + residuals)
+- Structured outputs in CSV and PNG format
+- CLI mode with automatic model comparison
+- Unit test suite for all models using `pytest`
 - Google Colab support for cloud-based execution
 
 ---
@@ -57,6 +58,11 @@ python binding_analysis_tool.py
    - `*_plot.png`: fit and residuals
    - `log.txt`: execution log
 
+6. Optionally run with automatic model comparison:
+
+```bash
+python binding_analysis_tool.py --auto-select
+```
 ---
 
 ## Input File Format
