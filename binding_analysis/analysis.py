@@ -73,9 +73,9 @@ def compare_models_by_metric(output_rows, metric="AIC"):
         # Custom residual check
         comp_flagged = row.get("composite_flagged")
         comp_stats = row.get("composite_stats", {})
-        comp_status = "✓" if comp_flagged is False else ("⚠️" if comp_flagged is True else "–")
-
-        logging.info(f"    Residuals: Ljung-Box [{ljung}], {row.get('bg_test', 'BG?')} [{bg}], Normality [{norm}], Composite [{comp_status}]")
+        custom_corr_flagged = row.get("custom_corr_flagged")
+        custom_corr_symbol = "✓" if custom_corr_flagged is False else ("⚠️" if custom_corr_flagged is True else "–")
+        logging.info(f"    Custom Corr [{custom_corr_symbol}]")
 
         if comp_stats:
             logging.info(f"    Composite stats: "
