@@ -7,7 +7,8 @@ This Python-based analysis tool is designed for evaluating titration data from N
 ## Features
 
 - Supports multiple host-guest binding models:
-  - 1:1, 1:2, 2:1, dimerization, and multi-equilibrium
+  - 1:1, 1:2, 2:1, dimerization, and multi-equilibrium models
+- Full decoupling of model logic from analysis code
 - Curve fitting using `scipy.optimize.curve_fit`
 - Smart initial guess refinement strategy
 - Configurable fitting parameters via `config.yaml`
@@ -64,6 +65,11 @@ python binding_analysis_tool.py
    - `*_plot.png`: fit and residuals
    - `log.txt`: execution log
 
+6. Optionally run with automatic model comparison:
+
+```bash
+python binding_analysis_tool.py --auto-select
+```
 ---
 
 ## Input File Format
@@ -319,32 +325,6 @@ Edit `binding_analysis/config.yaml` to adjust:
 - Input/output folder paths
 - Residual test lag count
 - Fitting settings (e.g., max iterations)
-
----
-
-## Testing
-
-A full test suite is included in `tests/test_models.py`.
-
-To run locally:
-
-```bash
-pytest tests/
-```
-
-Tests ensure:
-
-- Model functions return finite values
-- curve_fit optimization converges
-- Estimated parameters are within tolerance of known values
-
-Tests are also executed automatically via GitHub Actions.
-
-To check test coverage:
-
-```bash
-pytest --cov=binding_analysis --cov-report=term
-```
 
 ---
 
