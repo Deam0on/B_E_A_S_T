@@ -56,7 +56,7 @@ def compare_models_by_metric(output_rows, metric="AIC"):
         bg = "✓" if bg_raw is False else ("⚠️" if bg_raw is True else "–")
         norm = "✓" if norm_raw is True else ("⚠️" if norm_raw is False else "–")
 
-        zc_sim = row.get("zero_crossing_similarity", None)
+        zc_sim = row.get("crossing_similarity", None)
         zc_str = f"{zc_sim:.1f}%" if isinstance(zc_sim, (int, float)) else zc_sim or "n/a"
 
         logging.info(f"{rank}. {model}")
