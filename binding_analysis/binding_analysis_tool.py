@@ -44,6 +44,7 @@ def parse_args():
     parser.add_argument("--no_normalized", action="store_true", help="Do not show/save normalized residual plots.")
     parser.add_argument("--input_dir", type=str, help="Override input directory (default: from config)")
     parser.add_argument("--output_dir", type=str, help="Override output directory (default: from config)")
+    parser.add_argument("--global_norm", action="store_true", help="Normalize residuals using global max Δδ.")
     return parser.parse_args()
 
 def main():
