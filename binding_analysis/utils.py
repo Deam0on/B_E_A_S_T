@@ -7,6 +7,27 @@ from statsmodels.stats.diagnostic import acorr_ljungbox, acorr_breusch_godfrey, 
 from scipy.optimize import curve_fit
 from scipy.stats import skew, kurtosis, normaltest
 
+def collect_global_max_deltadelta(input_folder: str) -> float:
+    """
+    Scans all CSV files in the input folder and returns the maximum Δδ across all files.
+    """
+    import pandas as pd
+    import numpy as np
+    from pathlib import Path
+
+    max_ddeltas = []
+
+    for csv_file in Path(input_folder).glob("*.csv"):
+        try:
+            df = pd.read_csv(csv_file)
+            delta = np.abs(df["delta"] - df["delta"].iloc[0])
+            delta.iloc[0] = 0
+            max_ddeltas.append(delta.max())
+        except Exception as e:
+            logging.warning(f"Failed to parse {csv_file.name}: {e}")
+
+    return max(max_ddeltas) if max_ddeltas else 1.0
+
 
 def smart_initial_guess(model_func, H0, d_delta_exp, default_guess, bounds, max_iter=5, perturbation=0.1):
     best_guess = default_guess
