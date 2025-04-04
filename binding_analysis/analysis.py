@@ -108,6 +108,8 @@ def process_csv_files_in_folder(config):
                 params, cov = curve_fit(func, H0, d_delta_exp, p0=guess, bounds=bounds, maxfev=maxfev)
                 fit_vals = func(H0, *params)
                 residuals = fit_vals - d_delta_exp
+                normalized_residuals = residuals / (np.max(d_delta_exp) - np.min(d_delta_exp))
+                weighted_rmse = np.sqrt(np.mean(normalized_residuals ** 2))
 
                 std_err = np.sqrt(np.diag(cov))
                 rss = np.sum(residuals**2)
@@ -132,16 +134,18 @@ def process_csv_files_in_folder(config):
                     "AIC": aic,
                     "BIC": bic,
                     "RMSE": rmse,
+                    "weighted_RMSE": weighted_rmse,
                     "confidence_intervals": [(v - 1.96*s, v + 1.96*s) for v, s in zip(params, std_err)],
                     "fitted_values": fit_vals.tolist(),
                     "residuals": residuals.tolist(),
+                    "normalized_residuals": normalized_residuals.tolist(),
                     "H_over_G": (H0 / G0).tolist(),
                     **diagnostics
                 })
 
                 logging.info(f"Model {model_name} fit completed")
                 logging.info(f"Parameters: {params}")
-                logging.info(f"R²: {r2:.4f}, AIC: {aic:.2f}, BIC: {bic:.2f}, RMSE: {rmse:.4f}")
+                logging.info(f"R²: {r2:.4f}, AIC: {aic:.2f}, BIC: {bic:.2f}, RMSE: {rmse:.4f}, Weighted RMSE: {weighted_rmse:.4f}")
 
             except Exception as e:
                 logging.error(f"Exception in model {model_name}: {e}")
@@ -157,14 +161,15 @@ def process_csv_files_in_folder(config):
         plot_results(H0, G0, d_delta_exp, results, plot_path)
 
 def plot_results(H0, G0, d_delta_exp, model_results, filename):
-    fig, axes = plt.subplots(nrows=5, ncols=2, figsize=(14, 12))
+    fig, axes = plt.subplots(nrows=5, ncols=3, figsize=(18, 14))
     model_names = list(model_results.keys())
 
     for i, model in enumerate(model_names):
         fitted, residuals = model_results[model]
         x = H0 / G0
+        norm_residuals = residuals / (np.max(d_delta_exp) - np.min(d_delta_exp))
 
-        # Left plot: Fit
+        # Fit
         axes[i, 0].scatter(x, d_delta_exp, label='Experimental')
         axes[i, 0].plot(x, fitted, color='red', label=f'{model} Fit')
         axes[i, 0].set_title(f'{model} Fit')
@@ -172,12 +177,19 @@ def plot_results(H0, G0, d_delta_exp, model_results, filename):
         axes[i, 0].set_ylabel('Δδ [Hz]')
         axes[i, 0].legend()
 
-        # Right plot: Residuals
+        # Residuals
         axes[i, 1].scatter(x, residuals, color='red')
         axes[i, 1].axhline(0, linestyle='--')
         axes[i, 1].set_title(f'{model} Residuals')
         axes[i, 1].set_xlabel('[H]/[G]')
         axes[i, 1].set_ylabel('Residual [Hz]')
+
+        # Normalized Residuals
+        axes[i, 2].scatter(x, norm_residuals, color='purple')
+        axes[i, 2].axhline(0, linestyle='--')
+        axes[i, 2].set_title(f'{model} Normalized Residuals')
+        axes[i, 2].set_xlabel('[H]/[G]')
+        axes[i, 2].set_ylabel('Normalized Residual')
 
     plt.tight_layout()
     plt.savefig(filename)

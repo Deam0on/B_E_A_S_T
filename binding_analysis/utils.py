@@ -68,50 +68,93 @@ def validate_data(df):
 
 def autocorrelation_tests(H0, residuals, model_name, lags=10):
     """
-    Performs Ljung-Box and Breusch-Godfrey (or White's) tests on residuals.
-    Logs detailed results and interpretation.
-    """
-    # Ljung-Box Test
-    lb_test = acorr_ljungbox(residuals, lags=[min(lags, len(H0)-2)], return_df=True)
-    lb_stat = lb_test["lb_stat"].values[0]
-    lb_p = lb_test["lb_pvalue"].values[0]
+    Performs diagnostic tests on residuals:
+    - Ljung-Box (autocorrelation)
+    - Breusch-Godfrey or White's (alternative heteroskedasticity/autocorr)
+    - Ramsey RESET (misspecification)
+    - Cook's distance (influential points)
 
-    # Breusch-Godfrey Test or fallback to White's
+    Returns a dict of all stats. Conditionally skips tests on small datasets.
+    """
+    results = {}
+    n = len(H0)
     X = sm.add_constant(H0)
+
+    logging.info("-" * 70)
+    logging.info(f"Residual diagnostics for model: {model_name}")
+
+    # Ljung-Box (if enough data)
+    if n >= 2 * lags + 1:
+        lb_test = acorr_ljungbox(residuals, lags=[min(lags, n - 2)], return_df=True)
+        lb_stat = lb_test["lb_stat"].values[0]
+        lb_p = lb_test["lb_pvalue"].values[0]
+        results.update({
+            "ljung_stat": lb_stat,
+            "ljung_p": lb_p,
+            "ljung_failed": lb_p < 0.05
+        })
+        logging.info(f"Ljung-Box:     stat = {lb_stat:.3f}, p = {lb_p:.4f}")
+    else:
+        logging.info("Ljung-Box test skipped (too few data points).")
+        results.update({
+            "ljung_stat": None,
+            "ljung_p": None,
+            "ljung_failed": None
+        })
+
+    # Breusch-Godfrey or White
     try:
         model = sm.OLS(residuals, X).fit()
-        bg_stat, bg_p, _, _ = acorr_breusch_godfrey(model, nlags=min(lags, len(H0)-2))
+        bg_stat, bg_p, _, _ = acorr_breusch_godfrey(model, nlags=min(lags, n - 2))
         bg_name = "Breusch-Godfrey"
     except Exception:
         model = sm.OLS(residuals, X).fit()
         bg_stat, bg_p, _, _ = het_white(model.resid, model.model.exog)
         bg_name = "White's Test"
 
-    ljung_fail = lb_p < 0.05
-    bg_fail = bg_p < 0.05
-
-    logging.info("-" * 70)
-    logging.info(f"Autocorrelation tests for model: {model_name}")
-    logging.info(f"Ljung-Box:     stat = {lb_stat:.3f}, p = {lb_p:.3f}")
-    logging.info(f"{bg_name}: stat = {bg_stat:.3f}, p = {bg_p:.3f}")
-
-    if ljung_fail and bg_fail:
-        logging.warning("Both tests detected autocorrelation! Model may need revision.")
-    elif ljung_fail or bg_fail:
-        logging.warning("One test detected autocorrelation. Consider reviewing residuals.")
-    else:
-        logging.info("No significant autocorrelation detected in residuals.")
-
-    logging.info("-" * 70)
-    return {
-        "ljung_stat": lb_stat,
-        "ljung_p": lb_p,
-        "bg_name": bg_name,
+    results.update({
+        "bg_test": bg_name,
         "bg_stat": bg_stat,
         "bg_p": bg_p,
-        "ljung_failed": lb_p < 0.05,
         "bg_failed": bg_p < 0.05
-    }
+    })
+    logging.info(f"{bg_name}: stat = {bg_stat:.3f}, p = {bg_p:.4f}")
+
+    # Ramsey RESET test (optional, for linear residual regressions)
+    if n >= 20:
+        try:
+            from statsmodels.stats.diagnostic import linear_reset
+            reset_test = linear_reset(model, power=2, use_f=True)
+            results.update({
+                "reset_stat": reset_test.fvalue,
+                "reset_p": reset_test.pvalue,
+                "reset_failed": reset_test.pvalue < 0.05
+            })
+            logging.info(f"Ramsey RESET:  stat = {reset_test.fvalue:.3f}, p = {reset_test.pvalue:.4f}")
+        except Exception as e:
+            logging.warning(f"RESET test failed: {e}")
+    else:
+        logging.info("Ramsey RESET test skipped (too few data points).")
+
+    # Cook's distance
+    if n >= 10:
+        try:
+            influence = model.get_influence()
+            cooks_d = influence.cooks_distance[0]
+            max_cook = np.max(cooks_d)
+            n_extreme = np.sum(cooks_d > (4 / n))
+            results.update({
+                "cooks_max": max_cook,
+                "cooks_extreme": n_extreme
+            })
+            logging.info(f"Cook’s Distance: max = {max_cook:.4f}, extreme (>4/n): {n_extreme}")
+        except Exception as e:
+            logging.warning(f"Cook’s Distance failed: {e}")
+    else:
+        logging.info("Cook’s Distance skipped (too few data points).")
+
+    logging.info("-" * 70)
+    return results
 
 
 def delete_old_result_files(folder_path):

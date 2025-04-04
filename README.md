@@ -9,11 +9,18 @@ This Python-based analysis tool is designed for evaluating titration data from N
 - Supports multiple host-guest binding models:
   - 1:1, 1:2, 2:1, dimerization, and multi-equilibrium
 - Curve fitting using `scipy.optimize.curve_fit`
+- Smart initial guess refinement strategy
 - Configurable fitting parameters via `config.yaml`
 - Fit diagnostics including:
-  - R², AIC, BIC, RMSE
-  - Ljung-Box and Breusch-Godfrey or White's test for residual autocorrelation
-- Plot generation (fit and residuals)
+  - R², AIC, BIC, RMSE, Weighted RMSE
+  - Ljung-Box, Breusch-Godfrey or White's test for residual autocorrelation
+  - Ramsey RESET Test (for model misspecification)
+  - Cook's Distance (influence detection)
+  - Skewness, Kurtosis, and D’Agostino’s normality test
+- Plot generation:
+  - Fitted curves
+  - Raw residuals
+  - Normalized residuals (Δδ-relative)
 - Structured output in CSV and PNG format
 - Logging to terminal and `results/log.txt`
 - Reproducibility guidance in `REPRODUCIBILITY.md`
@@ -264,6 +271,44 @@ K_{HG} H_\text{free} G_\text{free} +
 K_{H_2G} K_d H_\text{free}^2 G_\text{free}
 }
 $$
+
+---
+
+## Results Interpretation Guide
+
+### Metrics and Diagnostics
+
+| Metric       | Description |
+|--------------|-------------|
+| **R²**       | Coefficient of determination — closer to 1 is better |
+| **AIC/BIC**  | Model selection criteria — lower is better |
+| **RMSE**     | Root Mean Squared Error — unnormalized residual size |
+| **Weighted RMSE** | RMSE scaled by the Δδ range — good for comparing across datasets |
+| **Ljung-Box**| Detects autocorrelation — p < 0.05 is problematic |
+| **Breusch-Godfrey / White** | Detects serial correlation / heteroscedasticity |
+| **Ramsey RESET** | Checks for non-linearity or omitted variables |
+| **Cook’s Distance** | Flags highly influential data points |
+| **Skew / Kurtosis / Normality p** | Indicates Gaussian behavior of residuals |
+
+### Cookbook for Model Evaluation
+
+1. **Start with AIC/BIC**: Prefer models with the lowest values.
+2. **Verify fit quality using RMSE & Weighted RMSE**: Smaller is better.
+3. **Check residual plots**:
+   - Look for randomness (no trends)
+   - Normalize view via “Normalized Residuals” for cross-experiment comparison
+4. **Review Ljung-Box and BG/White Tests**:
+   - If both fail → model likely poorly specified
+5. **Ramsey RESET test fails?**
+   - Try alternate model or include missing terms
+6. **Large Cook’s Distance points?**
+   - Validate or consider outlier exclusion
+7. **Skewness/Kurtosis too high or p < 0.05 in normality test?**
+   - Might indicate non-random structure → residuals not white noise
+
+Use these steps as a checklist to pick the best-fitting model per dataset.
+
+---
 
 ## Configuration
 
