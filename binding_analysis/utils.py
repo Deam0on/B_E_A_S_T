@@ -7,6 +7,8 @@ from statsmodels.stats.diagnostic import acorr_ljungbox, acorr_breusch_godfrey, 
 from scipy.optimize import curve_fit
 from scipy.stats import skew, kurtosis, normaltest
 from scipy.stats import pearsonr, spearmanr
+from statsmodels.sandbox.stats.runs import runstest_1samp
+from scipy.fft import rfft
 
 def custom_residual_pattern_test(residuals):
     if len(residuals) < 9:
