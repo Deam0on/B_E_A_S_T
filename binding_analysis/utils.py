@@ -8,24 +8,61 @@ from scipy.optimize import curve_fit
 from scipy.stats import skew, kurtosis, normaltest
 
 def custom_residual_pattern_test(residuals):
-    if len(residuals) < 3:
-        return {"custom_corr_stat": None, "custom_corr_flagged": None}
+    if len(residuals) < 9:
+        return {"composite_stats": None, "composite_flagged": None}
 
-    diffs = np.diff(residuals)
-    second_diffs = np.diff(diffs)
-    sgn_changes = np.sum(np.diff(np.sign(diffs)) != 0)
+    residuals = np.asarray(residuals)
+    n = len(residuals)
 
-    complexity = np.std(diffs)
-    second_order_trend = np.mean(np.abs(second_diffs))
+    # Lag-1 Pearson and Spearman
+    pearson_corr, _ = pearsonr(residuals[:-1], residuals[1:])
+    spearman_corr, _ = spearmanr(residuals[:-1], residuals[1:])
 
-    flagged = complexity < 0.05 or second_order_trend > 0.2 or sgn_changes < len(residuals) * 0.3
+    # Spectral energy ratio (low freq)
+    freqs = rfft(residuals)
+    energy = np.abs(freqs)**2
+    low_freq_energy = np.sum(energy[:n//10])
+    total_energy = np.sum(energy)
+    spectral_ratio = low_freq_energy / total_energy if total_energy > 0 else 0
+
+    # Rolling R² (linear fit on residual windows)
+    rolling_r2 = []
+    for i in range(n - window + 1):
+        x = np.arange(window)
+        y = residuals[i:i+window]
+        slope, intercept = np.polyfit(x, y, 1)
+        y_pred = slope * x + intercept
+        ss_res = np.sum((y - y_pred) ** 2)
+        ss_tot = np.sum((y - np.mean(y)) ** 2)
+        r2 = 1 - ss_res / ss_tot if ss_tot > 0 else 0
+        rolling_r2.append(r2)
+    avg_r2 = np.mean(rolling_r2)
+
+    # Runs test (sign changes)
+    signs = np.sign(residuals - np.mean(residuals))
+    run_stat, p_run = runstest_1samp(signs)
+    expected_runs = (2 * np.sum(signs != 0) - 1) / 3
+    actual_runs = np.sum(np.diff(signs) != 0)
+    run_ratio = actual_runs / expected_runs if expected_runs else 1
+
+    # Heuristic thresholds
+    flagged = (
+        abs(pearson_corr) > 0.3 or
+        abs(spearman_corr) > 0.3 or
+        spectral_ratio > 0.25 or
+        avg_r2 > 0.3 or
+        run_ratio < 0.7 or run_ratio > 1.3
+    )
+
     return {
-        "custom_corr_stat": {
-            "std_diff": float(complexity),
-            "mean_abs_2nd_diff": float(second_order_trend),
-            "sign_change_ratio": float(sgn_changes) / len(residuals)
+        "composite_stats": {
+            "pearson_corr": pearson_corr,
+            "spearman_corr": spearman_corr,
+            "spectral_ratio": spectral_ratio,
+            "avg_rolling_r2": avg_r2,
+            "run_ratio": run_ratio
         },
-        "custom_corr_flagged": flagged
+        "composite_flagged": flagged
     }
 
 def collect_global_max_deltadelta(input_folder: str) -> float:
