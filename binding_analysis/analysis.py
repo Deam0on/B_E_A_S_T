@@ -40,7 +40,10 @@ def smart_initial_guess(model_func, guess, bounds, H0, d_delta_exp, step=10, max
 
     return best_guess
 
+
 def compare_models_by_metric(output_rows, metric="AIC"):
+    from tabulate import tabulate
+
     sorted_models = sorted(output_rows, key=lambda r: r[metric])
     logging.info("\nModel ranking by %s (lower is better):", metric)
 
@@ -51,19 +54,37 @@ def compare_models_by_metric(output_rows, metric="AIC"):
         r2 = row["r_squared"]
         rmse = row["RMSE"]
         wrmse = row.get("weighted_RMSE", None)
-    
-        ljung_raw = row.get("ljung_failed")
-        bg_raw = row.get("bg_failed")
         norm_raw = row.get("normality_pass", True)
-    
-        ljung = "✓" if ljung_raw is False else ("⚠️" if ljung_raw is True else "–")
-        bg = "✓" if bg_raw is False else ("⚠️" if bg_raw is True else "–")
-        norm = "✓" if norm_raw is True else ("⚠️" if norm_raw is False else "–")
-    
-        zc_sim = row.get("crossing_similarity", None)
-        zc_str = f"{zc_sim:.1f}%" if isinstance(zc_sim, (int, float)) else zc_sim or "n/a"
-    
-        # Make sure this is defined early
+
+        table_data = [
+            ["Metric", "Value", "Acceptable Range"],
+            ["R²", f"{r2:.4f}", "> 0.95"],
+            ["RMSE", f"{rmse:.4f}", "Low"],
+            ["Weighted RMSE", f"{wrmse:.4f}" if wrmse is not None else "n/a", "Low"],
+            ["AIC", f"{aic:.2f}", "Lower is better"],
+            ["BIC", f"{bic:.2f}", "Lower is better"],
+            ["Normality test", "✓" if norm_raw else "⚠️", "✓ if normal"],
+        ]
+
+        ljung = row.get("ljung_stat")
+        if ljung is not None:
+            table_data.append(["Ljung-Box stat", f"{ljung:.3f}", "p > 0.05"])
+
+        reset_p = row.get("reset_p")
+        if reset_p is not None:
+            table_data.append(["RESET p", f"{reset_p:.4f}", "p > 0.05"])
+
+        comp_stats = row.get("composite_stats", {})
+        if comp_stats:
+            table_data.extend([
+                ["Pearson corr", f"{comp_stats['pearson_corr']:.2f}", "|r| < 0.3"],
+                ["Spearman corr", f"{comp_stats['spearman_corr']:.2f}", "|r| < 0.3"],
+                ["Rolling R²", f"{comp_stats['avg_rolling_r2']:.2f}", "< 0.3"],
+                ["Run ratio", f"{comp_stats['run_ratio']:.2f}", "0.7–1.3"]
+            ])
+
+        logging.info(f"\n{rank}. Model: {model}\n" + tabulate(table_data, headers="firstrow", tablefmt="fancy_grid"))
+defined early
         custom_corr_flagged = row.get("composite_flagged")
         custom_corr_symbol = "✓" if custom_corr_flagged is False else ("⚠️" if custom_corr_flagged is True else "–")
 
