@@ -91,6 +91,19 @@ def compare_models_by_metric(output_rows, metric="AIC"):
             "RMSE", f"{rmse:.4f}", "As low as possible", "OK"  # RMSE doesn’t have a pass/fail threshold
         ])
 
+        if wrmse is not None:
+            table_data.append([
+                "Weighted RMSE", f"{wrmse:.4f}", "As low as possible", "OK – used when comparing across datasets"
+            ])
+
+        table_data.append([
+            "AIC", f"{aic:.2f}", "As low as possible", "OK – for model comparison only"
+        ])
+
+        table_data.append([
+            "BIC", f"{bic:.2f}", "As low as possible", "OK – for model comparison only"
+        ])
+
         table_data.append([
             "Normality test", "Passed" if norm_raw else "Failed", "True / False",
             interpret_diagnostic("normality", None, None, norm_raw)
