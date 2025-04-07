@@ -77,9 +77,9 @@ def compare_models_by_metric(output_rows, metric="AIC"):
         comp_stats = row.get("composite_stats", {})
         if comp_stats:
             table_data.extend([
-                ["Pearson corr", f"{comp_stats['pearson_corr']:.2f}", "|r| < 0.3"],
-                ["Spearman corr", f"{comp_stats['spearman_corr']:.2f}", "|r| < 0.3"],
-                ["Rolling R²", f"{comp_stats['avg_rolling_r2']:.2f}", "< 0.3"]
+                ["Pearson corr", f"{comp_stats['pearson_corr']:.2f}", "|r| < 0.35"],
+                ["Spearman corr", f"{comp_stats['spearman_corr']:.2f}", "|r| < 0.35"],
+                ["Rolling R²", f"{comp_stats['avg_rolling_r2']:.2f}", "< 0.35"]
                 # ["Run ratio", f"{comp_stats['run_ratio']:.2f}", "0.7–1.3"]
             ])
 
