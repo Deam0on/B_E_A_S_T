@@ -75,7 +75,7 @@ def compare_models_by_metric(output_rows, metric="AIC"):
         logging.info(f"{rank}. {model}")
         logging.info(f"    R² = {r2:.4f} | RMSE = {rmse:.4f}" + (f" | wRMSE = {wrmse:.4f}" if wrmse is not None else ""))
         logging.info(f"    AIC = {aic:.2f} | BIC = {bic:.2f}")
-        logging.info(f"    Skewness = {row.get('skewness', 'n/a'):.2f} | Kurtosis = {row.get('kurtosis', 'n/a'):.2f} | Zero-crossing noise similarity = {zc_str}")
+        # logging.info(f"    Skewness = {row.get('skewness', 'n/a'):.2f} | Kurtosis = {row.get('kurtosis', 'n/a'):.2f} | Zero-crossing noise similarity = {zc_str}")
         logging.info(f"    Normality test passed: {row.get('normality_pass', 'n/a')}")
         # logging.info(f"    Residuals: Ljung-Box [{ljung}], {row.get('bg_test', 'BG?')} [{bg}], Normality [{norm}]")
         # logging.info(f"    Custom Corr [{custom_corr_symbol}]")
@@ -85,9 +85,10 @@ def compare_models_by_metric(output_rows, metric="AIC"):
             logging.info(f"    Composite stats: "
                          f"Pearson = {comp_stats['pearson_corr']:.2f}, "
                          f"Spearman = {comp_stats['spearman_corr']:.2f}, "
-                         f"Spectral = {comp_stats['spectral_ratio']:.2f}, "
+                        #  f"Spectral = {comp_stats['spectral_ratio']:.2f}, "
                          f"R² = {comp_stats['avg_rolling_r2']:.2f}, "
-                         f"Run ratio = {comp_stats['run_ratio']:.2f}")
+                        #  f"Run ratio = {comp_stats['run_ratio']:.2f}"
+                        )
         
     return sorted_models
 
@@ -101,15 +102,15 @@ def advanced_residual_diagnostics(H0, residuals, model_name, enable_tests=True, 
             "ljung_stat": None,
             "ljung_p": None,
             "ljung_failed": None,
-            "bg_test": None,
-            "bg_stat": None,
-            "bg_p": None,
-            "bg_failed": None,
+            # "bg_test": None,
+            # "bg_stat": None,
+            # "bg_p": None,
+            # "bg_failed": None,
             "reset_stat": None,
             "reset_p": None,
             "reset_failed": None,
-            "cooks_max": None,
-            "cooks_extreme": None,
+            # "cooks_max": None,
+            # "cooks_extreme": None,
             "zero_crossing_similarity": None
         }
 
@@ -145,9 +146,9 @@ def advanced_residual_diagnostics(H0, residuals, model_name, enable_tests=True, 
             logging.info("Composite residual correlation test:")
             logging.info(f"  Lag-1 Pearson = {stats['pearson_corr']:.3f}")
             logging.info(f"  Lag-1 Spearman = {stats['spearman_corr']:.3f}")
-            logging.info(f"  Spectral ratio = {stats['spectral_ratio']:.3f}")
+            # logging.info(f"  Spectral ratio = {stats['spectral_ratio']:.3f}")
             logging.info(f"  Avg rolling R² = {stats['avg_rolling_r2']:.3f}")
-            logging.info(f"  Run ratio = {stats['run_ratio']:.3f}")
+            # logging.info(f"  Run ratio = {stats['run_ratio']:.3f}")
 
         if custom["composite_flagged"]:
             logging.warning("⚠️ Residuals flagged as correlated by composite test.")

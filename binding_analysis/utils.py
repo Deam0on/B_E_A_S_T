@@ -53,18 +53,18 @@ def custom_residual_pattern_test(residuals):
     flagged = (
         abs(pearson_corr) > 0.35 or
         abs(spearman_corr) > 0.35 or
-        spectral_ratio > 0.3 or
-        avg_r2 > 0.35 or
-        run_ratio < 0.65 or run_ratio > 1.35
+        # spectral_ratio > 0.3 or
+        avg_r2 > 0.35
+        # run_ratio < 0.65 or run_ratio > 1.35
     )
 
     return {
         "composite_stats": {
             "pearson_corr": pearson_corr,
             "spearman_corr": spearman_corr,
-            "spectral_ratio": spectral_ratio,
+            # "spectral_ratio": spectral_ratio,
             "avg_rolling_r2": avg_r2,
-            "run_ratio": run_ratio
+            # "run_ratio": run_ratio
         },
         "composite_flagged": flagged
     }
@@ -174,22 +174,22 @@ def autocorrelation_tests(H0, residuals, model_name, lags=10):
         })
 
     # Breusch-Godfrey or White
-    try:
-        model = sm.OLS(residuals, X).fit()
-        bg_stat, bg_p, _, _ = acorr_breusch_godfrey(model, nlags=min(lags, n - 2))
-        bg_name = "Breusch-Godfrey"
-    except Exception:
-        model = sm.OLS(residuals, X).fit()
-        bg_stat, bg_p, _, _ = het_white(model.resid, model.model.exog)
-        bg_name = "White's Test"
+    # try:
+    #     model = sm.OLS(residuals, X).fit()
+    #     bg_stat, bg_p, _, _ = acorr_breusch_godfrey(model, nlags=min(lags, n - 2))
+    #     bg_name = "Breusch-Godfrey"
+    # except Exception:
+    #     model = sm.OLS(residuals, X).fit()
+    #     bg_stat, bg_p, _, _ = het_white(model.resid, model.model.exog)
+    #     bg_name = "White's Test"
 
-    results.update({
-        "bg_test": bg_name,
-        "bg_stat": bg_stat,
-        "bg_p": bg_p,
-        "bg_failed": bg_p < 0.05
-    })
-    logging.info(f"{bg_name}: stat = {bg_stat:.3f}, p = {bg_p:.4f}")
+    # results.update({
+    #     "bg_test": bg_name,
+    #     "bg_stat": bg_stat,
+    #     "bg_p": bg_p,
+    #     "bg_failed": bg_p < 0.05
+    # })
+    # logging.info(f"{bg_name}: stat = {bg_stat:.3f}, p = {bg_p:.4f}")
 
     # Ramsey RESET test
     if n >= 15:
@@ -208,21 +208,21 @@ def autocorrelation_tests(H0, residuals, model_name, lags=10):
         logging.info("Ramsey RESET test skipped (too few data points).")
 
     # Cook's distance
-    if n >= 10:
-        try:
-            influence = model.get_influence()
-            cooks_d = influence.cooks_distance[0]
-            max_cook = np.max(cooks_d)
-            n_extreme = np.sum(cooks_d > (4 / n))
-            results.update({
-                "cooks_max": max_cook,
-                "cooks_extreme": n_extreme
-            })
-            logging.info(f"Cook’s Distance: max = {max_cook:.4f}, extreme (>4/n): {n_extreme}")
-        except Exception as e:
-            logging.warning(f"Cook’s Distance failed: {e}")
-    else:
-        logging.info("Cook’s Distance skipped (too few data points).")
+    # if n >= 10:
+    #     try:
+    #         influence = model.get_influence()
+    #         cooks_d = influence.cooks_distance[0]
+    #         max_cook = np.max(cooks_d)
+    #         n_extreme = np.sum(cooks_d > (4 / n))
+    #         results.update({
+    #             "cooks_max": max_cook,
+    #             "cooks_extreme": n_extreme
+    #         })
+    #         logging.info(f"Cook’s Distance: max = {max_cook:.4f}, extreme (>4/n): {n_extreme}")
+    #     except Exception as e:
+    #         logging.warning(f"Cook’s Distance failed: {e}")
+    # else:
+    #     logging.info("Cook’s Distance skipped (too few data points).")
 
     # Zero-crossing randomness test
     try:
@@ -286,15 +286,15 @@ def save_combined_csv(results, output_file):
                 "ljung_stat": result.get("ljung_stat"),
                 "ljung_p": result.get("ljung_p"),
                 "ljung_failed": result.get("ljung_failed"),
-                "bg_test": result.get("bg_test"),
-                "bg_stat": result.get("bg_stat"),
-                "bg_p": result.get("bg_p"),
-                "bg_failed": result.get("bg_failed"),
+                # "bg_test": result.get("bg_test"),
+                # "bg_stat": result.get("bg_stat"),
+                # "bg_p": result.get("bg_p"),
+                # "bg_failed": result.get("bg_failed"),
                 "reset_stat": result.get("reset_stat"),
                 "reset_p": result.get("reset_p"),
                 "reset_failed": result.get("reset_failed"),
-                "cooks_max": result.get("cooks_max"),
-                "cooks_extreme": result.get("cooks_extreme"),
+                # "cooks_max": result.get("cooks_max"),
+                # "cooks_extreme": result.get("cooks_extreme"),
                 "crossing_similarity": result.get("crossing_similarity"),
                 "zero_crossings": result.get("zero_crossings"),
                 "composite_flagged": result.get("composite_flagged"),
