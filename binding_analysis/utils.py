@@ -194,6 +194,7 @@ def autocorrelation_tests(H0, residuals, model_name, lags=10):
     # Ramsey RESET test
     if n >= 15:
         try:
+            model = sm.OLS(residuals, X).fit()
             from statsmodels.stats.diagnostic import linear_reset
             reset_test = linear_reset(model, power=2, use_f=True)
             results.update({
