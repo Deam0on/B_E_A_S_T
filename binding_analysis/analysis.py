@@ -71,7 +71,7 @@ def metric_value_range(metric):
 
 def interpret_diagnostic(metric, value, threshold, passed):
     if passed:
-        return "✓ OK"
+        return "OK"
     
     explanations = {
         "normality": (
@@ -139,25 +139,25 @@ def compare_models_by_metric(output_rows, metric="AIC"):
         ])
 
         table_data.append([
-            "RMSE", f"{rmse:.4f}", "As low as possible", "0 to ∞", "OK – reflects average residual error"
+            "RMSE", f"{rmse:.4f}", "As low as possible", "0 to ∞", "Reflects average residual error"
         ])
 
         if wrmse is not None:
             table_data.append([
                 "Weighted RMSE", f"{wrmse:.4f}", "As low as possible", "0 to ∞",
-                "OK – used when comparing across datasets"
+                "Used when comparing across datasets"
             ])
 
         table_data.append([
-            "AIC", f"{aic:.2f}", "As low as possible", "−∞ to ∞", "OK – for model comparison only"
+            "AIC", f"{aic:.2f}", "As low as possible", "−∞ to ∞", "OModel comparison only"
         ])
 
         table_data.append([
-            "BIC", f"{bic:.2f}", "As low as possible", "−∞ to ∞", "OK – for model comparison only"
+            "BIC", f"{bic:.2f}", "As low as possible", "−∞ to ∞", "Model comparison only"
         ])
 
         table_data.append([
-            "Normality test", "✓" if norm_raw else "✗", "✓ / ✗", "✓ or ✗",
+            "Normality test", "Passed" if norm_raw else "Failed", "Passed / Failed", "Passed or Failed",
             interpret_diagnostic("normality", None, None, norm_raw)
         ])
 
