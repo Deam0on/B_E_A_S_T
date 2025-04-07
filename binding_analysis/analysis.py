@@ -40,18 +40,68 @@ def smart_initial_guess(model_func, guess, bounds, H0, d_delta_exp, step=10, max
 
     return best_guess
 
+# def interpret_diagnostic(metric, value, threshold, passed):
+#     if passed:
+#         return "OK"
+#     explanations = {
+#         "normality": "Outliers or heavy tails present",
+#         "ljung": "Residuals are autocorrelated (lag structure)",
+#         "reset": "Model may be misspecified (non-linear relationship)",
+#         "pearson": "Linear trend in residuals",
+#         "spearman": "Monotonic non-linear trend",
+#         "rolling_r2": "Local structure or trends present"
+#     }
+#     return explanations.get(metric, "Check residual pattern")
+
+def metric_value_range(metric):
+    ranges = {
+        "r2": "0 to 1",
+        "rmse": "0 to ∞",
+        "wrmse": "0 to ∞",
+        "aic": "−∞ to ∞",
+        "bic": "−∞ to ∞",
+        "normality": "✓ / ✗",
+        "ljung": "0 to 1 (p-value)",
+        "reset": "0 to 1 (p-value)",
+        "pearson": "−1 to 1",
+        "spearman": "−1 to 1",
+        "rolling_r2": "0 to 1"
+    }
+    return ranges.get(metric, "n/a")
+
 def interpret_diagnostic(metric, value, threshold, passed):
     if passed:
-        return "OK"
+        return "✓ OK"
+    
     explanations = {
-        "normality": "Outliers or heavy tails present",
-        "ljung": "Residuals are autocorrelated (lag structure)",
-        "reset": "Model may be misspecified (non-linear relationship)",
-        "pearson": "Linear trend in residuals",
-        "spearman": "Monotonic non-linear trend",
-        "rolling_r2": "Local structure or trends present"
+        "normality": (
+            "Residuals are not normally distributed. This could mean outliers, skewed error structure, "
+            "or heavier tails than expected. It may affect confidence in fitted parameters."
+        ),
+        "ljung": (
+            "Significant autocorrelation detected. Residuals show repeating patterns or cycles, "
+            "indicating poor model fit over time or concentration range."
+        ),
+        "reset": (
+            "Model structure may be too simple. There may be a missing non-linear term or interaction "
+            "not captured by the current model equation."
+        ),
+        "pearson": (
+            "Residuals increase or decrease in a linear fashion across the domain. Suggests the model "
+            "is systematically over- or under-predicting."
+        ),
+        "spearman": (
+            "Residuals follow a consistent monotonic trend (e.g., always increasing or decreasing). "
+            "Implies model misses a non-linear or saturating effect."
+        ),
+        "rolling_r2": (
+            "High local trends or structure detected. Residuals show 'blocks' or gradual shifts, "
+            "possibly due to unmodeled system behavior or missing covariates."
+        )
     }
-    return explanations.get(metric, "Check residual pattern")
+
+    return explanations.get(metric, "Check the residuals for patterns not explained by the model.")
+
 
 
 def compare_models_by_metric(output_rows, metric="AIC"):
@@ -80,46 +130,48 @@ def compare_models_by_metric(output_rows, metric="AIC"):
         # ]
 
         table_data = [
-            ["Metric", "Value", "Acceptable Range", "Interpretation"],
+            ["Metric", "Value", "Acceptable Range", "Possible Range", "Interpretation"],
         ]
 
         table_data.append([
-            "R²", f"{r2:.4f}", "> 0.98", interpret_diagnostic("r2", r2, 0.98, passed=r2 > 0.98)
+            "R²", f"{r2:.4f}", "> 0.98", "0 to 1",
+            interpret_diagnostic("r2", r2, 0.98, passed=r2 > 0.98)
         ])
 
         table_data.append([
-            "RMSE", f"{rmse:.4f}", "As low as possible", "OK"  # RMSE doesn’t have a pass/fail threshold
+            "RMSE", f"{rmse:.4f}", "As low as possible", "0 to ∞", "OK – reflects average residual error"
         ])
 
         if wrmse is not None:
             table_data.append([
-                "Weighted RMSE", f"{wrmse:.4f}", "As low as possible", "OK – used when comparing across datasets"
+                "Weighted RMSE", f"{wrmse:.4f}", "As low as possible", "0 to ∞",
+                "OK – used when comparing across datasets"
             ])
 
         table_data.append([
-            "AIC", f"{aic:.2f}", "As low as possible", "OK – for model comparison only"
+            "AIC", f"{aic:.2f}", "As low as possible", "−∞ to ∞", "OK – for model comparison only"
         ])
 
         table_data.append([
-            "BIC", f"{bic:.2f}", "As low as possible", "OK – for model comparison only"
+            "BIC", f"{bic:.2f}", "As low as possible", "−∞ to ∞", "OK – for model comparison only"
         ])
 
         table_data.append([
-            "Normality test", "Passed" if norm_raw else "Failed", "True / False",
+            "Normality test", "✓" if norm_raw else "✗", "✓ / ✗", "✓ or ✗",
             interpret_diagnostic("normality", None, None, norm_raw)
         ])
 
         ljung = row.get("ljung_p")
         if ljung is not None:
             table_data.append([
-                "Ljung-Box p", f"{ljung:.3f}", "> 0.05",
-                interpret_diagnostic("ljung", ljung, 0.05, passed=row.get("ljung_p", 1) > 0.05)
+                "Ljung-Box p", f"{ljung:.3f}", "> 0.05", "0 to 1",
+                interpret_diagnostic("ljung", ljung, 0.05, passed=ljung > 0.05)
             ])
 
         reset_p = row.get("reset_p")
         if reset_p is not None:
             table_data.append([
-                "RESET p", f"{reset_p:.4f}", "> 0.05",
+                "RESET p", f"{reset_p:.4f}", "> 0.05", "0 to 1",
                 interpret_diagnostic("reset", reset_p, 0.05, passed=reset_p > 0.05)
             ])
 
@@ -130,15 +182,15 @@ def compare_models_by_metric(output_rows, metric="AIC"):
             rolling_r2 = comp_stats["avg_rolling_r2"]
 
             table_data.append([
-                "Pearson corr", f"{pearson:.2f}", "< 0.35",
+                "Pearson corr", f"{pearson:.2f}", "< 0.35", "−1 to 1",
                 interpret_diagnostic("pearson", pearson, 0.35, abs(pearson) < 0.35)
             ])
             table_data.append([
-                "Spearman corr", f"{spearman:.2f}", "< 0.35",
+                "Spearman corr", f"{spearman:.2f}", "< 0.35", "−1 to 1",
                 interpret_diagnostic("spearman", spearman, 0.35, abs(spearman) < 0.35)
             ])
             table_data.append([
-                "Rolling R²", f"{rolling_r2:.2f}", "< 0.35",
+                "Rolling R²", f"{rolling_r2:.2f}", "< 0.35", "0 to 1",
                 interpret_diagnostic("rolling_r2", rolling_r2, 0.35, rolling_r2 < 0.35)
             ])
 
@@ -146,6 +198,7 @@ def compare_models_by_metric(output_rows, metric="AIC"):
             f"\n{rank}. Model: {model}\n" +
             tabulate([[str(cell) for cell in row] for row in table_data], headers="firstrow", tablefmt="fancy_grid")
         )
+
 
         custom_corr_flagged = row.get("composite_flagged")
         custom_corr_symbol = "✓" if custom_corr_flagged is False else ("⚠️" if custom_corr_flagged is True else "–")
