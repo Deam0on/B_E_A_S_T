@@ -129,7 +129,10 @@ def compare_models_by_metric(output_rows, metric="AIC"):
                 interpret_diagnostic("rolling_r2", rolling_r2, 0.35, rolling_r2 < 0.35)
             ])
 
-        logging.info(f"\n{rank}. Model: {model}\n" + tabulate(table_data, headers="firstrow", tablefmt="fancy_grid"))
+        logging.info(
+            f"\n{rank}. Model: {model}\n" +
+            tabulate([[str(cell) for cell in row] for row in table_data], headers="firstrow", tablefmt="fancy_grid")
+        )
 
         custom_corr_flagged = row.get("composite_flagged")
         custom_corr_symbol = "✓" if custom_corr_flagged is False else ("⚠️" if custom_corr_flagged is True else "–")
