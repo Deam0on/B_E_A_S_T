@@ -40,6 +40,19 @@ def smart_initial_guess(model_func, guess, bounds, H0, d_delta_exp, step=10, max
 
     return best_guess
 
+def interpret_diagnostic(metric, value, threshold, passed):
+    if passed:
+        return "OK"
+    explanations = {
+        "normality": "Outliers or heavy tails present",
+        "ljung": "Residuals are autocorrelated (lag structure)",
+        "reset": "Model may be misspecified (non-linear relationship)",
+        "pearson": "Linear trend in residuals",
+        "spearman": "Monotonic non-linear trend",
+        "rolling_r2": "Local structure or trends present"
+    }
+    return explanations.get(metric, "Check residual pattern")
+
 
 def compare_models_by_metric(output_rows, metric="AIC"):
     from tabulate import tabulate
@@ -56,31 +69,64 @@ def compare_models_by_metric(output_rows, metric="AIC"):
         wrmse = row.get("weighted_RMSE", None)
         norm_raw = row.get("normality_pass", True)
 
+        # table_data = [
+        #     ["Metric", "Value", "Acceptable Range"],
+        #     ["R²", f"{r2:.4f}", "> 0.98"],
+        #     ["RMSE", f"{rmse:.4f}", "As low as possible"],
+        #     ["Weighted RMSE", f"{wrmse:.4f}" if wrmse is not None else "n/a", "As low as possible"],
+        #     ["AIC", f"{aic:.2f}", "As low as possible"],
+        #     ["BIC", f"{bic:.2f}", "As low as possible"],
+        #     ["Normality test", "True" if norm_raw else "⚠️", "True / False"],
+        # ]
+
         table_data = [
-            ["Metric", "Value", "Acceptable Range"],
-            ["R²", f"{r2:.4f}", "> 0.98"],
-            ["RMSE", f"{rmse:.4f}", "As low as possible"],
-            ["Weighted RMSE", f"{wrmse:.4f}" if wrmse is not None else "n/a", "As low as possible"],
-            ["AIC", f"{aic:.2f}", "As low as possible"],
-            ["BIC", f"{bic:.2f}", "As low as possible"],
-            ["Normality test", "✓" if norm_raw else "⚠️", "True / False"],
+            ["Metric", "Value", "Acceptable Range", "Interpretation"],
         ]
+
+        table_data.append([
+            "R²", f"{r2:.4f}", "> 0.98", interpret_diagnostic("r2", r2, 0.98, passed=r2 > 0.98)
+        ])
+
+        table_data.append([
+            "RMSE", f"{rmse:.4f}", "As low as possible", "OK"  # RMSE doesn’t have a pass/fail threshold
+        ])
+
+        table_data.append([
+            "Normality test", "✓" if norm_raw else "✗", "True / False",
+            interpret_diagnostic("normality", None, None, norm_raw)
+        ])
 
         ljung = row.get("ljung_stat")
         if ljung is not None:
-            table_data.append(["Ljung-Box stat", f"{ljung:.3f}", "> 0.05"])
+            table_data.append([
+                "Ljung-Box stat", f"{ljung:.3f}", "> 0.05",
+                interpret_diagnostic("ljung", ljung, 0.05, passed=row.get("ljung_p", 1) > 0.05)
+            ])
 
         reset_p = row.get("reset_p")
         if reset_p is not None:
-            table_data.append(["RESET p", f"{reset_p:.4f}", "> 0.05"])
+            table_data.append([
+                "RESET p", f"{reset_p:.4f}", "> 0.05",
+                interpret_diagnostic("reset", reset_p, 0.05, passed=reset_p > 0.05)
+            ])
 
         comp_stats = row.get("composite_stats", {})
         if comp_stats:
-            table_data.extend([
-                ["Pearson corr", f"{comp_stats['pearson_corr']:.2f}", "< 0.35"],
-                ["Spearman corr", f"{comp_stats['spearman_corr']:.2f}", "< 0.35"],
-                ["Rolling R²", f"{comp_stats['avg_rolling_r2']:.2f}", "< 0.35"]
-                # ["Run ratio", f"{comp_stats['run_ratio']:.2f}", "0.7–1.3"]
+            pearson = comp_stats["pearson_corr"]
+            spearman = comp_stats["spearman_corr"]
+            rolling_r2 = comp_stats["avg_rolling_r2"]
+
+            table_data.append([
+                "Pearson corr", f"{pearson:.2f}", "< 0.35",
+                interpret_diagnostic("pearson", pearson, 0.35, abs(pearson) < 0.35)
+            ])
+            table_data.append([
+                "Spearman corr", f"{spearman:.2f}", "< 0.35",
+                interpret_diagnostic("spearman", spearman, 0.35, abs(spearman) < 0.35)
+            ])
+            table_data.append([
+                "Rolling R²", f"{rolling_r2:.2f}", "< 0.35",
+                interpret_diagnostic("rolling_r2", rolling_r2, 0.35, rolling_r2 < 0.35)
             ])
 
         logging.info(f"\n{rank}. Model: {model}\n" + tabulate(table_data, headers="firstrow", tablefmt="fancy_grid"))
