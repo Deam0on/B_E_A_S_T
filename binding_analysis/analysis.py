@@ -79,7 +79,7 @@ def interpret_diagnostic(metric, value, threshold, passed):
             "or heavier tails than expected. It may affect confidence in fitted parameters."
         ),
         "ljung": (
-            "Significant autocorrelation detected. Residuals show repeating patterns or cycles, "
+            "Residuals show repeating patterns or cycles, "
             "indicating poor model fit over time or concentration range."
         ),
         "reset": (
@@ -95,7 +95,7 @@ def interpret_diagnostic(metric, value, threshold, passed):
             "Implies model misses a non-linear or saturating effect."
         ),
         "rolling_r2": (
-            "High local trends or structure detected. Residuals show 'blocks' or gradual shifts, "
+            "Local trends or structure detected. Residuals show 'blocks' or gradual shifts, "
             "possibly due to unmodeled system behavior or missing covariates."
         )
     }
@@ -149,7 +149,7 @@ def compare_models_by_metric(output_rows, metric="AIC"):
             ])
 
         table_data.append([
-            "AIC", f"{aic:.2f}", "As low as possible", "−∞ to ∞", "OModel comparison only"
+            "AIC", f"{aic:.2f}", "As low as possible", "−∞ to ∞", "Model comparison only"
         ])
 
         table_data.append([
