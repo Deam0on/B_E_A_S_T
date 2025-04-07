@@ -96,10 +96,10 @@ def compare_models_by_metric(output_rows, metric="AIC"):
             interpret_diagnostic("normality", None, None, norm_raw)
         ])
 
-        ljung = row.get("ljung_stat")
+        ljung = row.get("ljung_p")
         if ljung is not None:
             table_data.append([
-                "Ljung-Box stat", f"{ljung:.3f}", "> 0.05",
+                "Ljung-Box p", f"{ljung:.3f}", "> 0.05",
                 interpret_diagnostic("ljung", ljung, 0.05, passed=row.get("ljung_p", 1) > 0.05)
             ])
 
