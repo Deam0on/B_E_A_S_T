@@ -68,17 +68,17 @@ def compare_models_by_metric(output_rows, metric="AIC"):
 
         ljung = row.get("ljung_stat")
         if ljung is not None:
-            table_data.append(["Ljung-Box stat", f"{ljung:.3f}", "p > 0.05"])
+            table_data.append(["Ljung-Box stat", f"{ljung:.3f}", "> 0.05"])
 
         reset_p = row.get("reset_p")
         if reset_p is not None:
-            table_data.append(["RESET p", f"{reset_p:.4f}", "p > 0.05"])
+            table_data.append(["RESET p", f"{reset_p:.4f}", "> 0.05"])
 
         comp_stats = row.get("composite_stats", {})
         if comp_stats:
             table_data.extend([
-                ["Pearson corr", f"{comp_stats['pearson_corr']:.2f}", "|r| < 0.35"],
-                ["Spearman corr", f"{comp_stats['spearman_corr']:.2f}", "|r| < 0.35"],
+                ["Pearson corr", f"{comp_stats['pearson_corr']:.2f}", "< 0.35"],
+                ["Spearman corr", f"{comp_stats['spearman_corr']:.2f}", "< 0.35"],
                 ["Rolling R²", f"{comp_stats['avg_rolling_r2']:.2f}", "< 0.35"]
                 # ["Run ratio", f"{comp_stats['run_ratio']:.2f}", "0.7–1.3"]
             ])

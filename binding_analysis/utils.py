@@ -126,7 +126,7 @@ def advanced_residual_diagnostics(residuals, model_name):
         s = skew(residuals)
         k = kurtosis(residuals)
         stat, p = normaltest(residuals)
-        logging.info(f"[{model_name}] Residual Diagnostics -> Skew: {s:.2f}, Kurtosis: {k:.2f}, Normality p = {p:.4f}")
+        # logging.info(f"[{model_name}] Residual Diagnostics -> Skew: {s:.2f}, Kurtosis: {k:.2f}, Normality p = {p:.4f}")
         return {"skew": s, "kurtosis": k, "normality_p": p}
     except Exception as e:
         logging.warning(f"Residual diagnostics for {model_name} skipped due to: {e}")
@@ -151,8 +151,8 @@ def autocorrelation_tests(H0, residuals, model_name, lags=10):
 
     lags = min(10, n // 5)
 
-    logging.info("-" * 70)
-    logging.info(f"Residual diagnostics for model: {model_name}")
+    # logging.info("-" * 70)
+    # logging.info(f"Residual diagnostics for model: {model_name}")
 
     # Ljung-Box
     if n >= 2 * lags + 1:
@@ -164,7 +164,7 @@ def autocorrelation_tests(H0, residuals, model_name, lags=10):
             "ljung_p": lb_p,
             "ljung_failed": lb_p < 0.05
         })
-        logging.info(f"Ljung-Box:     stat = {lb_stat:.3f}, p = {lb_p:.4f}")
+        # logging.info(f"Ljung-Box:     stat = {lb_stat:.3f}, p = {lb_p:.4f}")
     else:
         logging.info("Ljung-Box test skipped (too few data points).")
         results.update({
@@ -202,7 +202,7 @@ def autocorrelation_tests(H0, residuals, model_name, lags=10):
                 "reset_p": reset_test.pvalue,
                 "reset_failed": reset_test.pvalue < 0.05
             })
-            logging.info(f"Ramsey RESET:  stat = {reset_test.fvalue:.3f}, p = {reset_test.pvalue:.4f}")
+            # logging.info(f"Ramsey RESET:  stat = {reset_test.fvalue:.3f}, p = {reset_test.pvalue:.4f}")
         except Exception as e:
             logging.warning(f"RESET test failed: {e}")
     else:
@@ -236,7 +236,7 @@ def autocorrelation_tests(H0, residuals, model_name, lags=10):
         similarity = 100 * (1 - abs(zero_crossings - sim_mean) / sim_mean)
         results["zero_crossings"] = zero_crossings
         results["crossing_similarity"] = similarity
-        logging.info(f"Zero-crossings: {zero_crossings} | Similarity to white noise: {similarity:.2f}%")
+        # logging.info(f"Zero-crossings: {zero_crossings} | Similarity to white noise: {similarity:.2f}%")
     except Exception as e:
         logging.warning(f"Zero-crossing similarity test failed: {e}")
 
