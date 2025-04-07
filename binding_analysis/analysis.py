@@ -92,7 +92,7 @@ def compare_models_by_metric(output_rows, metric="AIC"):
         ])
 
         table_data.append([
-            "Normality test", "True" if norm_raw else "✗", "True / False",
+            "Normality test", "Passed" if norm_raw else "Failed", "True / False",
             interpret_diagnostic("normality", None, None, norm_raw)
         ])
 
