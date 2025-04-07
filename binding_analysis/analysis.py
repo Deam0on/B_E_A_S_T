@@ -58,12 +58,12 @@ def compare_models_by_metric(output_rows, metric="AIC"):
 
         table_data = [
             ["Metric", "Value", "Acceptable Range"],
-            ["R²", f"{r2:.4f}", "> 0.95"],
-            ["RMSE", f"{rmse:.4f}", "Low"],
-            ["Weighted RMSE", f"{wrmse:.4f}" if wrmse is not None else "n/a", "Low"],
-            ["AIC", f"{aic:.2f}", "Lower is better"],
-            ["BIC", f"{bic:.2f}", "Lower is better"],
-            ["Normality test", "✓" if norm_raw else "⚠️", "✓ if normal"],
+            ["R²", f"{r2:.4f}", "> 0.98"],
+            ["RMSE", f"{rmse:.4f}", "As low as possible"],
+            ["Weighted RMSE", f"{wrmse:.4f}" if wrmse is not None else "n/a", "As low as possible"],
+            ["AIC", f"{aic:.2f}", "As low as possible"],
+            ["BIC", f"{bic:.2f}", "As low as possible"],
+            ["Normality test", "✓" if norm_raw else "⚠️", "True / False"],
         ]
 
         ljung = row.get("ljung_stat")
@@ -88,28 +88,28 @@ def compare_models_by_metric(output_rows, metric="AIC"):
         custom_corr_flagged = row.get("composite_flagged")
         custom_corr_symbol = "✓" if custom_corr_flagged is False else ("⚠️" if custom_corr_flagged is True else "–")
 
-        if "normality_pass" not in row:
-            logging.warning(f"normality_pass not found in diagnostics for model {model}")
-        else:
-            logging.warning(f"Alles OK (normality")
+        # if "normality_pass" not in row:
+        #     logging.warning(f"normality_pass not found in diagnostics for model {model}")
+        # else:
+        #     logging.warning(f"Alles OK (normality")
     
-        logging.info(f"{rank}. {model}")
-        logging.info(f"    R² = {r2:.4f} | RMSE = {rmse:.4f}" + (f" | wRMSE = {wrmse:.4f}" if wrmse is not None else ""))
-        logging.info(f"    AIC = {aic:.2f} | BIC = {bic:.2f}")
+        # logging.info(f"{rank}. {model}")
+        # logging.info(f"    R² = {r2:.4f} | RMSE = {rmse:.4f}" + (f" | wRMSE = {wrmse:.4f}" if wrmse is not None else ""))
+        # logging.info(f"    AIC = {aic:.2f} | BIC = {bic:.2f}")
         # logging.info(f"    Skewness = {row.get('skewness', 'n/a'):.2f} | Kurtosis = {row.get('kurtosis', 'n/a'):.2f} | Zero-crossing noise similarity = {zc_str}")
-        logging.info(f"    Normality test passed: {row.get('normality_pass', 'n/a')}")
+        # logging.info(f"    Normality test passed: {row.get('normality_pass', 'n/a')}")
         # logging.info(f"    Residuals: Ljung-Box [{ljung}], {row.get('bg_test', 'BG?')} [{bg}], Normality [{norm}]")
         # logging.info(f"    Custom Corr [{custom_corr_symbol}]")
     
-        comp_stats = row.get("composite_stats", {})
-        if comp_stats:
-            logging.info(f"    Composite stats: "
-                         f"Pearson = {comp_stats['pearson_corr']:.2f}, "
-                         f"Spearman = {comp_stats['spearman_corr']:.2f}, "
+        # comp_stats = row.get("composite_stats", {})
+        # if comp_stats:
+            # logging.info(f"    Composite stats: "
+                        #  f"Pearson = {comp_stats['pearson_corr']:.2f}, "
+                        #  f"Spearman = {comp_stats['spearman_corr']:.2f}, "
                         #  f"Spectral = {comp_stats['spectral_ratio']:.2f}, "
-                         f"R² = {comp_stats['avg_rolling_r2']:.2f}, "
+                        #  f"R² = {comp_stats['avg_rolling_r2']:.2f}, "
                         #  f"Run ratio = {comp_stats['run_ratio']:.2f}"
-                        )
+                        # )
         
     return sorted_models
 
@@ -143,10 +143,10 @@ def advanced_residual_diagnostics(H0, residuals, model_name, enable_tests=True, 
     skewness = pd.Series(residuals).skew()
     kurtosis = pd.Series(residuals).kurtosis()
 
-    logging.info(f"Additional diagnostics for {model_name}:")
-    logging.info(f"Skewness: {skewness:.3f}, Kurtosis: {kurtosis:.3f}")
-    if not normality_pass:
-        logging.warning("Residuals may not be normally distributed (outliers or heavy tails).")
+    # logging.info(f"Additional diagnostics for {model_name}:")
+    # logging.info(f"Skewness: {skewness:.3f}, Kurtosis: {kurtosis:.3f}")
+    # if not normality_pass:
+    #     logging.warning("Residuals may not be normally distributed (outliers or heavy tails).")
 
     result = {
         **autocorr,
@@ -162,19 +162,19 @@ def advanced_residual_diagnostics(H0, residuals, model_name, enable_tests=True, 
             "composite_stats": custom.get("composite_stats")
         })
 
-        stats = custom["composite_stats"]
-        if stats:
-            logging.info("Composite residual correlation test:")
-            logging.info(f"  Lag-1 Pearson = {stats['pearson_corr']:.3f}")
-            logging.info(f"  Lag-1 Spearman = {stats['spearman_corr']:.3f}")
+        # stats = custom["composite_stats"]
+        # if stats:
+            # logging.info("Composite residual correlation test:")
+            # logging.info(f"  Lag-1 Pearson = {stats['pearson_corr']:.3f}")
+            # logging.info(f"  Lag-1 Spearman = {stats['spearman_corr']:.3f}")
             # logging.info(f"  Spectral ratio = {stats['spectral_ratio']:.3f}")
-            logging.info(f"  Avg rolling R² = {stats['avg_rolling_r2']:.3f}")
+            # logging.info(f"  Avg rolling R² = {stats['avg_rolling_r2']:.3f}")
             # logging.info(f"  Run ratio = {stats['run_ratio']:.3f}")
 
-        if custom["composite_flagged"]:
-            logging.warning("⚠️ Residuals flagged as correlated by composite test.")
-        else:
-            logging.info("✓ Composite test: residuals appear uncorrelated.")
+        # if custom["composite_flagged"]:
+        #     logging.warning("⚠️ Residuals flagged as correlated by composite test.")
+        # else:
+        #     logging.info("✓ Composite test: residuals appear uncorrelated.")
 
     return result
 
@@ -278,7 +278,7 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
 
                 logging.info(f"Model {model_name} fit completed")
                 logging.info(f"Parameters: {params}")
-                logging.info(f"R²: {r2:.4f}, AIC: {aic:.2f}, BIC: {bic:.2f}, RMSE: {rmse:.4f}, Weighted RMSE: {weighted_rmse:.4f}")
+                # logging.info(f"R²: {r2:.4f}, AIC: {aic:.2f}, BIC: {bic:.2f}, RMSE: {rmse:.4f}, Weighted RMSE: {weighted_rmse:.4f}")
 
             except Exception as e:
                 logging.error(f"Exception in model {model_name}: {e}")
