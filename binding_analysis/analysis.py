@@ -79,12 +79,12 @@ def compare_models_by_metric(output_rows, metric="AIC"):
             table_data.extend([
                 ["Pearson corr", f"{comp_stats['pearson_corr']:.2f}", "|r| < 0.3"],
                 ["Spearman corr", f"{comp_stats['spearman_corr']:.2f}", "|r| < 0.3"],
-                ["Rolling R²", f"{comp_stats['avg_rolling_r2']:.2f}", "< 0.3"],
-                ["Run ratio", f"{comp_stats['run_ratio']:.2f}", "0.7–1.3"]
+                ["Rolling R²", f"{comp_stats['avg_rolling_r2']:.2f}", "< 0.3"]
+                # ["Run ratio", f"{comp_stats['run_ratio']:.2f}", "0.7–1.3"]
             ])
 
         logging.info(f"\n{rank}. Model: {model}\n" + tabulate(table_data, headers="firstrow", tablefmt="fancy_grid"))
-        
+
         custom_corr_flagged = row.get("composite_flagged")
         custom_corr_symbol = "✓" if custom_corr_flagged is False else ("⚠️" if custom_corr_flagged is True else "–")
 
