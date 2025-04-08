@@ -35,7 +35,7 @@ This Python-based analysis tool is designed for evaluating titration data from N
 ### Option 1: Google Colab
 
 Launch in Colab:  
-[Open in Colab](https://colab.research.google.com/github/Deam0on/mysak_delta_iso/blob/custom_statistics/example_data/colab_template.ipynb)
+[Open in Colab](https://colab.research.google.com/github/Deam0on/mysak_delta_iso/blob/custom_beta/example_data/colab_template.ipynb)
 
 ### Option 2: Run Locally
 
