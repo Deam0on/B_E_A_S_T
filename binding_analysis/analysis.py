@@ -124,7 +124,8 @@ def compare_models_by_metric(output_rows, metric="AIC"):
         table_data = [["Metric", "Value", "Acceptable Range", "Possible Range", "Interpretation"]]
 
         for section, metrics in section_headers.items():
-            table_data.append([f"=== {section} ===", "", "", "", ""])
+            full_span = f"=== {section} ===".center(95)
+            table_data.append([full_span, "", "", "", ""])
 
             for metric in metrics:
                 if metric == "R²":
