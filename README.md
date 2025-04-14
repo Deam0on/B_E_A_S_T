@@ -7,7 +7,7 @@ This Python-based analysis tool is designed for evaluating titration data from N
 ## Features
 
 - **Model Support**:
-  - Includes 1:1, 1:2, 2:1, dimerization, and general multi-equilibrium binding models
+  - Includes HG, H₂G, HG₂, and H₂G + HG binding models
   - Model logic is modularized – easily extendable via the `models/` folder
 
 - **Flexible Fitting & Configuration**:
