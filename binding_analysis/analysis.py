@@ -310,7 +310,7 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
                 params = result.x
                 fit_vals = func(H0, *params)
                 residuals = fit_vals - d_delta_exp
-                n_iter = result.nfev
+                n_iter = result.nfev * len(H0)
 
                 logging.info(f"Fitting completed in {n_iter} function evaluations.")
 
