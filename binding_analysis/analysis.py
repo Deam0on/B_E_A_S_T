@@ -117,8 +117,8 @@ def compare_models_by_metric(output_rows, metric="AIC"):
         # Build section headers and metric keys
         section_headers = {
             "Criteria": ["R²", "RMSE", "Weighted RMSE", "AIC", "BIC"],
-            "Main Tests": ["Normality test", "Ljung-Box p", "RESET p"],
-            "Optional Tests": ["Pearson corr", "Spearman corr", "Rolling R²", "Spectral ratio", "Run ratio", "Zero-crossings", "Cook’s Distance"]
+            "Main Tests": ["Normality test", "Ljung-Box p", "RESET p", "Pearson corr", "Spearman corr", "Rolling R²"],
+            "Optional Tests": ["Spectral ratio", "Run ratio", "Zero-crossings", "Cook’s Distance"]
         }
 
         table_data = [["Metric", "Value", "Acceptable Range", "Possible Range", "Interpretation"]]
@@ -142,7 +142,7 @@ def compare_models_by_metric(output_rows, metric="AIC"):
                     table_data.append([metric, f"{bic:.2f}", "Low", "−∞ to ∞", "Stricter than AIC for model comparison"])
                 elif metric == "Normality test":
                     table_data.append([
-                        metric, "✓" if norm_raw else "✗", "✓", "✓ / ✗",
+                        metric, "Passed" if norm_raw else "Failed", "Passed", "Passed / Failed",
                         interpret_diagnostic("normality", None, None, norm_raw)
                     ])
                 elif metric == "Ljung-Box p" and ljung is not None:
