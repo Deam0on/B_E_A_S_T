@@ -133,6 +133,8 @@ def compare_models_by_metric(output_rows, metric="AIC"):
         cooks = row.get("cooks_max")
         zero_crossings = row.get("zero_crossings")
         crossing_sim = row.get("crossing_similarity")
+        bg_white = row.get("bg_p")
+        bg_or_white = row.get("bg_test")
 
         # Build section headers and metric keys
         section_headers = {
@@ -219,9 +221,7 @@ def compare_models_by_metric(output_rows, metric="AIC"):
                         interpret_diagnostic("cooks_distance", cooks, 1.0, passed)
                     ])
 
-                elif metric == "Breusch-Godfrey" and "bg_p" in row:
-                    bg_p = row["bg_p"]
-                    bg_name = row.get("bg_test", "Breusch-Godfrey")
+                elif metric == "Breusch-Godfrey" and "bg_white" is not None:
                     passed = bg_p > 0.05
                     table_data.append([
                         bg_name, f"{bg_p:.3f}", "> 0.05", "0 to 1",
