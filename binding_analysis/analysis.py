@@ -15,6 +15,7 @@ from statsmodels.sandbox.stats.runs import runstest_1samp
 from scipy.fft import rfft
 from models import model_definitions
 from utils import save_combined_csv, autocorrelation_tests, validate_data
+from scipy.optimize import least_squares
 
 def smart_initial_guess(model_func, guess, bounds, H0, d_delta_exp, step=10, max_iter=10):
     best_guess = np.array(guess)
@@ -302,18 +303,30 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
                 bounds = model['bounds']
                 func = model['lambda']
 
-                params, cov = curve_fit(func, H0, d_delta_exp, p0=guess, bounds=bounds, maxfev=maxfev)
+                def residuals_func(params):
+                    return func(H0, *params) - d_delta_exp
+
+                result = least_squares(residuals_func, x0=guess, bounds=bounds, max_nfev=maxfev)
+                params = result.x
                 fit_vals = func(H0, *params)
                 residuals = fit_vals - d_delta_exp
+                n_iter = result.nfev
+
+                logging.info(f"Fitting completed in {n_iter} function evaluations.")
 
                 delta_max = np.max(np.abs(d_delta_exp)) if np.max(np.abs(d_delta_exp)) > 0 else 1
-                
                 normalized_residuals = residuals / global_delta_range
                 weighted_rmse = np.sqrt(np.mean(normalized_residuals ** 2))
-                
-                
 
+                # Estimating covariance (approximation)
+                from scipy.linalg import svd
+                _, s, VT = svd(result.jac, full_matrices=False)
+                threshold = np.finfo(float).eps * max(result.jac.shape) * s[0]
+                s = s[s > threshold]
+                VT = VT[:s.size]
+                cov = np.dot(VT.T / s**2, VT)
                 std_err = np.sqrt(np.diag(cov))
+
                 rss = np.sum(residuals**2)
                 r2 = 1 - rss / np.sum((d_delta_exp - np.mean(d_delta_exp))**2)
                 n = len(d_delta_exp)
@@ -348,12 +361,12 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
                     "residuals": residuals.tolist(),
                     "normalized_residuals": normalized_residuals if not skip_normres else [],
                     "H_over_G": (H0 / G0).tolist(),
+                    "nfev": n_iter,
                     **diagnostics
                 })
 
                 logging.info(f"Model {model_name} fit completed")
                 logging.info(f"Parameters: {params}")
-                # logging.info(f"R²: {r2:.4f}, AIC: {aic:.2f}, BIC: {bic:.2f}, RMSE: {rmse:.4f}, Weighted RMSE: {weighted_rmse:.4f}")
 
             except Exception as e:
                 logging.error(f"Exception in model {model_name}: {e}")
@@ -367,6 +380,7 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
 
         plot_path = os.path.join(output_folder, filename.replace(".csv", "_plot.png"))
         plot_results(H0, G0, d_delta_exp, results, plot_path, file_title=filename, show_normalized=not skip_normres)
+
 
 def plot_results(H0, G0, d_delta_exp, model_results, filename, file_title=None, show_normalized=True):
     fig, axes = plt.subplots(nrows=5, ncols=3 if show_normalized else 2, figsize=(18, 14))
