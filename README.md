@@ -110,7 +110,7 @@ python binding_analysis_tool.py \
 
 All data used in the paper is uploaded in `example_data/` folder
 
-See [Input Format and File Structure](Input_and_File_Structure)
+See [Input Format and File Structure](https://github.com/Deam0on/mysak_delta_iso/wiki/Input_and_File_Structure)
 
 ---
 
@@ -118,7 +118,7 @@ See [Input Format and File Structure](Input_and_File_Structure)
 
 This repository includes multiple binding models used to fit NMR titration data. Below are the corresponding equations and definitions of parameters.
 
-For detailed model description, see [Binding Models and Theory](Binding_Models_and_Theory)
+For detailed model description, see [Binding Models and Theory](https://github.com/Deam0on/mysak_delta_iso/wiki/Binding_Models_and_Theory)
 
 ---
 
@@ -132,7 +132,7 @@ A rich suite of statistical diagnostics is applied to each model's residuals, gr
 
 These are rendered into a per-model table for easy comparison.
 
-See the [Residual Diagnostics wiki page](Residual-Diagnostics) for test details, acceptable values, and interpretation.
+See the [Residual Diagnostics wiki page](https://github.com/Deam0on/mysak_delta_iso/wiki/Residual_Diagnostics) for test details, acceptable values, and interpretation.
 
 ---
 
@@ -159,4 +159,4 @@ This project is released under the MIT License. See `LICENSE` for details.
 
 ## Support this project
 
-You can support me via [liberpay](liberapay.com/Deamoon)
+You can support me via [liberpay](https://liberapay.com/Deamoon)
