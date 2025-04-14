@@ -1,6 +1,8 @@
-# Binding Isotherm Analysis Tool
+# BEAST - Binding Evaluation and Analysis Software Tool
 
 This Python-based analysis tool is designed for evaluating titration data from NMR experiments. It fits experimental chemical shift data to multiple thermodynamic binding models and estimates association constants. The tool supports batch analysis, model fitting, statistical diagnostics, and reproducible outputs.
+
+![BEAST](example_data/BEAST.jpg)
 
 ---
 
