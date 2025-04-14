@@ -120,13 +120,13 @@ def model_definitions(H0, G0, d_delta_exp):
             "bounds": ([0, 0, -np.inf, -np.inf], [np.inf, np.inf, np.inf, np.inf]),
             "lambda": lambda H0, Ka, Kd, d_inf_1, d_inf_2: binding_isotherm_2_1(H0, G0, Ka, Kd, d_inf_1, d_inf_2)
         },
-        "H₂": {
+        "HG + H₂": {
             "function": binding_dimer,
             "initial_guess": [100, 100, 100, 100],
             "bounds": ([0, 0, -np.inf, -np.inf], [np.inf]*4),
             "lambda": lambda H0, Ka, Kd, d_inf_1, d_inf_2: binding_dimer(H0, G0, Ka, Kd, d_inf_1, d_inf_2)
         },
-        "H₂G + HG": {
+        "H₂G + HG + H₂": {
             "function": multi_model,
             "initial_guess": [100, 100, 100, 100, 100, 100],
             "bounds": ([0, 0, 0, -np.inf, -np.inf, -np.inf], [np.inf]*6),
