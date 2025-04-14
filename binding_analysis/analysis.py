@@ -225,7 +225,7 @@ def compare_models_by_metric(output_rows, metric="AIC"):
                     passed = bg_white > 0.05
                     table_data.append([
                         bg_or_white, f"{bg_white:.3f}", "> 0.05", "0 to 1",
-                        interpret_diagnostic("bg_p", bg_p, 0.05, passed)
+                        interpret_diagnostic("bg_p", bg_white, 0.05, passed)
                     ])
 
 
