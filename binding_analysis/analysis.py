@@ -221,9 +221,10 @@ def compare_models_by_metric(output_rows, metric="AIC"):
 
                 elif metric == "Breusch-Godfrey" and "bg_p" in row:
                     bg_p = row["bg_p"]
+                    bg_name = row.get("bg_test", "Breusch-Godfrey")
                     passed = bg_p > 0.05
                     table_data.append([
-                        metric, f"{bg_p:.3f}", "> 0.05", "0 to 1",
+                        bg_name, f"{bg_p:.3f}", "> 0.05", "0 to 1",
                         interpret_diagnostic("bg_p", bg_p, 0.05, passed)
                     ])
 
