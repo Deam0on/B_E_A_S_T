@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import traceback
+from tabulate import tabulate
 import logging
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
@@ -39,19 +40,6 @@ def smart_initial_guess(model_func, guess, bounds, H0, d_delta_exp, step=10, max
             break
 
     return best_guess
-
-# def interpret_diagnostic(metric, value, threshold, passed):
-#     if passed:
-#         return "OK"
-#     explanations = {
-#         "normality": "Outliers or heavy tails present",
-#         "ljung": "Residuals are autocorrelated (lag structure)",
-#         "reset": "Model may be misspecified (non-linear relationship)",
-#         "pearson": "Linear trend in residuals",
-#         "spearman": "Monotonic non-linear trend",
-#         "rolling_r2": "Local structure or trends present"
-#     }
-#     return explanations.get(metric, "Check residual pattern")
 
 def metric_value_range(metric):
     ranges = {
@@ -105,8 +93,6 @@ def interpret_diagnostic(metric, value, threshold, passed):
 
 
 def compare_models_by_metric(output_rows, metric="AIC"):
-    from tabulate import tabulate
-
     sorted_models = sorted(output_rows, key=lambda r: r[metric])
     logging.info("\nModel ranking by %s (lower is better):", metric)
 
@@ -119,113 +105,100 @@ def compare_models_by_metric(output_rows, metric="AIC"):
         wrmse = row.get("weighted_RMSE", None)
         norm_raw = row.get("normality_pass", True)
 
-        # table_data = [
-        #     ["Metric", "Value", "Acceptable Range"],
-        #     ["R²", f"{r2:.4f}", "> 0.98"],
-        #     ["RMSE", f"{rmse:.4f}", "As low as possible"],
-        #     ["Weighted RMSE", f"{wrmse:.4f}" if wrmse is not None else "n/a", "As low as possible"],
-        #     ["AIC", f"{aic:.2f}", "As low as possible"],
-        #     ["BIC", f"{bic:.2f}", "As low as possible"],
-        #     ["Normality test", "True" if norm_raw else "⚠️", "True / False"],
-        # ]
-
-        table_data = [
-            ["Metric", "Value", "Acceptable Range", "Possible Range", "Interpretation"],
-        ]
-
-        table_data.append([
-            "R²", f"{r2:.4f}", "> 0.98", "0 to 1",
-            interpret_diagnostic("r2", r2, 0.98, passed=r2 > 0.98)
-        ])
-
-        table_data.append([
-            "RMSE", f"{rmse:.4f}", "As low as possible", "0 to ∞", "Reflects average residual error"
-        ])
-
-        if wrmse is not None:
-            table_data.append([
-                "Weighted RMSE", f"{wrmse:.4f}", "As low as possible", "0 to ∞",
-                "Used when comparing across datasets"
-            ])
-
-        table_data.append([
-            "AIC", f"{aic:.2f}", "As low as possible", "−∞ to ∞", "Model comparison only"
-        ])
-
-        table_data.append([
-            "BIC", f"{bic:.2f}", "As low as possible", "−∞ to ∞", "Model comparison only"
-        ])
-
-        table_data.append([
-            "Normality test", "Passed" if norm_raw else "Failed", "Passed / Failed", "Passed or Failed",
-            interpret_diagnostic("normality", None, None, norm_raw)
-        ])
-
-        ljung = row.get("ljung_p")
-        if ljung is not None:
-            table_data.append([
-                "Ljung-Box p", f"{ljung:.3f}", "> 0.05", "0 to 1",
-                interpret_diagnostic("ljung", ljung, 0.05, passed=ljung > 0.05)
-            ])
-
-        reset_p = row.get("reset_p")
-        if reset_p is not None:
-            table_data.append([
-                "RESET p", f"{reset_p:.4f}", "> 0.05", "0 to 1",
-                interpret_diagnostic("reset", reset_p, 0.05, passed=reset_p > 0.05)
-            ])
-
         comp_stats = row.get("composite_stats", {})
-        if comp_stats:
-            pearson = comp_stats["pearson_corr"]
-            spearman = comp_stats["spearman_corr"]
-            rolling_r2 = comp_stats["avg_rolling_r2"]
+        ljung = row.get("ljung_p")
+        reset_p = row.get("reset_p")
+        spectral = comp_stats.get("spectral_ratio")
+        run_ratio = comp_stats.get("run_ratio")
+        cooks = row.get("cooks_max")
+        zero_crossings = row.get("zero_crossings")
+        crossing_sim = row.get("crossing_similarity")
 
-            table_data.append([
-                "Pearson corr", f"{pearson:.2f}", "< 0.35", "−1 to 1",
-                interpret_diagnostic("pearson", pearson, 0.35, abs(pearson) < 0.35)
-            ])
-            table_data.append([
-                "Spearman corr", f"{spearman:.2f}", "< 0.35", "−1 to 1",
-                interpret_diagnostic("spearman", spearman, 0.35, abs(spearman) < 0.35)
-            ])
-            table_data.append([
-                "Rolling R²", f"{rolling_r2:.2f}", "< 0.35", "0 to 1",
-                interpret_diagnostic("rolling_r2", rolling_r2, 0.35, rolling_r2 < 0.35)
-            ])
+        # Build section headers and metric keys
+        section_headers = {
+            "Criteria": ["R²", "RMSE", "Weighted RMSE", "AIC", "BIC"],
+            "Main Tests": ["Normality test", "Ljung-Box p", "RESET p"],
+            "Optional Tests": ["Pearson corr", "Spearman corr", "Rolling R²", "Spectral ratio", "Run ratio", "Zero-crossings", "Cook’s Distance"]
+        }
+
+        table_data = [["Metric", "Value", "Acceptable Range", "Possible Range", "Interpretation"]]
+
+        for section, metrics in section_headers.items():
+            table_data.append([f"=== {section} ===", "", "", "", ""])
+
+            for metric in metrics:
+                if metric == "R²":
+                    table_data.append([
+                        metric, f"{r2:.4f}", "> 0.98", "0 to 1",
+                        interpret_diagnostic("r2", r2, 0.98, r2 > 0.98)
+                    ])
+                elif metric == "RMSE":
+                    table_data.append([metric, f"{rmse:.4f}", "Low", "0 to ∞", "Lower indicates better fit"])
+                elif metric == "Weighted RMSE" and wrmse is not None:
+                    table_data.append([metric, f"{wrmse:.4f}", "Low", "0 to ∞", "Used for comparison across datasets"])
+                elif metric == "AIC":
+                    table_data.append([metric, f"{aic:.2f}", "Low", "−∞ to ∞", "Used to compare model fit (penalized)"])
+                elif metric == "BIC":
+                    table_data.append([metric, f"{bic:.2f}", "Low", "−∞ to ∞", "Stricter than AIC for model comparison"])
+                elif metric == "Normality test":
+                    table_data.append([
+                        metric, "✓" if norm_raw else "✗", "✓", "✓ / ✗",
+                        interpret_diagnostic("normality", None, None, norm_raw)
+                    ])
+                elif metric == "Ljung-Box p" and ljung is not None:
+                    table_data.append([
+                        metric, f"{ljung:.3f}", "> 0.05", "0 to 1",
+                        interpret_diagnostic("ljung", ljung, 0.05, ljung > 0.05)
+                    ])
+                elif metric == "RESET p" and reset_p is not None:
+                    table_data.append([
+                        metric, f"{reset_p:.4f}", "> 0.05", "0 to 1",
+                        interpret_diagnostic("reset", reset_p, 0.05, reset_p > 0.05)
+                    ])
+                elif metric == "Pearson corr" and "pearson_corr" in comp_stats:
+                    p = comp_stats["pearson_corr"]
+                    table_data.append([
+                        metric, f"{p:.2f}", "< 0.35", "-1 to 1",
+                        interpret_diagnostic("pearson", p, 0.35, abs(p) < 0.35)
+                    ])
+                elif metric == "Spearman corr" and "spearman_corr" in comp_stats:
+                    s = comp_stats["spearman_corr"]
+                    table_data.append([
+                        metric, f"{s:.2f}", "< 0.35", "-1 to 1",
+                        interpret_diagnostic("spearman", s, 0.35, abs(s) < 0.35)
+                    ])
+                elif metric == "Rolling R²" and "avg_rolling_r2" in comp_stats:
+                    r = comp_stats["avg_rolling_r2"]
+                    table_data.append([
+                        metric, f"{r:.2f}", "< 0.35", "0 to 1",
+                        interpret_diagnostic("rolling_r2", r, 0.35, r < 0.35)
+                    ])
+                elif metric == "Spectral ratio" and spectral is not None:
+                    table_data.append([
+                        metric, f"{spectral:.2f}", "< 0.3", "0 to 1",
+                        "Detects low-frequency oscillations or periodic patterns"
+                    ])
+                elif metric == "Run ratio" and run_ratio is not None:
+                    table_data.append([
+                        metric, f"{run_ratio:.2f}", "≈ 1.0", "0 to ~2.0",
+                        "Too low or high implies clustering of residual signs"
+                    ])
+                elif metric == "Zero-crossings" and crossing_sim is not None:
+                    table_data.append([
+                        metric, f"{crossing_sim:.1f}%", "> 80%", "0 to 100%",
+                        "Lower % implies structured or directional residuals"
+                    ])
+                elif metric == "Cook’s Distance" and cooks is not None:
+                    table_data.append([
+                        metric, f"{cooks:.3f}", "< 1.0", "0 to ∞",
+                        "High values mean individual points may distort fit"
+                    ])
 
         logging.info(
             f"\n{rank}. Model: {model}\n" +
-            tabulate([[str(cell) for cell in row] for row in table_data], headers="firstrow", tablefmt="fancy_grid")
+            tabulate(table_data, headers="firstrow", tablefmt="fancy_grid")
         )
 
-
-        custom_corr_flagged = row.get("composite_flagged")
-        custom_corr_symbol = "✓" if custom_corr_flagged is False else ("⚠️" if custom_corr_flagged is True else "–")
-
-        # if "normality_pass" not in row:
-        #     logging.warning(f"normality_pass not found in diagnostics for model {model}")
-        # else:
-        #     logging.warning(f"Alles OK (normality")
-    
-        # logging.info(f"{rank}. {model}")
-        # logging.info(f"    R² = {r2:.4f} | RMSE = {rmse:.4f}" + (f" | wRMSE = {wrmse:.4f}" if wrmse is not None else ""))
-        # logging.info(f"    AIC = {aic:.2f} | BIC = {bic:.2f}")
-        # logging.info(f"    Skewness = {row.get('skewness', 'n/a'):.2f} | Kurtosis = {row.get('kurtosis', 'n/a'):.2f} | Zero-crossing noise similarity = {zc_str}")
-        # logging.info(f"    Normality test passed: {row.get('normality_pass', 'n/a')}")
-        # logging.info(f"    Residuals: Ljung-Box [{ljung}], {row.get('bg_test', 'BG?')} [{bg}], Normality [{norm}]")
-        # logging.info(f"    Custom Corr [{custom_corr_symbol}]")
-    
-        # comp_stats = row.get("composite_stats", {})
-        # if comp_stats:
-            # logging.info(f"    Composite stats: "
-                        #  f"Pearson = {comp_stats['pearson_corr']:.2f}, "
-                        #  f"Spearman = {comp_stats['spearman_corr']:.2f}, "
-                        #  f"Spectral = {comp_stats['spectral_ratio']:.2f}, "
-                        #  f"R² = {comp_stats['avg_rolling_r2']:.2f}, "
-                        #  f"Run ratio = {comp_stats['run_ratio']:.2f}"
-                        # )
-        
     return sorted_models
 
 def advanced_residual_diagnostics(H0, residuals, model_name, enable_tests=True, enable_custom_corr=True):
@@ -238,15 +211,15 @@ def advanced_residual_diagnostics(H0, residuals, model_name, enable_tests=True, 
             "ljung_stat": None,
             "ljung_p": None,
             "ljung_failed": None,
-            # "bg_test": None,
-            # "bg_stat": None,
-            # "bg_p": None,
-            # "bg_failed": None,
+            "bg_test": None,
+            "bg_stat": None,
+            "bg_p": None,
+            "bg_failed": None,
             "reset_stat": None,
             "reset_p": None,
             "reset_failed": None,
-            # "cooks_max": None,
-            # "cooks_extreme": None,
+            "cooks_max": None,
+            "cooks_extreme": None,
             "zero_crossing_similarity": None
         }
 
@@ -276,20 +249,6 @@ def advanced_residual_diagnostics(H0, residuals, model_name, enable_tests=True, 
             "composite_flagged": custom.get("composite_flagged"),
             "composite_stats": custom.get("composite_stats")
         })
-
-        # stats = custom["composite_stats"]
-        # if stats:
-            # logging.info("Composite residual correlation test:")
-            # logging.info(f"  Lag-1 Pearson = {stats['pearson_corr']:.3f}")
-            # logging.info(f"  Lag-1 Spearman = {stats['spearman_corr']:.3f}")
-            # logging.info(f"  Spectral ratio = {stats['spectral_ratio']:.3f}")
-            # logging.info(f"  Avg rolling R² = {stats['avg_rolling_r2']:.3f}")
-            # logging.info(f"  Run ratio = {stats['run_ratio']:.3f}")
-
-        # if custom["composite_flagged"]:
-        #     logging.warning("⚠️ Residuals flagged as correlated by composite test.")
-        # else:
-        #     logging.info("✓ Composite test: residuals appear uncorrelated.")
 
     return result
 
