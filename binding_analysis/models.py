@@ -66,7 +66,7 @@ def binding_dimer(H0, G0, Ka, Kd, d_inf_1, d_inf_2):
     d_delta_comp[0] = 0
     return d_delta_comp
 
-def multi_model(H0, G0, KHG, Kd, KH2G, dG, dHG, dH2G, max_iter=100, tol=1e-6):
+def multi_model(H0, G0, KHG, Kd, KH2G, dG, dHG, dH2G, max_iter=100000, tol=1e-6):
     d_obs = np.zeros_like(H0)
     epsilon = 1e-10
 
@@ -102,31 +102,31 @@ def multi_model(H0, G0, KHG, Kd, KH2G, dG, dHG, dH2G, max_iter=100, tol=1e-6):
 
 def model_definitions(H0, G0, d_delta_exp):
     return {
-        "1:1": {
+        "HG": {
             "function": binding_isotherm_1_1,
             "initial_guess": [100, 100, 100],  # Ka, d_free, d_inf
             "bounds": ([0, -np.inf, -np.inf], [np.inf, np.inf, np.inf]),
             "lambda": lambda H0, Ka, d_free, d_inf: binding_isotherm_1_1(H0, G0, Ka, d_free, d_inf)
         },
-        "1:2": {
+        "HG₂": {
             "function": binding_isotherm_1_2,
             "initial_guess": [100, 100, 100, 100],
             "bounds": ([0, 0, -np.inf, -np.inf], [np.inf, np.inf, np.inf, np.inf]),
             "lambda": lambda H0, Ka, Kd, d_inf_1, d_inf_2: binding_isotherm_1_2(H0, G0, Ka, Kd, d_inf_1, d_inf_2)
         },
-        "2:1": {
+        "H₂G": {
             "function": binding_isotherm_2_1,
             "initial_guess": [100, 100, 100, 100],
             "bounds": ([0, 0, -np.inf, -np.inf], [np.inf, np.inf, np.inf, np.inf]),
             "lambda": lambda H0, Ka, Kd, d_inf_1, d_inf_2: binding_isotherm_2_1(H0, G0, Ka, Kd, d_inf_1, d_inf_2)
         },
-        "dimer": {
+        "H₂": {
             "function": binding_dimer,
             "initial_guess": [100, 100, 100, 100],
             "bounds": ([0, 0, -np.inf, -np.inf], [np.inf]*4),
             "lambda": lambda H0, Ka, Kd, d_inf_1, d_inf_2: binding_dimer(H0, G0, Ka, Kd, d_inf_1, d_inf_2)
         },
-        "multi": {
+        "H₂G + HG": {
             "function": multi_model,
             "initial_guess": [100, 100, 100, 100, 100, 100],
             "bounds": ([0, 0, 0, -np.inf, -np.inf, -np.inf], [np.inf]*6),

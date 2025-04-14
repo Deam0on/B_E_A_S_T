@@ -86,10 +86,29 @@ def interpret_diagnostic(metric, value, threshold, passed):
         "rolling_r2": (
             "Local trends or structure detected. Residuals show 'blocks' or gradual shifts, "
             "possibly due to unmodeled system behavior or missing covariates."
+        ),
+        "spectral_ratio": (
+            "Residuals contain dominant low-frequency components, possibly indicating periodic behavior "
+            "or systematic deviations."
+        ),
+        "run_ratio": (
+            "Number of sign changes in residuals deviates from expected. Indicates clustering or directional drift."
+        ),
+        "zero_crossings": (
+            "Residuals show fewer random fluctuations than expected. White-noise similarity is low, "
+            "suggesting model misfit or trend."
+        ),
+        "cooks_distance": (
+            "One or more data points may exert excessive influence on the model fit. Indicates potential outliers."
+        ),
+        "bg_p": (
+            "Higher-order autocorrelation detected. Residuals are not independent across lags, "
+            "suggesting temporal or concentration structure not captured by the model."
         )
     }
 
     return explanations.get(metric, "Check the residuals for patterns not explained by the model.")
+
 
 
 
@@ -119,7 +138,7 @@ def compare_models_by_metric(output_rows, metric="AIC"):
         section_headers = {
             "Criteria": ["R²", "RMSE", "Weighted RMSE", "AIC", "BIC"],
             "Main Tests": ["Normality test", "Ljung-Box p", "RESET p", "Pearson corr", "Spearman corr", "Rolling R²"],
-            "Optional Tests": ["Spectral ratio", "Run ratio", "Zero-crossings", "Cook’s Distance"]
+            "Optional Tests": ["Spectral ratio", "Run ratio", "Zero-crossings", "Cook’s Distance", "Breusch-Godfrey"]
         }
 
         table_data = [["Metric", "Value", "Acceptable Range", "Possible Range", "Interpretation"]]
@@ -178,23 +197,36 @@ def compare_models_by_metric(output_rows, metric="AIC"):
                 elif metric == "Spectral ratio" and spectral is not None:
                     table_data.append([
                         metric, f"{spectral:.2f}", "< 0.3", "0 to 1",
-                        "Detects low-frequency oscillations or periodic patterns"
+                        interpret_diagnostic("spectral_ratio", spectral, 0.3, spectral < 0.3)
                     ])
                 elif metric == "Run ratio" and run_ratio is not None:
+                    passed = 0.65 < run_ratio < 1.35
                     table_data.append([
                         metric, f"{run_ratio:.2f}", "≈ 1.0", "0 to ~2.0",
-                        "Too low or high implies clustering of residual signs"
+                        interpret_diagnostic("run_ratio", run_ratio, None, passed)
                     ])
                 elif metric == "Zero-crossings" and crossing_sim is not None:
+                    passed = crossing_sim > 80
                     table_data.append([
                         metric, f"{crossing_sim:.1f}%", "> 80%", "0 to 100%",
-                        "Lower % implies structured or directional residuals"
+                        interpret_diagnostic("zero_crossings", crossing_sim, 80, passed)
                     ])
+
                 elif metric == "Cook’s Distance" and cooks is not None:
+                    passed = cooks < 1.0
                     table_data.append([
                         metric, f"{cooks:.3f}", "< 1.0", "0 to ∞",
-                        "High values mean individual points may distort fit"
+                        interpret_diagnostic("cooks_distance", cooks, 1.0, passed)
                     ])
+
+                elif metric == "Breusch-Godfrey" and "bg_p" in row:
+                    bg_p = row["bg_p"]
+                    passed = bg_p > 0.05
+                    table_data.append([
+                        metric, f"{bg_p:.3f}", "> 0.05", "0 to 1",
+                        interpret_diagnostic("bg_p", bg_p, 0.05, passed)
+                    ])
+
 
         logging.info(
             f"\n{rank}. Model: {model}\n" +

@@ -107,6 +107,8 @@ python binding_analysis_tool.py \
 
 ## Input File Format
 
+All data used in the paper is uploaded in `example_data/` folder
+
 See [Input Format and File Structure](Input_and_File_Structure)
 
 ---
@@ -129,7 +131,7 @@ A rich suite of statistical diagnostics is applied to each model's residuals, gr
 
 These are rendered into a per-model table for easy comparison.
 
-See the [Residual Diagnostics wiki page](https://github.com/Deam0on/mysak_delta_iso/wiki/Residual-Diagnostics) for test details, acceptable values, and interpretation.
+See the [Residual Diagnostics wiki page](Residual-Diagnostics) for test details, acceptable values, and interpretation.
 
 ---
 
@@ -141,14 +143,10 @@ Each run creates a `results/` folder with:
 - Per-sample **plots**: data, residuals, and optionally normalized residuals
 - A comprehensive **log.txt** with step-by-step model evaluation
 
-The [Output Format wiki page](https://github.com/Deam0on/mysak_delta_iso/wiki/Output-Files) describes all output files and CSV structure.
-
 ---
 ## Additional Resources
 
-- 📚 [Project Wiki](https://github.com/Deam0on/mysak_delta_iso/wiki)
-- 📂 [Example Dataset](https://github.com/Deam0on/mysak_delta_iso/tree/main/data_input)
-- 📈 [Adding New Models](https://github.com/Deam0on/mysak_delta_iso/wiki/Adding-New-Models)
+- [Project Wiki](https://github.com/Deam0on/mysak_delta_iso/wiki)
 
 For questions or contributions, open an issue or pull request on the [GitHub repo](https://github.com/Deam0on/mysak_delta_iso).
 
