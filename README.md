@@ -9,7 +9,7 @@ This Python-based analysis tool is designed for evaluating titration data from N
 ## Features
 
 - **Model Support**:
-  - Includes HG, H₂G, HG₂, and H₂G + HG binding models
+  - Includes `HG`, `HG + H₂`, `H₂G`, `HG₂`, `H₂G + HG + H₂` binding models
   - Model logic is modularized – easily extendable via the `models/` folder
 
 - **Flexible Fitting & Configuration**:
