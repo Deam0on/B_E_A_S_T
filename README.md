@@ -29,6 +29,7 @@ This Python-based analysis tool is designed for evaluating titration data from N
     - Runs test (sign clustering via run ratio)
     - Zero-crossing white-noise similarity
     - Cook’s Distance (outlier/influence detection)
+    - Breusch-Godfrey / White’s test (auxiliary regression on lagged residuals)
 
 - **Visualization**:
   - Fitted curve vs experimental Δδ
