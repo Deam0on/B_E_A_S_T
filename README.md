@@ -4,29 +4,47 @@ This Python-based analysis tool is designed for evaluating titration data from N
 
 ---
 
-## Features (Section under construction)
+## Features
 
-- Supports multiple host-guest binding models:
-  - 1:1, 1:2, 2:1, dimerization, and multi-equilibrium models
-- Full decoupling of model logic from analysis code
-- Curve fitting using `scipy.optimize.curve_fit`
-- Smart initial guess refinement strategy
-- Configurable fitting parameters via `config.yaml`
-- Fit diagnostics including:
-  - R², AIC, BIC, RMSE, Weighted RMSE
-  - Ljung-Box, Breusch-Godfrey or White's test for residual autocorrelation
-  - Ramsey RESET Test (for model misspecification)
-  - Cook's Distance (influence detection)
-  - Skewness, Kurtosis, and D’Agostino’s normality test
-- Plot generation:
-  - Fitted curves
-  - Raw residuals
-  - Normalized residuals (Δδ-relative)
-- Structured output in CSV and PNG format
-- Logging to terminal and `results/log.txt`
-- Reproducibility guidance in `REPRODUCIBILITY.md`
-- Unit test suite for all models using pytest
-- Google Colab support for cloud-based execution
+- **Model Support**:
+  - Includes 1:1, 1:2, 2:1, dimerization, and general multi-equilibrium binding models
+  - Model logic is modularized – easily extendable via the `models/` folder
+
+- **Flexible Fitting & Configuration**:
+  - Curve fitting using `scipy.optimize.curve_fit`
+  - Smart initial guess refinement strategy to avoid poor local minima
+  - All key settings (initial guesses, bounds, residual test thresholds) configurable via `config.yaml`
+
+- **Detailed Fit Diagnostics** (grouped and structured):
+  - **Criteria**:
+    - R², RMSE, Weighted RMSE, AIC, BIC
+  - **Main Tests**:
+    - Normality check
+    - Ljung-Box test (autocorrelation)
+    - Ramsey RESET test (model misspecification)
+    - Lag-1 Pearson & Spearman correlation of residuals
+    - Rolling R² analysis (local structure detection)
+  - **Optional Tests**:
+    - Spectral energy ratio (low-frequency pattern detection)
+    - Runs test (sign clustering via run ratio)
+    - Zero-crossing white-noise similarity
+    - Cook’s Distance (outlier/influence detection)
+
+- **Visualization**:
+  - Fitted curve vs experimental Δδ
+  - Raw and normalized residuals
+  - Optional colored model overlays
+
+- **Structured Output**:
+  - Results saved in CSV format (per model and per point)
+  - Diagnostic plots saved as PNG
+  - Human-readable diagnostic tables in log
+
+- **User Experience**:
+  - Logging to terminal and `results/log.txt`
+  - Fully modular code structure for reuse and testing
+  - CLI interface with customizable options for quick runs
+  - Google Colab compatible for web/cloud use
 
 ---
 
@@ -35,7 +53,7 @@ This Python-based analysis tool is designed for evaluating titration data from N
 ### Option 1: Google Colab
 
 Launch in Colab:  
-[Open in Colab](https://colab.research.google.com/github/Deam0on/mysak_delta_iso/blob/custom_beta/example_data/colab_template.ipynb)
+[Open in Colab](https://colab.research.google.com/github/Deam0on/mysak_delta_iso/blob/main/example_data/colab_template.ipynb)
 
 ### Option 2: Run Locally
 
