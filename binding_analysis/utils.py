@@ -6,6 +6,89 @@ import statsmodels.api as sm
 from statsmodels.stats.diagnostic import acorr_ljungbox, acorr_breusch_godfrey, het_white
 from scipy.optimize import curve_fit
 from scipy.stats import skew, kurtosis, normaltest
+from scipy.stats import pearsonr, spearmanr
+from statsmodels.sandbox.stats.runs import runstest_1samp
+from scipy.fft import rfft
+
+def custom_residual_pattern_test(residuals):
+    if len(residuals) < 9:
+        return {"composite_stats": None, "composite_flagged": None}
+
+    residuals = np.asarray(residuals)
+    n = len(residuals)
+
+    # Lag-1 Pearson and Spearman
+    pearson_corr, _ = pearsonr(residuals[:-1], residuals[1:])
+    spearman_corr, _ = spearmanr(residuals[:-1], residuals[1:])
+
+    # Spectral energy ratio (low freq)
+    freqs = rfft(residuals)
+    energy = np.abs(freqs)**2
+    low_freq_energy = np.sum(energy[:n//10])
+    total_energy = np.sum(energy)
+    spectral_ratio = low_freq_energy / total_energy if total_energy > 0 else 0
+
+    # Rolling R² (linear fit on residual windows)
+    window = min(5, len(residuals) - 2)
+    rolling_r2 = []
+    for i in range(n - window + 1):
+        x = np.arange(window)
+        y = residuals[i:i+window]
+        slope, intercept = np.polyfit(x, y, 1)
+        y_pred = slope * x + intercept
+        ss_res = np.sum((y - y_pred) ** 2)
+        ss_tot = np.sum((y - np.mean(y)) ** 2)
+        r2 = 1 - ss_res / ss_tot if ss_tot > 0 else 0
+        rolling_r2.append(r2)
+    avg_r2 = np.mean(rolling_r2)
+
+    # Runs test (sign changes)
+    signs = np.sign(residuals - np.mean(residuals))
+    run_stat, p_run = runstest_1samp(signs)
+    expected_runs = (2 * np.sum(signs != 0) - 1) / 3
+    actual_runs = np.sum(np.diff(signs) != 0)
+    run_ratio = actual_runs / expected_runs if expected_runs else 1
+
+    # Heuristic thresholds
+    flagged = (
+        abs(pearson_corr) > 0.35 or
+        abs(spearman_corr) > 0.35 or
+        spectral_ratio > 0.3 or
+        avg_r2 > 0.35 or
+        run_ratio < 0.65 or run_ratio > 1.35
+    )
+
+    return {
+        "composite_stats": {
+            "pearson_corr": pearson_corr,
+            "spearman_corr": spearman_corr,
+            "spectral_ratio": spectral_ratio,
+            "avg_rolling_r2": avg_r2,
+            "run_ratio": run_ratio
+        },
+        "composite_flagged": flagged
+    }
+
+def collect_global_max_deltadelta(input_folder: str) -> float:
+    """
+    Scans all CSV files in the input folder and returns the maximum Δδ across all files.
+    """
+    import pandas as pd
+    import numpy as np
+    from pathlib import Path
+
+    max_ddeltas = []
+
+    for csv_file in Path(input_folder).glob("*.csv"):
+        try:
+            df = pd.read_csv(csv_file)
+            delta = np.abs(df["delta"] - df["delta"].iloc[0])
+            delta.iloc[0] = 0
+            max_ddeltas.append(delta.max())
+        except Exception as e:
+            logging.warning(f"Failed to parse {csv_file.name}: {e}")
+
+    return max(max_ddeltas) if max_ddeltas else 1.0
 
 
 def smart_initial_guess(model_func, H0, d_delta_exp, default_guess, bounds, max_iter=5, perturbation=0.1):
@@ -43,7 +126,7 @@ def advanced_residual_diagnostics(residuals, model_name):
         s = skew(residuals)
         k = kurtosis(residuals)
         stat, p = normaltest(residuals)
-        logging.info(f"[{model_name}] Residual Diagnostics -> Skew: {s:.2f}, Kurtosis: {k:.2f}, Normality p = {p:.4f}")
+        # logging.info(f"[{model_name}] Residual Diagnostics -> Skew: {s:.2f}, Kurtosis: {k:.2f}, Normality p = {p:.4f}")
         return {"skew": s, "kurtosis": k, "normality_p": p}
     except Exception as e:
         logging.warning(f"Residual diagnostics for {model_name} skipped due to: {e}")
@@ -68,8 +151,8 @@ def autocorrelation_tests(H0, residuals, model_name, lags=10):
 
     lags = min(10, n // 5)
 
-    logging.info("-" * 70)
-    logging.info(f"Residual diagnostics for model: {model_name}")
+    # logging.info("-" * 70)
+    # logging.info(f"Residual diagnostics for model: {model_name}")
 
     # Ljung-Box
     if n >= 2 * lags + 1:
@@ -81,7 +164,7 @@ def autocorrelation_tests(H0, residuals, model_name, lags=10):
             "ljung_p": lb_p,
             "ljung_failed": lb_p < 0.05
         })
-        logging.info(f"Ljung-Box:     stat = {lb_stat:.3f}, p = {lb_p:.4f}")
+        # logging.info(f"Ljung-Box:     stat = {lb_stat:.3f}, p = {lb_p:.4f}")
     else:
         logging.info("Ljung-Box test skipped (too few data points).")
         results.update({
@@ -106,11 +189,12 @@ def autocorrelation_tests(H0, residuals, model_name, lags=10):
         "bg_p": bg_p,
         "bg_failed": bg_p < 0.05
     })
-    logging.info(f"{bg_name}: stat = {bg_stat:.3f}, p = {bg_p:.4f}")
+    # logging.info(f"{bg_name}: stat = {bg_stat:.3f}, p = {bg_p:.4f}")
 
     # Ramsey RESET test
     if n >= 15:
         try:
+            model = sm.OLS(residuals, X).fit()
             from statsmodels.stats.diagnostic import linear_reset
             reset_test = linear_reset(model, power=2, use_f=True)
             results.update({
@@ -118,7 +202,7 @@ def autocorrelation_tests(H0, residuals, model_name, lags=10):
                 "reset_p": reset_test.pvalue,
                 "reset_failed": reset_test.pvalue < 0.05
             })
-            logging.info(f"Ramsey RESET:  stat = {reset_test.fvalue:.3f}, p = {reset_test.pvalue:.4f}")
+            # logging.info(f"Ramsey RESET:  stat = {reset_test.fvalue:.3f}, p = {reset_test.pvalue:.4f}")
         except Exception as e:
             logging.warning(f"RESET test failed: {e}")
     else:
@@ -135,7 +219,7 @@ def autocorrelation_tests(H0, residuals, model_name, lags=10):
                 "cooks_max": max_cook,
                 "cooks_extreme": n_extreme
             })
-            logging.info(f"Cook’s Distance: max = {max_cook:.4f}, extreme (>4/n): {n_extreme}")
+            # logging.info(f"Cook’s Distance: max = {max_cook:.4f}, extreme (>4/n): {n_extreme}")
         except Exception as e:
             logging.warning(f"Cook’s Distance failed: {e}")
     else:
@@ -152,7 +236,7 @@ def autocorrelation_tests(H0, residuals, model_name, lags=10):
         similarity = 100 * (1 - abs(zero_crossings - sim_mean) / sim_mean)
         results["zero_crossings"] = zero_crossings
         results["crossing_similarity"] = similarity
-        logging.info(f"Zero-crossings: {zero_crossings} | Similarity to white noise: {similarity:.2f}%")
+        # logging.info(f"Zero-crossings: {zero_crossings} | Similarity to white noise: {similarity:.2f}%")
     except Exception as e:
         logging.warning(f"Zero-crossing similarity test failed: {e}")
 
@@ -213,7 +297,9 @@ def save_combined_csv(results, output_file):
                 "cooks_max": result.get("cooks_max"),
                 "cooks_extreme": result.get("cooks_extreme"),
                 "crossing_similarity": result.get("crossing_similarity"),
-                "zero_crossings": result.get("zero_crossings")
+                "zero_crossings": result.get("zero_crossings"),
+                "composite_flagged": result.get("composite_flagged"),
+                "composite_stats": str(result.get("composite_stats"))
             })
 
     pd.DataFrame(rows).to_csv(output_file, index=False)

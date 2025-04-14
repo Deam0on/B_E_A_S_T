@@ -44,6 +44,8 @@ def parse_args():
     parser.add_argument("--no_normalized", action="store_true", help="Do not show/save normalized residual plots.")
     parser.add_argument("--input_dir", type=str, help="Override input directory (default: from config)")
     parser.add_argument("--output_dir", type=str, help="Override output directory (default: from config)")
+    parser.add_argument("--global_norm", action="store_true", help="Normalize residuals using global max Δδ.")
+    parser.add_argument("--custom_residual_check", action="store_true", help="Enable custom pattern-based residual test.")
     return parser.parse_args()
 
 def main():
@@ -62,7 +64,8 @@ def main():
     # Store CLI flags in config
     config["cli_flags"] = {
         "skip_tests": args.skip_tests,
-        "no_normalized": args.no_normalized
+        "no_normalized": args.no_normalized,
+        "custom_residual_check": args.custom_residual_check
     }
 
     os.makedirs(output_dir, exist_ok=True)
