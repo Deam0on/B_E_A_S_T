@@ -20,14 +20,13 @@ This Python-based analysis tool is designed for evaluating titration data from N
 - **Detailed Fit Diagnostics** (grouped and structured):
   - **Criteria**:
     - R², RMSE, Weighted RMSE, AIC, BIC
-  - **Main Tests**:
+  - **Core Tests**:
     - Normality check
     - Ljung-Box test (autocorrelation)
     - Ramsey RESET test (model misspecification)
     - Lag-1 Pearson & Spearman correlation of residuals
     - Rolling R² analysis (local structure detection)
   - **Optional Tests**:
-    - Spectral energy ratio (low-frequency pattern detection)
     - Runs test (sign clustering via run ratio)
     - Zero-crossing white-noise similarity
     - Cook’s Distance (outlier/influence detection)
