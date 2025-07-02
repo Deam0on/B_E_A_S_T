@@ -21,14 +21,14 @@ This Python-based analysis tool is designed for evaluating titration data from N
   - **Criteria**:
     - R², RMSE, Weighted RMSE, AIC, BIC
   - **Core Tests**:
-    - Normality check
+    - Shapiro-Wilk (normality test)
     - Ljung-Box test (autocorrelation)
     - Ramsey RESET test (model misspecification)
     - Lag-1 Pearson & Spearman correlation of residuals
     - Rolling R² analysis (local structure detection)
   - **Optional Tests**:
-    - Runs test (sign clustering via run ratio)
-    - Zero-crossing white-noise similarity
+    - Runs Test Ratio (sign clustering via run ratio)
+    - Similarity of the residual's zero-crossing behavior
     - Cook’s Distance (outlier/influence detection)
     - Breusch-Godfrey / White’s test (auxiliary regression on lagged residuals)
 
@@ -54,7 +54,7 @@ This Python-based analysis tool is designed for evaluating titration data from N
 
 ### Option 1: Google Colab
 
-Launch in [Google Colab](https://colab.research.google.com/github/Deam0on/mysak_delta_iso/blob/main/example_data/colab_template.ipynb)
+Launch in [Google Colab](https://colab.research.google.com/github/Deam0on/B_E_A_S_T/blob/main/example_data/colab_template.ipynb)
 
 Set of experimental data can be found under `example_data/`
 
@@ -63,8 +63,8 @@ Set of experimental data can be found under `example_data/`
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/Deam0on/mysak_delta_iso.git
-cd mysak_delta_iso/binding_analysis
+git clone https://github.com/Deam0on/B_E_A_S_T.git
+cd B_E_A_S_T/binding_analysis
 ```
 
 2. Install dependencies:
@@ -112,7 +112,7 @@ python binding_analysis_tool.py \
 
 All data used in the paper is uploaded in `example_data/` folder
 
-See [Input Format and File Structure](https://github.com/Deam0on/mysak_delta_iso/wiki/Input_and_File_Structure)
+See [Input Format and File Structure](https://github.com/Deam0on/B_E_A_S_T/wiki/Input_and_File_Structure)
 
 ---
 
@@ -120,7 +120,7 @@ See [Input Format and File Structure](https://github.com/Deam0on/mysak_delta_iso
 
 This repository includes multiple binding models used to fit NMR titration data. Below are the corresponding equations and definitions of parameters.
 
-For detailed model description, see [Binding Models and Theory](https://github.com/Deam0on/mysak_delta_iso/wiki/Binding_Models_and_Theory)
+For detailed model description, see [Binding Models and Theory](https://github.com/Deam0on/B_E_A_S_T/wiki/Binding_Models_and_Theory)
 
 ---
 
@@ -134,7 +134,7 @@ A rich suite of statistical diagnostics is applied to each model's residuals, gr
 
 These are rendered into a per-model table for easy comparison.
 
-See the [Residual Diagnostics wiki page](https://github.com/Deam0on/mysak_delta_iso/wiki/Residual_Diagnostics) for test details, acceptable values, and interpretation.
+See the [Residual Diagnostics wiki page](https://github.com/Deam0on/B_E_A_S_T/wiki/Residual_Diagnostics) for test details, acceptable values, and interpretation.
 
 ---
 
@@ -149,9 +149,9 @@ Each run creates a `results/` folder with:
 ---
 ## Additional Resources
 
-- [Project Wiki](https://github.com/Deam0on/mysak_delta_iso/wiki)
+- [Project Wiki](https://github.com/Deam0on/B_E_A_S_T/wiki)
 
-For questions or contributions, open an issue or pull request on the [GitHub repo](https://github.com/Deam0on/mysak_delta_iso).
+For questions or contributions, open an issue or pull request on the [GitHub repo](https://github.com/Deam0on/B_E_A_S_T).
 
 ---
 
