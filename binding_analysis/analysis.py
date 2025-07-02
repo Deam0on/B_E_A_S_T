@@ -16,12 +16,12 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from models import model_definitions
+from .models import model_definitions
 from scipy.optimize import curve_fit, least_squares
 from scipy.stats import pearsonr, spearmanr
 from statsmodels.api import OLS, add_constant
 from tabulate import tabulate
-from utils import (
+from .utils import (
     autocorrelation_tests,
     collect_global_max_deltadelta,
     custom_residual_pattern_test,
@@ -250,11 +250,17 @@ def compare_models_by_metric(
             logging.info(f"    Diagnostic flags: {', '.join(flags)}")
 
         logging.info("-" * 50)
+        # Extract diagnostic values from row data
         cooks = row.get("cooks_max")
         zero_crossings = row.get("zero_crossings")
         crossing_sim = row.get("crossing_similarity")
         bg_white = row.get("bg_p")
         bg_or_white = row.get("bg_test")
+        ljung = row.get("ljung_p")
+        reset_p = row.get("reset_p")
+        spectral = row.get("spectral_ratio")
+        run_ratio = row.get("run_ratio")
+        comp_stats = row.get("composite_stats", {})
 
         # Build section headers and metric keys
         section_headers = {
@@ -336,13 +342,14 @@ def compare_models_by_metric(
                         ]
                     )
                 elif metric == "Normality test":
+                    normality_pass = row.get("normality_pass", True)
                     table_data.append(
                         [
                             metric,
-                            "Passed" if norm_raw else "Failed",
+                            "Passed" if normality_pass else "Failed",
                             "Passed",
                             "Passed / Failed",
-                            interpret_diagnostic("normality", None, None, norm_raw),
+                            interpret_diagnostic("normality", None, None, normality_pass),
                         ]
                     )
                 elif metric == "Ljung-Box p" and ljung is not None:
