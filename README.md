@@ -21,14 +21,14 @@ This Python-based analysis tool is designed for evaluating titration data from N
   - **Criteria**:
     - R², RMSE, Weighted RMSE, AIC, BIC
   - **Core Tests**:
-    - Normality check
+    - Shapiro-Wilk (normality test)
     - Ljung-Box test (autocorrelation)
     - Ramsey RESET test (model misspecification)
     - Lag-1 Pearson & Spearman correlation of residuals
     - Rolling R² analysis (local structure detection)
   - **Optional Tests**:
-    - Runs test (sign clustering via run ratio)
-    - Zero-crossing white-noise similarity
+    - Runs Test Ratio(sign clustering via run ratio)
+    - Similarity of the residual's zero-crossing behavior
     - Cook’s Distance (outlier/influence detection)
     - Breusch-Godfrey / White’s test (auxiliary regression on lagged residuals)
 
