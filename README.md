@@ -126,7 +126,7 @@ For detailed model description, see [Binding Models and Theory](https://github.c
 
 ## Residual Diagnostics
 
-A rich suite of statistical diagnostics is applied to each model's residuals, grouped into:
+A suite of statistical diagnostics is applied to each model's residuals, grouped into:
 
 - **Criteria metrics** (e.g., R², AIC)
 - **Main diagnostics** (e.g., Ljung-Box, RESET)
