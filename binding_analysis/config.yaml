@@ -1,38 +1,84 @@
+# BEAST Configuration File
+# Configure analysis parameters, model settings, and diagnostic thresholds
+
 general:
+  # Maximum function evaluations for curve fitting
   maxfev: 100000
+  
+  # Number of lags for autocorrelation tests
   lags: 10
+  
+  # Output directory for results
   results_dir: results
+  
+  # Input directory containing CSV files
   input_dir: data_input
+  
+  # Enable smart initial parameter guessing
   use_smart_guess: true
+  
+  # Enable model comparison and ranking
   compare_models: true
+  
+  # Enable advanced residual diagnostics
   advanced_residuals: true
 
+# Model-specific settings for initial guesses and parameter bounds
 models:
+  # 1:1 Host-Guest binding (H + G ⇌ HG)
   "1:1":
-    initial_guess: [100, 100]
+    initial_guess: [100, 100]  # [Ka, d_inf]
     bounds:
-      lower: [0, 0]
-      upper: [1e6, 1e6]
+      lower: [0, -1e6]         # [Ka_min, d_inf_min]
+      upper: [1e6, 1e6]        # [Ka_max, d_inf_max]
 
+  # 1:2 Host-Guest binding (H + G ⇌ HG, HG + G ⇌ HG₂)
   "1:2":
-    initial_guess: [100, 100, 100, 100]
+    initial_guess: [100, 100, 100, 100]  # [Ka, Kd, d_inf_1, d_inf_2]
     bounds:
-      lower: [0, 0, -1e6, -1e6]
+      lower: [0, 0, -1e6, -1e6]           # Binding constants must be positive
       upper: [1e6, 1e6, 1e6, 1e6]
+
+  # 2:1 Host-Guest binding (H + G ⇌ HG, H + HG ⇌ H₂G)
   "2:1":
-    initial_guess: [100, 100, 100, 100]
+    initial_guess: [100, 100, 100, 100]  # [Ka, Kd, d_inf_1, d_inf_2]
     bounds:
       lower: [0, 0, -1e6, -1e6]
       upper: [1e6, 1e6, 1e6, 1e6]
 
+  # Host-Guest binding with dimerization (H + G ⇌ HG, 2H ⇌ H₂)
   "dimer":
-    initial_guess: [100, 100, 100, 100]
+    initial_guess: [100, 100, 100, 100]  # [Ka, Kd, d_inf_1, d_inf_2]
     bounds:
       lower: [0, 0, -1e6, -1e6]
       upper: [1e6, 1e6, 1e6, 1e6]
 
+  # Multi-equilibrium system (H + G ⇌ HG, 2H ⇌ H₂, H₂ + G ⇌ H₂G)
   "multi":
-    initial_guess: [100, 100, 100, 100, 100, 100]
+    initial_guess: [100, 100, 100, 100, 100, 100]  # [KHG, Kd, KH2G, dG, dHG, dH2G]
     bounds:
-      lower: [0, 0, 0, -1e6, -1e6, -1e6]
+      lower: [0, 0, 0, -1e6, -1e6, -1e6]           # Binding constants positive, shifts can be negative
       upper: [1e6, 1e6, 1e6, 1e6, 1e6, 1e6]
+
+# Diagnostic test thresholds (p-values)
+diagnostics:
+  # Significance level for statistical tests
+  alpha: 0.05
+  
+  # Ljung-Box test for autocorrelation
+  ljung_box_threshold: 0.05
+  
+  # Ramsey RESET test for functional form
+  reset_threshold: 0.05
+  
+  # Normality test threshold
+  normality_threshold: 0.05
+  
+  # Custom pattern detection thresholds
+  pattern_detection:
+    pearson_threshold: 0.35      # Lag-1 correlation
+    spearman_threshold: 0.35     # Lag-1 rank correlation
+    spectral_threshold: 0.3      # Low-frequency energy ratio
+    rolling_r2_threshold: 0.35   # Local trend detection
+    run_ratio_lower: 0.65        # Minimum run ratio
+    run_ratio_upper: 1.35        # Maximum run ratio
