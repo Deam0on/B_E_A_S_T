@@ -27,7 +27,7 @@ This Python-based analysis tool is designed for evaluating titration data from N
     - Lag-1 Pearson & Spearman correlation of residuals
     - Rolling R² analysis (local structure detection)
   - **Optional Tests**:
-    - Runs Test Ratio(sign clustering via run ratio)
+    - Runs Test Ratio (sign clustering via run ratio)
     - Similarity of the residual's zero-crossing behavior
     - Cook’s Distance (outlier/influence detection)
     - Breusch-Godfrey / White’s test (auxiliary regression on lagged residuals)
