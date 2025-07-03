@@ -25,7 +25,7 @@ This Python-based analysis tool is designed for evaluating titration data from N
     - Ljung-Box test (autocorrelation)
     - Ramsey RESET test (model misspecification)
     - Lag-1 Pearson & Spearman correlation of residuals
-    - Rolling R² analysis (local structure detection)
+    - Rolling window R² analysis (local structure detection)
   - **Optional Tests**:
     - Runs Test Ratio (sign clustering via run ratio)
     - Similarity of the residual's zero-crossing behavior
