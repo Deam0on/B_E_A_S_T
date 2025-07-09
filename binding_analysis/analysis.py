@@ -16,12 +16,12 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from .models import model_definitions
+from models import model_definitions
 from scipy.optimize import curve_fit, least_squares
 from scipy.stats import pearsonr, spearmanr
 from statsmodels.api import OLS, add_constant
 from tabulate import tabulate
-from .utils import (
+from utils import (
     autocorrelation_tests,
     collect_global_max_deltadelta,
     custom_residual_pattern_test,
@@ -290,82 +290,84 @@ def compare_models_by_metric(
             full_span = f"=== {section} ===".center(95)
             table_data.append([full_span, "", "", "", ""])
 
-            for metric in metrics:
-                if metric == "R²":
+            for metric_name in metrics:
+                if metric_name == "R²":
                     table_data.append(
                         [
-                            metric,
+                            metric_name,
                             f"{r2:.4f}",
                             "> 0.98",
                             "0 to 1",
                             interpret_diagnostic("r2", r2, 0.98, r2 > 0.98),
                         ]
                     )
-                elif metric == "RMSE":
+                elif metric_name == "RMSE":
                     table_data.append(
                         [
-                            metric,
+                            metric_name,
                             f"{rmse:.4f}",
                             "Low",
                             "0 to ∞",
                             "Lower indicates better fit",
                         ]
                     )
-                elif metric == "Weighted RMSE" and wrmse is not None:
+                elif metric_name == "Weighted RMSE" and wrmse is not None:
                     table_data.append(
                         [
-                            metric,
+                            metric_name,
                             f"{wrmse:.4f}",
                             "Low",
                             "0 to ∞",
                             "Used for comparison across datasets",
                         ]
                     )
-                elif metric == "AIC":
+                elif metric_name == "AIC":
                     table_data.append(
                         [
-                            metric,
+                            metric_name,
                             f"{aic:.2f}",
                             "Low",
                             "−∞ to ∞",
                             "Used to compare model fit (penalized)",
                         ]
                     )
-                elif metric == "BIC":
+                elif metric_name == "BIC":
                     table_data.append(
                         [
-                            metric,
+                            metric_name,
                             f"{bic:.2f}",
                             "Low",
                             "−∞ to ∞",
                             "Stricter than AIC for model comparison",
                         ]
                     )
-                elif metric == "Normality test":
+                elif metric_name == "Normality test":
                     normality_pass = row.get("normality_pass", True)
                     table_data.append(
                         [
-                            metric,
+                            metric_name,
                             "Passed" if normality_pass else "Failed",
                             "Passed",
                             "Passed / Failed",
-                            interpret_diagnostic("normality", None, None, normality_pass),
+                            interpret_diagnostic(
+                                "normality", None, None, normality_pass
+                            ),
                         ]
                     )
-                elif metric == "Ljung-Box p" and ljung is not None:
+                elif metric_name == "Ljung-Box p" and ljung is not None:
                     table_data.append(
                         [
-                            metric,
+                            metric_name,
                             f"{ljung:.3f}",
                             "> 0.05",
                             "0 to 1",
                             interpret_diagnostic("ljung", ljung, 0.05, ljung > 0.05),
                         ]
                     )
-                elif metric == "RESET p" and reset_p is not None:
+                elif metric_name == "RESET p" and reset_p is not None:
                     table_data.append(
                         [
-                            metric,
+                            metric_name,
                             f"{reset_p:.4f}",
                             "> 0.05",
                             "0 to 1",
@@ -374,43 +376,43 @@ def compare_models_by_metric(
                             ),
                         ]
                     )
-                elif metric == "Pearson corr" and "pearson_corr" in comp_stats:
+                elif metric_name == "Pearson corr" and "pearson_corr" in comp_stats:
                     p = comp_stats["pearson_corr"]
                     table_data.append(
                         [
-                            metric,
+                            metric_name,
                             f"{p:.2f}",
                             "< 0.35",
                             "-1 to 1",
                             interpret_diagnostic("pearson", p, 0.35, abs(p) < 0.35),
                         ]
                     )
-                elif metric == "Spearman corr" and "spearman_corr" in comp_stats:
+                elif metric_name == "Spearman corr" and "spearman_corr" in comp_stats:
                     s = comp_stats["spearman_corr"]
                     table_data.append(
                         [
-                            metric,
+                            metric_name,
                             f"{s:.2f}",
                             "< 0.35",
                             "-1 to 1",
                             interpret_diagnostic("spearman", s, 0.35, abs(s) < 0.35),
                         ]
                     )
-                elif metric == "Rolling R²" and "avg_rolling_r2" in comp_stats:
+                elif metric_name == "Rolling R²" and "avg_rolling_r2" in comp_stats:
                     r = comp_stats["avg_rolling_r2"]
                     table_data.append(
                         [
-                            metric,
+                            metric_name,
                             f"{r:.2f}",
                             "< 0.35",
                             "0 to 1",
                             interpret_diagnostic("rolling_r2", r, 0.35, r < 0.35),
                         ]
                     )
-                elif metric == "Spectral ratio" and spectral is not None:
+                elif metric_name == "Spectral ratio" and spectral is not None:
                     table_data.append(
                         [
-                            metric,
+                            metric_name,
                             f"{spectral:.2f}",
                             "< 0.3",
                             "0 to 1",
@@ -419,22 +421,22 @@ def compare_models_by_metric(
                             ),
                         ]
                     )
-                elif metric == "Run ratio" and run_ratio is not None:
+                elif metric_name == "Run ratio" and run_ratio is not None:
                     passed = 0.65 < run_ratio < 1.35
                     table_data.append(
                         [
-                            metric,
+                            metric_name,
                             f"{run_ratio:.2f}",
                             "≈ 1.0",
                             "0 to ~2.0",
                             interpret_diagnostic("run_ratio", run_ratio, None, passed),
                         ]
                     )
-                elif metric == "Zero-crossings" and crossing_sim is not None:
+                elif metric_name == "Zero-crossings" and crossing_sim is not None:
                     passed = crossing_sim > 80
                     table_data.append(
                         [
-                            metric,
+                            metric_name,
                             f"{crossing_sim:.1f}%",
                             "> 80%",
                             "0 to 100%",
@@ -444,11 +446,11 @@ def compare_models_by_metric(
                         ]
                     )
 
-                elif metric == "Cook’s Distance" and cooks is not None:
+                elif metric_name == "Cook's Distance" and cooks is not None:
                     passed = cooks < 1.0
                     table_data.append(
                         [
-                            metric,
+                            metric_name,
                             f"{cooks:.3f}",
                             "< 1.0",
                             "0 to ∞",
@@ -456,11 +458,11 @@ def compare_models_by_metric(
                         ]
                     )
 
-                elif metric == "Breusch-Godfrey" and bg_white is not None:
+                elif metric_name == "Breusch-Godfrey" and bg_white is not None:
                     passed = bg_white > 0.05
                     table_data.append(
                         [
-                            bg_or_white,
+                            metric_name,
                             f"{bg_white:.3f}",
                             "> 0.05",
                             "0 to 1",
@@ -545,30 +547,6 @@ def advanced_residual_diagnostics(
     }
 
     return results
-    kurtosis = pd.Series(residuals).kurtosis()
-
-    # logging.info(f"Additional diagnostics for {model_name}:")
-    # logging.info(f"Skewness: {skewness:.3f}, Kurtosis: {kurtosis:.3f}")
-    # if not normality_pass:
-    #     logging.warning("Residuals may not be normally distributed (outliers or heavy tails).")
-
-    result = {
-        **autocorr,
-        "skewness": skewness,
-        "kurtosis": kurtosis,
-        "normality_pass": normality_pass,
-    }
-
-    if enable_custom_corr:
-        custom = custom_residual_pattern_test(residuals)
-        result.update(
-            {
-                "composite_flagged": custom.get("composite_flagged"),
-                "composite_stats": custom.get("composite_stats"),
-            }
-        )
-
-    return result
 
 
 def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False):
