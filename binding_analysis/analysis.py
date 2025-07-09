@@ -16,12 +16,12 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from binding_analysis.models import model_definitions
+from models import model_definitions
 from scipy.optimize import curve_fit, least_squares
 from scipy.stats import pearsonr, spearmanr
 from statsmodels.api import OLS, add_constant
 from tabulate import tabulate
-from binding_analysis.utils import (
+from utils import (
     autocorrelation_tests,
     collect_global_max_deltadelta,
     custom_residual_pattern_test,
