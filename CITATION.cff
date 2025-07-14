@@ -1,0 +1,39 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "BEAST - Binding Evaluation and Analysis Software Tool"
+version: 1.0.0
+date-released: 2025-01-01
+url: "https://github.com/Deam0on/B_E_A_S_T"
+repository-code: "https://github.com/Deam0on/B_E_A_S_T"
+authors:
+  - family-names: "Hládek"
+    given-names: "Filip"
+    email: "info.f@hladek.cz"
+license: MIT
+abstract: >-
+  BEAST (Binding Evaluation and Analysis Software Tool) is a Python-based 
+  analysis tool designed for evaluating titration data from NMR experiments. 
+  It fits experimental chemical shift data to multiple thermodynamic binding 
+  models and estimates association constants. The tool supports batch analysis, 
+  model fitting, statistical diagnostics, and reproducible outputs.
+keywords:
+  - "NMR"
+  - "titration"
+  - "binding"
+  - "thermodynamics"
+  - "curve-fitting"
+  - "chemistry"
+  - "chemical shift"
+  - "association constants"
+  - "binding models"
+preferred-citation:
+  type: software
+  title: "BEAST - Binding Evaluation and Analysis Software Tool"
+  authors:
+    - family-names: "Hládek"
+      given-names: "Filip"
+      email: "info.f@hladek.cz"
+  version: 1.0.0
+  url: "https://github.com/Deam0on/B_E_A_S_T"
+  year: 2025
