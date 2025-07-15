@@ -19,16 +19,20 @@ This Python-based analysis tool is designed for evaluating titration data from N
 
 - **Detailed Fit Diagnostics** (grouped and structured):
   - **Criteria**:
-    - R², RMSE, Weighted RMSE, AIC, BIC
+    - Coefficient of determination (R²)
+    - Root Mean Square Error (RMSE)
+    - Weighted Root Mean Square Error (wRMSE)
+    - Akaike Information Criterion (AIC)
+    - Bayesian Information Criterion (BIC)
   - **Core Tests**:
     - Shapiro-Wilk (normality test)
     - Ljung-Box test (autocorrelation)
     - Ramsey RESET test (model misspecification)
-    - Lag-1 Pearson & Spearman correlation of residuals
+    - Lag-1 Pearson & Spearman correlation of residuals (PC & SC)
     - Rolling window R² analysis (local structure detection)
   - **Optional Tests**:
     - Runs Test Ratio (sign clustering via run ratio)
-    - Similarity of the residual's zero-crossing behavior
+    - Similarity of the residual's zero-crossing behavior (ZC)
     - Cook’s Distance (outlier/influence detection)
     - Breusch-Godfrey / White’s test (auxiliary regression on lagged residuals)
 
