@@ -128,13 +128,13 @@ For detailed model description, see [Binding Models and Theory](https://github.c
 
 ---
 
-## Residual Diagnostics
+## Fit Diagnostics
 
 A suite of statistical diagnostics is applied to each model's residuals, grouped into:
 
-- **Criteria metrics** (e.g., R², AIC)
-- **Main diagnostics** (e.g., Ljung-Box, RESET)
-- **Optional residual pattern checks** (e.g., Pearson/Spearman correlation, spectral energy ratio)
+- **Criteria** - Standard fit quality metrics
+- **Core Tests** - Essential statistical tests for model validation
+- **Optional Tests** - Advanced pattern detection and outlier analysis
 
 These are rendered into a per-model table for easy comparison.
 
