@@ -138,7 +138,7 @@ A suite of statistical diagnostics is applied to each model's residuals, grouped
 
 These are rendered into a per-model table for easy comparison.
 
-See the [Residual Diagnostics wiki page](https://github.com/Deam0on/B_E_A_S_T/wiki/Residual_Diagnostics) for test details, acceptable values, and interpretation.
+See the [Fit Diagnostics wiki page](https://github.com/Deam0on/B_E_A_S_T/wiki/Fit_Diagnostics) for test details, acceptable values, and interpretation.
 
 ---
 
