@@ -196,9 +196,9 @@ def binding_dimer(
 
         # Chemical shift calculation
         numerator = (d_inf_1 * G0_i) / (1 + Ka * H_free) + (
-            d_inf_2 * Ka * H_free * G0_i
+            d_inf_2 * Ka * H_free * G0_i / (1 + Ka * H_free)
         )
-        denominator = (G0_i / (1 + Ka * H_free)) + (Ka * H_free * G0_i)
+        denominator = (G0_i / (1 + Ka * H_free)) + (Ka * H_free * G0_i / (1 + Ka * H_free))
 
         d_obs[i] = numerator / denominator
 
