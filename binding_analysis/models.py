@@ -43,7 +43,7 @@ def binding_isotherm_1_1(
     HG = 0.5 * (term - sqrt_term)
 
     # Chemical shift calculation
-    d_delta_comp = (d_free * (HG - G0) / G0) + (d_inf * (HG / G0))
+    d_delta_comp = (d_free * (G0-HG) / G0) + (d_inf * (HG / G0))
     return d_delta_comp
 
 
