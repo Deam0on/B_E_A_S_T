@@ -686,6 +686,7 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
 
                 logging.info(f"Model {model_name} fit completed")
                 logging.info(f"Parameters: {params}")
+                logging.debug(f"Parm - results: {results}")
 
             except Exception as e:
                 logging.error(f"Exception in model {model_name}: {e}")
