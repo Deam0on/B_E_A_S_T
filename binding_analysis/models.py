@@ -79,7 +79,7 @@ def binding_isotherm_1_2(
 
         # Cubic equation coefficients for G_free
         a = Ka * Kd
-        b = Ka * ((2 * Kd * H0_i) - (Kd * G0_i) + 1)
+        b = Ka * (2 * Kd * H0_i - Kd * G0_i + 1)
         c = Ka * (H0_i - G0_i) + 1
         d = -G0_i
 
@@ -93,10 +93,15 @@ def binding_isotherm_1_2(
         )
 
         # Chemical shift calculation
-        numerator = d_inf_1 * G0_i * Ka * G_free + d_inf_2 * G0_i * Ka * Kd * G_free**2
-        denominator = 1 + Ka * G_free + Ka * Kd * G_free**2
+        # numerator = d_inf_1 * G0_i * Ka * G_free + d_inf_2 * G0_i * Ka * Kd * G_free**2
+        # # denominator = 1 + Ka * G_free + Ka * Kd * G_free**2
 
-        d_delta_comp[i] = numerator / denominator
+        # d_delta_comp[i] = numerator / denominator
+
+        HG = (Ka * H0_i * G_free) / (1 + Ka * G_free + Ka * Kd * G_free**2)
+        HG2 = (Ka * Kd * H0_i * G_free**2) / (1 + Ka * G_free + Ka * Kd * G_free**2)
+
+        d_delta_comp[i] = (d_inf_1 * HG + 2 * d_inf_2 * HG2) / G0_i
 
     return d_delta_comp
 
@@ -131,7 +136,7 @@ def binding_isotherm_2_1(
 
         # Cubic equation coefficients for H_free
         a = Ka * Kd
-        b = Ka * ((2 * Kd * G0_i) - (Kd * H0_i) + 1)
+        b = Ka * (2 * Kd * G0_i - Kd * H0_i + 1)
         c = Ka * (G0_i - H0_i) + 1
         d = -H0_i
 
@@ -145,16 +150,17 @@ def binding_isotherm_2_1(
         )
 
         # Chemical shift calculation
-        numerator = (
-            d_inf_1 * G0_i * Ka * H_free + 2 * d_inf_2 * G0_i * Ka * Kd * H_free**2
-        )
-        if H0_i <= 0:
-            d_delta_comp[i] = 0
-        else:
-            denominator = H0_i * (1 + Ka * H_free + Ka * Kd * H_free**2)
-            d_delta_comp[i] = numerator / denominator
+        # numerator = (
+        #     d_inf_1 * G0_i * Ka * H_free + 2 * d_inf_2 * G0_i * Ka * Kd * H_free**2
+        # )
+        # denominator = G0_i * (1 + Ka * H_free + Ka * Kd * H_free**2)
 
         # d_delta_comp[i] = numerator / denominator
+
+        HG = (Ka * H_free * G0_i) / (1 + Ka * H_free + Ka * Kd * H_free**2)
+        H2G = (Ka * Kd * H_free**2 * G0_i) / (1 + Ka * H_free + Ka * Kd * H_free**2)
+
+        d_delta_comp[i] = (d_inf_1 * HG + 2 * d_inf_2 * H2G) / G0_i
 
     return d_delta_comp
 
