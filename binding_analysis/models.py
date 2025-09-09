@@ -148,7 +148,7 @@ def binding_isotherm_2_1(
         numerator = (
             d_inf_1 * H0_i * Ka * H_free + 2 * d_inf_2 * H0_i * Ka * Kd * H_free**2
         )
-        if G0_i>0:
+        if G0_i <= 0:
             d_delta_comp[i] = 0
         else:
             denominator = G0_i * (1 + Ka * H_free + Ka * Kd * H_free**2)
