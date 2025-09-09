@@ -93,8 +93,7 @@ def binding_isotherm_1_2(
         )
 
         # Chemical shift calculation
-        # numerator = d_inf_1 * G0_i * Ka * G_free + d_inf_2 * G0_i * Ka * Kd * G_free**2
-        numerator = d_inf_1 * Ka * G_free + d_inf_2 * Ka * Kd * G_free**2
+        numerator = d_inf_1 * G0_i * Ka * G_free + d_inf_2 * G0_i * Ka * Kd * G_free**2
         denominator = 1 + Ka * G_free + Ka * Kd * G_free**2
 
         d_delta_comp[i] = numerator / denominator
@@ -150,7 +149,7 @@ def binding_isotherm_2_1(
             d_inf_1 * G0_i * Ka * H_free + 2 * d_inf_2 * G0_i * Ka * Kd * H_free**2
         )
         # denominator = G0_i * (1 + Ka * H_free + Ka * Kd * H_free**2)
-        denominator = H0_i * (1 + Ka * H_free + Ka * Kd * H_free**2)
+        denominator = (1 + Ka * H_free + Ka * Kd * H_free**2)
 
         d_delta_comp[i] = numerator / denominator
 
