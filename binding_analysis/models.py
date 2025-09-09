@@ -146,12 +146,12 @@ def binding_isotherm_2_1(
 
         # Chemical shift calculation
         numerator = (
-            d_inf_1 * H0_i * Ka * H_free + 2 * d_inf_2 * H0_i * Ka * Kd * H_free**2
+            d_inf_1 * G0_i * Ka * H_free + 2 * d_inf_2 * G0_i * Ka * Kd * H_free**2
         )
         if G0_i <= 0:
             d_delta_comp[i] = 0
         else:
-            denominator = G0_i * (1 + Ka * H_free + Ka * Kd * H_free**2)
+            denominator = H0_i * (1 + Ka * H_free + Ka * Kd * H_free**2)
             d_delta_comp[i] = numerator / denominator
 
         # d_delta_comp[i] = numerator / denominator
