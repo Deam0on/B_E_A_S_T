@@ -71,6 +71,7 @@ def binding_isotherm_1_2(
         Calculated chemical shift changes (Δδ)
     """
     H0, G0 = np.asarray(H0), np.asarray(G0)
+    HG, HG2 = np.asarray(H0), np.asarray(G0)
     d_delta_comp = np.zeros_like(H0, dtype=float)
     epsilon = 1e-10
 
@@ -128,6 +129,8 @@ def binding_isotherm_2_1(
         Calculated chemical shift changes (Δδ)
     """
     H0, G0 = np.asarray(H0), np.asarray(G0)
+    HG, H2G = np.asarray(H0), np.asarray(G0)
+    
     d_delta_comp = np.zeros_like(H0, dtype=float)
     epsilon = 1e-10
 
