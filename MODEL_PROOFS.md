@@ -2,15 +2,6 @@
 
 This document provides detailed mathematical derivations for the 1:1, 1:2, and 2:1 host-guest binding models used in BEAST (Binding Evaluation and Analysis Software Tool).
 
-## Table of Contents
-- [1:1 Host-Guest Binding Model](#11-host-guest-binding-model)
-- [1:2 Host-Guest Binding Model](#12-host-guest-binding-model)
-- [2:1 Host-Guest Binding Model](#21-host-guest-binding-model)
-- [Host Dimerization Model (HG + H₂)](#host-dimerization-model-hg--h2)
-- [Multi-Equilibrium Model (HG + H₂ + H₂G)](#multi-equilibrium-model-hg--h2--h2g)
-- [Chemical Shift Calculations](#chemical-shift-calculations)
-- [References](#references)
-
 ---
 
 ## 1:1 Host-Guest Binding Model
@@ -284,7 +275,7 @@ $$[H_0] + [H_0]K_a[H] = [H] + K_a[H]^2 + K_a[H][G_0] + 2K_d[H]^2 + 2K_dK_a[H]^3$
 
 Rearranging:
 
-$$2K_dK_a[H]^3 + 2K_d[H]^2 + K_a([G_0] - [H_0])[H] + [H_0] = 0$$
+$$2K_dK_a[H]^3 + (K_a + 2K_d)[H]^2 + (K_a([G_0] - [H_0])+1)[H] + [H_0] = 0$$
 
 **Cubic equation in [H] (free host concentration):**
 
@@ -293,8 +284,8 @@ $$a[H]^3 + b[H]^2 + c[H] + d = 0$$
 Where:
 
 - $a = 2K_aK_d$
-- $b = 2K_d$
-- $c = K_a([G_0] - [H_0])$
+- $b = K_a + 2K_d$
+- $c = K_a([G_0] - [H_0]) + 1$
 - $d = [H_0]$
 
 ---
