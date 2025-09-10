@@ -15,6 +15,31 @@ import numpy as np
 # Type aliases for clarity
 ArrayLike = Union[np.ndarray, list, float]
 
+def select_physical_root(roots, lower, upper, epsilon=1e-10):
+    """
+    Select a physically valid root from real roots.
+
+    Args:
+        roots: array-like of candidate roots (complex allowed)
+        lower: lower bound (e.g. 0)
+        upper: upper bound (e.g. total concentration G0 or H0)
+        epsilon: tolerance for positivity
+
+    Returns:
+        Selected root (float)
+    """
+    real_roots = np.real(roots[np.isreal(roots)])
+    # Keep roots within the physical interval
+    candidates = real_roots[(real_roots > lower + epsilon) & (real_roots <= upper + epsilon)]
+    if candidates.size > 0:
+        # If multiple, pick the smallest (to stay physical/stable)
+        return np.min(candidates)
+    # Fallback: pick the smallest positive root if nothing in interval
+    positives = real_roots[real_roots > lower + epsilon]
+    if positives.size > 0:
+        return np.min(positives)
+    return epsilon
+
 
 def binding_isotherm_1_1(
     H0: ArrayLike, G0: ArrayLike, Ka: float, d_free: float, d_inf: float
@@ -43,9 +68,8 @@ def binding_isotherm_1_1(
     HG = 0.5 * (term - sqrt_term)
 
     # Chemical shift calculation
-    # d_delta_comp = (d_free * (G0-HG) / G0) + (d_inf * (HG / G0))
-    # fixed to be delta-delta
     d_delta_comp = (d_inf * (HG / G0))
+
     return d_delta_comp
 
 
@@ -73,7 +97,7 @@ def binding_isotherm_1_2(
     H0, G0 = np.asarray(H0), np.asarray(G0)
     d_delta_comp = np.zeros_like(H0, dtype=float)
     epsilon = 1e-10
-
+    
     for i in range(len(H0)):
         H0_i, G0_i = H0[i], G0[i]
 
@@ -83,27 +107,15 @@ def binding_isotherm_1_2(
         c = Ka * (H0_i - G0_i) + 1
         d = -G0_i
 
-        coefficients = [a, b, c, d]
-        roots = np.roots(coefficients)
-        real_roots = roots[np.isreal(roots)].real
-        positive_real_roots = real_roots[real_roots > epsilon]
-
-        G_free = (
-            np.min(positive_real_roots) if len(positive_real_roots) > 0 else epsilon
-        )
+        roots = np.roots([a, b, c, d])
+        G_free = select_physical_root(roots, 0.0, G0_i, epsilon)
 
         # Calculate complex concentrations
         denominator = 1 + Ka * G_free + Ka * Kd * G_free**2
         HG = (Ka * H0_i * G_free) / denominator
         HG2 = (Ka * Kd * H0_i * G_free**2) / denominator
 
-        # Calculate guest molecules in each environment
-        G_in_HG = HG        # 1 guest per HG complex
-        G_in_HG2 = 2 * HG2  # 2 guests per HG₂ complex
-        
-        # Standard weighted average: δ_obs = Σ(δ_i × [species_i]) / [total_guest]
-        # For Δδ: free guest contributes 0 (reference point)
-        d_delta_comp[i] = (d_inf_1 * G_in_HG + d_inf_2 * G_in_HG2) / G0_i
+        d_delta_comp[i] = (d_inf_1 * HG + d_inf_2 * 2 * HG2) / G0_i
 
     return d_delta_comp
 
@@ -142,24 +154,14 @@ def binding_isotherm_2_1(
         c = Ka * (G0_i - H0_i) + 1
         d = -H0_i
 
-        coefficients = [a, b, c, d]
-        roots = np.roots(coefficients)
-        real_roots = roots[np.isreal(roots)].real
-        positive_real_roots = real_roots[real_roots > epsilon]
-
-        H_free = (
-            np.min(positive_real_roots) if len(positive_real_roots) > 0 else epsilon
-        )
+        roots = np.roots([a, b, c, d])
+        H_free = select_physical_root(roots, 0.0, H0_i, epsilon)
 
         # Calculate complex concentrations
         denominator = 1 + Ka * H_free + Ka * Kd * H_free**2
         HG = (Ka * H_free * G0_i) / denominator
         H2G = (Ka * Kd * H_free**2 * G0_i) / denominator
 
-        # For 2:1 binding, each guest is in exactly one environment
-        # HG contains [HG] guest molecules
-        # H2G contains [H2G] guest molecules
-        # Standard weighted average: δ_obs = Σ(δ_i × [species_i]) / [total_guest]
         d_delta_comp[i] = (d_inf_1 * HG + d_inf_2 * H2G) / G0_i
 
     return d_delta_comp
@@ -194,48 +196,18 @@ def binding_dimer(
         H0_i, G0_i = H0[i], G0[i]
 
         # Cubic equation coefficients for H_free
-        # Derived from: 2*Kd*Ka*[H]³ + 2*Kd*[H]² + Ka*(G0-H0)*[H] + H0 = 0
-        a = 2 * Kd * Ka
-        b = 2 * Kd  
-        c = Ka * (G0_i - H0_i)
-        d = H0_i
+        # 2*Ka*Kd*[H]^3 + (Ka + 2*Kd)*[H]^2 + (Ka*(G0-H0) + 1)*[H] - H0 = 0
+        a = 2.0 * Ka * Kd
+        b = Ka + 2.0 * Kd
+        c = Ka * (G0_i - H0_i) + 1.0
+        d = -H0_i
 
-        # Handle degenerate cases
-        if abs(a) < epsilon:  # No cubic term
-            if abs(b) < epsilon:  # Linear equation
-                if abs(c) < epsilon:
-                    H_free = epsilon
-                else:
-                    H_free = -d / c
-            else:  # Quadratic equation
-                discriminant = c**2 - 4*b*d
-                if discriminant >= 0:
-                    sqrt_disc = np.sqrt(discriminant)
-                    root1 = (-c + sqrt_disc) / (2*b)
-                    root2 = (-c - sqrt_disc) / (2*b)
-                    H_free = max(root1, root2) if max(root1, root2) > epsilon else epsilon
-                else:
-                    H_free = epsilon
-        else:  # Full cubic equation
-            coefficients = [a, b, c, d]
-            roots = np.roots(coefficients)
-            real_roots = roots[np.isreal(roots)].real
-            positive_real_roots = real_roots[real_roots > epsilon]
-            
-            if len(positive_real_roots) > 0:
-                # Choose the physically meaningful root
-                # Usually the smallest positive root
-                H_free = np.min(positive_real_roots)
-            else:
-                H_free = epsilon
-
-        # Calculate species concentrations
+        roots = np.roots([a, b, c, d])
+        H_free = select_physical_root(roots, 0.0, H0_i, epsilon)
         G_free = G0_i / (1 + Ka * H_free)
-        HG = Ka * H_free * G_free
-        H2 = Kd * H_free**2
 
-        # For guest-observed NMR: weighted average of guest environments
-        # G_free contributes 0 (reference), HG contributes d_inf_1
+        HG = Ka * H_free * G_free
+
         d_delta_comp[i] = (d_inf_1 * HG) / G0_i
 
     return d_delta_comp
@@ -288,7 +260,7 @@ def multi_model(
         G_free = G0_i / 2
         
         # Iterative solution for equilibrium concentrations
-        for iteration in range(max_iter):
+        for _ in range(max_iter):
             H_free_old = H_free
             G_free_old = G_free
             
@@ -302,6 +274,7 @@ def multi_model(
             # From guest mass balance: G0 = G_free + HG + H2G
             
             # Guest mass balance (simpler)
+            H_old, G_old = H_free, G_free
             G_free = G0_i / (1 + KHG * H_free + KH2G * Kd * H_free**2)
             
             # Host mass balance (quadratic in H_free)
@@ -312,21 +285,18 @@ def multi_model(
             a = 2 * Kd * (1 + KH2G * G_free)
             b = 1 + KHG * G_free
             c = -H0_i
-            
-            if abs(a) < epsilon:  # Linear case
+
+            if abs(a) < epsilon:
                 H_free = -c / b if abs(b) > epsilon else epsilon
-            else:  # Quadratic case
-                discriminant = b**2 - 4*a*c
-                if discriminant >= 0:
-                    sqrt_disc = np.sqrt(discriminant)
-                    root1 = (-b + sqrt_disc) / (2*a)
-                    root2 = (-b - sqrt_disc) / (2*a)
-                    H_free = max(root1, root2) if max(root1, root2) > epsilon else epsilon
+            else:
+                disc = b**2 - 4*a*c
+                if disc >= 0:
+                    sqrt_disc = np.sqrt(disc)
+                    roots = np.array([(-b + sqrt_disc) / (2*a), (-b - sqrt_disc) / (2*a)])
+                    H_free = select_physical_root(roots, 0.0, H0_i, epsilon)
                 else:
                     H_free = epsilon
-            
-            # Check convergence
-            if (abs(H_free - H_free_old) < tol and abs(G_free - G_free_old) < tol):
+            if abs(H_free - H_old) < tol and abs(G_free - G_old) < tol:
                 break
         
         # Calculate final species concentrations
@@ -342,7 +312,7 @@ def multi_model(
         if total_guest > epsilon:
             delta_obs = (dG * G_free + dHG * HG + dH2G * H2G) / total_guest
         else:
-            delta_obs = dG  # Fallback to free guest shift
+            delta_obs = dG
         
         # Convert to Δδ relative to free guest (dG as reference)
         d_delta_comp[i] = delta_obs - dG

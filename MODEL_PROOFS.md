@@ -275,7 +275,7 @@ $$[H_0] + [H_0]K_a[H] = [H] + K_a[H]^2 + K_a[H][G_0] + 2K_d[H]^2 + 2K_dK_a[H]^3$
 
 Rearranging:
 
-$$2K_dK_a[H]^3 + (K_a + 2K_d)[H]^2 + (K_a([G_0] - [H_0])+1)[H] + [H_0] = 0$$
+$$2K_dK_a[H]^3 + (K_a + 2K_d)[H]^2 + (K_a([G_0] - [H_0])+1)[H] - [H_0] = 0$$
 
 **Cubic equation in [H] (free host concentration):**
 
@@ -286,7 +286,7 @@ Where:
 - $a = 2K_aK_d$
 - $b = K_a + 2K_d$
 - $c = K_a([G_0] - [H_0]) + 1$
-- $d = [H_0]$
+- $d = -[H_0]$
 
 ---
 
