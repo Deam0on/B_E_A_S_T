@@ -93,19 +93,17 @@ def binding_isotherm_1_2(
         )
 
         # Calculate complex concentrations
-        HG = (Ka * H0_i * G_free) / (1 + Ka * G_free + Ka * Kd * G_free**2)
-        HG2 = (Ka * Kd * H0_i * G_free**2) / (1 + Ka * G_free + Ka * Kd * G_free**2)
+        denominator = 1 + Ka * G_free + Ka * Kd * G_free**2
+        HG = (Ka * H0_i * G_free) / denominator
+        HG2 = (Ka * Kd * H0_i * G_free**2) / denominator
 
         # Calculate guest molecules in each environment
-        G_in_HG = HG  # 1 guest per HG complex
+        G_in_HG = HG        # 1 guest per HG complex
         G_in_HG2 = 2 * HG2  # 2 guests per HG₂ complex
-        G_bound_total = G_in_HG + G_in_HG2
-
-        # Weighted average chemical shift based on guest molecule populations
-        if G_bound_total > epsilon:
-            d_delta_comp[i] = (d_inf_1 * G_in_HG + d_inf_2 * G_in_HG2) / G_bound_total * (G_bound_total / G0_i)
-        else:
-            d_delta_comp[i] = 0
+        
+        # Standard weighted average: δ_obs = Σ(δ_i × [species_i]) / [total_guest]
+        # For Δδ: free guest contributes 0 (reference point)
+        d_delta_comp[i] = (d_inf_1 * G_in_HG + d_inf_2 * G_in_HG2) / G0_i
 
     return d_delta_comp
 
@@ -154,15 +152,15 @@ def binding_isotherm_2_1(
         )
 
         # Calculate complex concentrations
-        HG = (Ka * H_free * G0_i) / (1 + Ka * H_free + Ka * Kd * H_free**2)
-        H2G = (Ka * Kd * H_free**2 * G0_i) / (1 + Ka * H_free + Ka * Kd * H_free**2)
+        denominator = 1 + Ka * H_free + Ka * Kd * H_free**2
+        HG = (Ka * H_free * G0_i) / denominator
+        H2G = (Ka * Kd * H_free**2 * G0_i) / denominator
 
-        # For 2:1 binding, each guest molecule is in one environment
-        # The observed shift is weighted by the fraction of guest in each complex
-        fraction_in_HG = HG / G0_i
-        fraction_in_H2G = H2G / G0_i
-        
-        d_delta_comp[i] = d_inf_1 * fraction_in_HG + d_inf_2 * fraction_in_H2G
+        # For 2:1 binding, each guest is in exactly one environment
+        # HG contains [HG] guest molecules
+        # H2G contains [H2G] guest molecules
+        # Standard weighted average: δ_obs = Σ(δ_i × [species_i]) / [total_guest]
+        d_delta_comp[i] = (d_inf_1 * HG + d_inf_2 * H2G) / G0_i
 
     return d_delta_comp
 
