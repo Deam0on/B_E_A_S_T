@@ -423,16 +423,20 @@ $$\Delta\delta = \frac{\delta_{HG}[G_{in\_HG}] + \delta_{complex}[G_{in\_complex
 
 ## References
 
-1. **Fielding, L.** *Determination of association constants (Ka) from solution NMR data.* Tetrahedron 2000, 56, 6151-6170.
+1. **Fielding, L.** *Determination of association constants (Ka) from solution NMR data.* Tetrahedron 2000, 56, 6151-6170. DOI: [10.1016/S0040-4020(99)01093-9](https://doi.org/10.1016/S0040-4020(99)01093-9)
 
-2. **Hirose, K.** *A practical guide for the determination of binding constants.* J. Incl. Phenom. Macrocycl. Chem. 2001, 39, 193-209.
+2. **Hirose, K.** *A practical guide for the determination of binding constants.* J. Incl. Phenom. Macrocycl. Chem. 2001, 39, 193-209. DOI: [10.1023/A:1011117412693](https://doi.org/10.1023/A:1011117412693)
 
-3. **Connors, K.A.** *Binding Constants: The Measurement of Molecular Complex Stability.* John Wiley & Sons: New York, 1987.
+3. **Connors, K.A.** *Binding Constants: The Measurement of Molecular Complex Stability.* John Wiley & Sons: New York, 1987. ISBN: 978-0-471-83583-7. Online DOI: [10.1002/9781118663370](https://doi.org/10.1002/9781118663370)
 
-4. **Thordarson, P.** *Determining association constants from titration experiments in supramolecular chemistry.* Chem. Soc. Rev. 2011, 40, 1305-1323.
+4. **Thordarson, P.** *Determining association constants from titration experiments in supramolecular chemistry.* Chem. Soc. Rev. 2011, 40, 1305-1323. DOI: [10.1039/C0CS00062K](https://doi.org/10.1039/C0CS00062K)
 
-5. **Ulatowski, F.; Dąbrowa, K.; Bałakier, T.; Jurczak, J.** *Recognizing the Limited Applicability of Job Plots in Studying Host–Guest Interactions in Supramolecular Chemistry.* J. Org. Chem. 2016, 81, 1746-1756.
+5. **Ulatowski, F.; Dąbrowa, K.; Bałakier, T.; Jurczak, J.** *Recognizing the Limited Applicability of Job Plots in Studying Host–Guest Interactions in Supramolecular Chemistry.* J. Org. Chem. 2016, 81, 1746-1756. DOI: [10.1021/acs.joc.5b02909](https://doi.org/10.1021/acs.joc.5b02909)
 
----
+### Additional Recommended References
 
-*This document provides the mathematical foundation for the binding isotherm models implemented in BEAST. The derivations follow standard approaches in supramolecular chemistry and NMR titration analysis.*
+6. **Brynn Hibbert, D.; Thordarson, P.** *The death of the Job plot, transparency, open science and online tools, uncertainty estimation methods and other developments in supramolecular chemistry data analysis.* Chem. Commun. 2016, 52, 12792-12805. DOI: [10.1039/C6CC03888C](https://doi.org/10.1039/C6CC03888C)
+
+7. **Ercolani, G.; Piguet, C.; Borkovec, M.; Hamacek, J.** *Symmetry numbers and statistical factors in self-assembly and multivalency.* J. Phys. Chem. B 2007, 111, 12195-12203. DOI: [10.1021/jp0739705](https://doi.org/10.1021/jp0739705)
+
+8. **Hunter, C.A.; Anderson, H.L.** *What is cooperativity?* Angew. Chem. Int. Ed. 2009, 48, 7488-7499. DOI: [10.1002/anie.200902490](https://doi.org/10.1002/anie.200902490)
