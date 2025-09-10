@@ -68,10 +68,6 @@ $$[HG]^2 - ([H_0] + [G_0] + \frac{1}{K_a})[HG] + [H_0][G_0] = 0$$
 
 $$[HG] = \frac{([H_0] + [G_0] + \frac{1}{K_a}) \pm \sqrt{([H_0] + [G_0] + \frac{1}{K_a})^2 - 4[H_0][G_0]}}{2}$$
 
-Taking the physically meaningful root (smaller value):
-
-$$[HG] = \frac{([H_0] + [G_0] + \frac{1}{K_a}) - \sqrt{([H_0] + [G_0] + \frac{1}{K_a})^2 - 4[H_0][G_0]}}{2}$$
-
 ---
 
 ## 1:2 Host-Guest Binding Model
@@ -251,16 +247,16 @@ $$\Delta\delta = \frac{\delta_{HG}[G_{in\_HG}] + \delta_{complex}[G_{in\_complex
 ### Model-Specific Implementations
 
 #### 1:1 Model
-- Guest molecules: $[G_{free}]$ and $[G_{in\_HG}] = [HG]$
-- $\Delta\delta = \frac{\delta_{inf} \cdot [HG]}{[G_0]}$
+- Guest molecules: $[G_{\text{free}}]$ and $[G_{\text{in HG}}] = [HG]$
+- $\Delta\delta = \frac{\delta_{\text{inf}} \cdot [HG]}{[G_0]}$
 
 #### 1:2 Model
-- Guest molecules: $[G_{free}]$, $[G_{in\_HG}] = [HG]$, and $[G_{in\_HG_2}] = 2[HG_2]$
-- $\Delta\delta = \frac{\delta_{inf1} \cdot [HG] + \delta_{inf2} \cdot 2[HG_2]}{[G_0]}$
+- Guest molecules: $[G_{\text{free}}]$, $[G_{\text{in HG}}] = [HG]$, and $[G_{\text{in HG}_2}] = 2[HG_2]$
+- $\Delta\delta = \frac{\delta_{\text{inf1}} \cdot [HG] + \delta_{\text{inf2}} \cdot 2[HG_2]}{[G_0]}$
 
 #### 2:1 Model
-- Guest molecules: $[G_{free}]$, $[G_{in\_HG}] = [HG]$, and $[G_{in\_H_2G}] = [H_2G]$
-- $\Delta\delta = \frac{\delta_{inf1} \cdot [HG] + \delta_{inf2} \cdot [H_2G]}{[G_0]}$
+- Guest molecules: $[G_{\text{free}}]$, $[G_{\text{in HG}}] = [HG]$, and $[G_{\text{in H}_2\text{G}}] = [H_2G]$
+- $\Delta\delta = \frac{\delta_{\text{inf1}} \cdot [HG] + \delta_{\text{inf2}} \cdot [H_2G]}{[G_0]}$
 
 ### Parameter Interpretation
 
