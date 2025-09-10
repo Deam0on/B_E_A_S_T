@@ -22,43 +22,54 @@ H + G ⇌ HG
 ```
 
 **Equilibrium constant:**
+
 $$K_a = \frac{[HG]}{[H][G]}$$
 
 ### Mass Balance Equations
 
 **Total host concentration:**
+
 $$[H_0] = [H] + [HG]$$
 
 **Total guest concentration:**
+
 $$[G_0] = [G] + [HG]$$
 
 ### Algebraic Solution
 
 From the mass balance equations:
+
 $$[H] = [H_0] - [HG]$$
 $$[G] = [G_0] - [HG]$$
 
 Substituting into the equilibrium expression:
+
 $$K_a = \frac{[HG]}{([H_0] - [HG])([G_0] - [HG])}$$
 
 Rearranging:
+
 $$K_a([H_0] - [HG])([G_0] - [HG]) = [HG]$$
 
 Expanding:
+
 $$K_a([H_0][G_0] - [H_0][HG] - [G_0][HG] + [HG]^2) = [HG]$$
 
 $$K_a[H_0][G_0] - K_a[H_0][HG] - K_a[G_0][HG] + K_a[HG]^2 = [HG]$$
 
 Rearranging into standard quadratic form:
+
 $$K_a[HG]^2 - (K_a[H_0] + K_a[G_0] + 1)[HG] + K_a[H_0][G_0] = 0$$
 
 Dividing by $K_a$:
+
 $$[HG]^2 - ([H_0] + [G_0] + \frac{1}{K_a})[HG] + [H_0][G_0] = 0$$
 
 **Quadratic formula solution:**
+
 $$[HG] = \frac{([H_0] + [G_0] + \frac{1}{K_a}) \pm \sqrt{([H_0] + [G_0] + \frac{1}{K_a})^2 - 4[H_0][G_0]}}{2}$$
 
 Taking the physically meaningful root (smaller value):
+
 $$[HG] = \frac{([H_0] + [G_0] + \frac{1}{K_a}) - \sqrt{([H_0] + [G_0] + \frac{1}{K_a})^2 - 4[H_0][G_0]}}{2}$$
 
 ---
@@ -75,50 +86,63 @@ HG + G ⇌ HG₂   (Kd)
 ```
 
 **Equilibrium constants:**
+
 $$K_a = \frac{[HG]}{[H][G]}$$
 $$K_d = \frac{[HG_2]}{[HG][G]}$$
 
 ### Mass Balance Equations
 
 **Total host concentration:**
+
 $$[H_0] = [H] + [HG] + [HG_2]$$
 
 **Total guest concentration:**
+
 $$[G_0] = [G] + [HG] + 2[HG_2]$$
 
 ### Algebraic Solution
 
 From the equilibrium expressions:
+
 $$[HG] = K_a[H][G]$$
 $$[HG_2] = K_d[HG][G] = K_a K_d[H][G]^2$$
 
 From host mass balance:
+
 $$[H_0] = [H] + K_a[H][G] + K_a K_d[H][G]^2$$
 $$[H_0] = [H](1 + K_a[G] + K_a K_d[G]^2)$$
 
 Therefore:
+
 $$[H] = \frac{[H_0]}{1 + K_a[G] + K_a K_d[G]^2}$$
 
 Substituting back:
+
 $$[HG] = \frac{K_a[H_0][G]}{1 + K_a[G] + K_a K_d[G]^2}$$
 $$[HG_2] = \frac{K_a K_d[H_0][G]^2}{1 + K_a[G] + K_a K_d[G]^2}$$
 
 From guest mass balance:
+
 $$[G_0] = [G] + \frac{K_a[H_0][G]}{1 + K_a[G] + K_a K_d[G]^2} + 2\frac{K_a K_d[H_0][G]^2}{1 + K_a[G] + K_a K_d[G]^2}$$
 
 Multiplying through by the denominator:
+
 $$[G_0](1 + K_a[G] + K_a K_d[G]^2) = [G](1 + K_a[G] + K_a K_d[G]^2) + K_a[H_0][G] + 2K_a K_d[H_0][G]^2$$
 
 Rearranging:
+
 $$[G_0] + [G_0]K_a[G] + [G_0]K_a K_d[G]^2 = [G] + K_a[G]^2 + K_a K_d[G]^3 + K_a[H_0][G] + 2K_a K_d[H_0][G]^2$$
 
 Collecting terms:
+
 $$K_a K_d[G]^3 + K_a(2K_d[H_0] - K_d[G_0] + 1)[G]^2 + K_a([H_0] - [G_0])[G] + ([G_0]) = 0$$
 
 **Cubic equation in [G] (free guest concentration):**
+
 $$a[G]^3 + b[G]^2 + c[G] + d = 0$$
 
 Where:
+
 - $a = K_a K_d$
 - $b = K_a(2K_d[H_0] - K_d[G_0] + 1)$
 - $c = K_a([H_0] - [G_0]) + 1$
@@ -138,50 +162,63 @@ H + HG ⇌ H₂G    (Kd)
 ```
 
 **Equilibrium constants:**
+
 $$K_a = \frac{[HG]}{[H][G]}$$
 $$K_d = \frac{[H_2G]}{[H][HG]}$$
 
 ### Mass Balance Equations
 
 **Total host concentration:**
+
 $$[H_0] = [H] + [HG] + 2[H_2G]$$
 
 **Total guest concentration:**
+
 $$[G_0] = [G] + [HG] + [H_2G]$$
 
 ### Algebraic Solution
 
 From the equilibrium expressions:
+
 $$[HG] = K_a[H][G]$$
 $$[H_2G] = K_d[H][HG] = K_a K_d[H]^2[G]$$
 
 From guest mass balance:
+
 $$[G_0] = [G] + K_a[H][G] + K_a K_d[H]^2[G]$$
 $$[G_0] = [G](1 + K_a[H] + K_a K_d[H]^2)$$
 
 Therefore:
+
 $$[G] = \frac{[G_0]}{1 + K_a[H] + K_a K_d[H]^2}$$
 
 Substituting back:
+
 $$[HG] = \frac{K_a[H][G_0]}{1 + K_a[H] + K_a K_d[H]^2}$$
 $$[H_2G] = \frac{K_a K_d[H]^2[G_0]}{1 + K_a[H] + K_a K_d[H]^2}$$
 
 From host mass balance:
+
 $$[H_0] = [H] + \frac{K_a[H][G_0]}{1 + K_a[H] + K_a K_d[H]^2} + 2\frac{K_a K_d[H]^2[G_0]}{1 + K_a[H] + K_a K_d[H]^2}$$
 
 Multiplying through by the denominator:
+
 $$[H_0](1 + K_a[H] + K_a K_d[H]^2) = [H](1 + K_a[H] + K_a K_d[H]^2) + K_a[H][G_0] + 2K_a K_d[H]^2[G_0]$$
 
 Rearranging:
+
 $$[H_0] + [H_0]K_a[H] + [H_0]K_a K_d[H]^2 = [H] + K_a[H]^2 + K_a K_d[H]^3 + K_a[G_0][H] + 2K_a K_d[G_0][H]^2$$
 
 Collecting terms:
+
 $$K_a K_d[H]^3 + K_a(2K_d[G_0] - K_d[H_0] + 1)[H]^2 + K_a([G_0] - [H_0])[H] + ([H_0]) = 0$$
 
 **Cubic equation in [H] (free host concentration):**
+
 $$a[H]^3 + b[H]^2 + c[H] + d = 0$$
 
 Where:
+
 - $a = K_a K_d$
 - $b = K_a(2K_d[G_0] - K_d[H_0] + 1)$
 - $c = K_a([G_0] - [H_0]) + 1$
@@ -198,14 +235,17 @@ The observed chemical shift in NMR is the population-weighted average of all spe
 $$\delta_{obs} = \frac{\sum_i \delta_i [species_i]}{[total]}$$
 
 For guest-observed experiments:
+
 $$\delta_{obs} = \frac{\delta_{free}[G_{free}] + \delta_{HG}[G_{in\_HG}] + \delta_{complex}[G_{in\_complex}]}{[G_0]}$$
 
 ### Delta-Delta (Δδ) Calculation
 
 Chemical shift changes are calculated relative to the free state:
+
 $$\Delta\delta = \delta_{obs} - \delta_{free}$$
 
 Since $\delta_{free}$ serves as the reference (zero point):
+
 $$\Delta\delta = \frac{\delta_{HG}[G_{in\_HG}] + \delta_{complex}[G_{in\_complex}]}{[G_0]}$$
 
 ### Model-Specific Implementations
