@@ -133,7 +133,7 @@ $$[G_0] + [G_0]K_a[G] + [G_0]K_a K_d[G]^2 = [G] + K_a[G]^2 + K_a K_d[G]^3 + K_a[
 
 Collecting terms:
 
-$$K_a K_d[G]^3 + K_a(2K_d[H_0] - K_d[G_0] + 1)[G]^2 + K_a([H_0] - [G_0])[G] - ([G_0]) = 0$$
+$$K_a K_d[G]^3 + K_a(2K_d[H_0] - K_d[G_0] + 1)[G]^2 + (K_a([H_0] - [G_0])+1)[G] - ([G_0]) = 0$$
 
 **Cubic equation in [G] (free guest concentration):**
 
@@ -209,7 +209,7 @@ $$[H_0] + [H_0]K_a[H] + [H_0]K_a K_d[H]^2 = [H] + K_a[H]^2 + K_a K_d[H]^3 + K_a[
 
 Collecting terms:
 
-$$K_a K_d[H]^3 + K_a(2K_d[G_0] - K_d[H_0] + 1)[H]^2 + K_a([G_0] - [H_0])[H] - ([H_0]) = 0$$
+$$K_a K_d[H]^3 + K_a(2K_d[G_0] - K_d[H_0] + 1)[H]^2 + (K_a([G_0] - [H_0])+1)[H] - ([H_0]) = 0$$
 
 **Cubic equation in [H] (free host concentration):**
 
