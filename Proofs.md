@@ -6,6 +6,8 @@ This document provides detailed mathematical derivations for the 1:1, 1:2, and 2
 - [1:1 Host-Guest Binding Model](#11-host-guest-binding-model)
 - [1:2 Host-Guest Binding Model](#12-host-guest-binding-model)
 - [2:1 Host-Guest Binding Model](#21-host-guest-binding-model)
+- [Host Dimerization Model (HG + H₂)](#host-dimerization-model-hg--h2)
+- [Multi-Equilibrium Model (HG + H₂ + H₂G)](#multi-equilibrium-model-hg--h2--h2g)
 - [Chemical Shift Calculations](#chemical-shift-calculations)
 - [References](#references)
 
@@ -222,6 +224,167 @@ Where:
 
 ---
 
+## Host Dimerization Model (HG + H₂)
+
+### Equilibrium Expressions
+
+This model describes host-guest binding in competition with host dimerization:
+
+```
+H + G ⇌ HG     (Ka)
+2H ⇌ H₂       (Kd)
+```
+
+**Equilibrium constants:**
+
+$$K_a = \frac{[HG]}{[H][G]}$$
+$$K_d = \frac{[H_2]}{[H]^2}$$
+
+### Mass Balance Equations
+
+**Total host concentration:**
+
+$$[H_0] = [H] + [HG] + 2[H_2]$$
+
+**Total guest concentration:**
+
+$$[G_0] = [G] + [HG]$$
+
+### Algebraic Solution
+
+From the equilibrium expressions:
+
+$$[HG] = K_a[H][G]$$
+$$[H_2] = K_d[H]^2$$
+
+From guest mass balance:
+
+$$[G_0] = [G] + K_a[H][G]$$
+$$[G_0] = [G](1 + K_a[H])$$
+
+Therefore:
+
+$$[G] = \frac{[G_0]}{1 + K_a[H]}$$
+
+Substituting back:
+
+$$[HG] = \frac{K_a[H][G_0]}{1 + K_a[H]}$$
+
+From host mass balance:
+
+$$[H_0] = [H] + \frac{K_a[H][G_0]}{1 + K_a[H]} + 2K_d[H]^2$$
+
+Multiplying through by $(1 + K_a[H])$:
+
+$$[H_0](1 + K_a[H]) = [H](1 + K_a[H]) + K_a[H][G_0] + 2K_d[H]^2(1 + K_a[H])$$
+
+Expanding:
+
+$$[H_0] + [H_0]K_a[H] = [H] + K_a[H]^2 + K_a[H][G_0] + 2K_d[H]^2 + 2K_dK_a[H]^3$$
+
+Rearranging:
+
+$$2K_dK_a[H]^3 + 2K_d[H]^2 + K_a([G_0] - [H_0])[H] + [H_0] = 0$$
+
+**Cubic equation in [H] (free host concentration):**
+
+$$a[H]^3 + b[H]^2 + c[H] + d = 0$$
+
+Where:
+
+- $a = 2K_aK_d$
+- $b = 2K_d$
+- $c = K_a([G_0] - [H_0])$
+- $d = [H_0]$
+
+---
+
+## Multi-Equilibrium Model (HG + H₂ + H₂G)
+
+### Equilibrium Expressions
+
+This model describes a complex system with three competing equilibria:
+
+```
+H + G ⇌ HG      (KHG)
+2H ⇌ H₂        (Kd)
+H₂ + G ⇌ H₂G    (KH2G)
+```
+
+**Equilibrium constants:**
+$$K_{HG} = \frac{[HG]}{[H][G]}$$
+$$K_d = \frac{[H_2]}{[H]^2}$$
+$$K_{H_2G} = \frac{[H_2G]}{[H_2][G]}$$
+
+### Mass Balance Equations
+
+**Total host concentration:**
+$$[H_0] = [H] + [HG] + 2[H_2] + 2[H_2G]$$
+
+**Total guest concentration:**
+$$[G_0] = [G] + [HG] + [H_2G]$$
+
+### Algebraic Solution
+
+From the equilibrium expressions:
+$$[HG] = K_{HG}[H][G]$$
+$$[H_2] = K_d[H]^2$$
+$$[H_2G] = K_{H_2G}[H_2][G] = K_{H_2G}K_d[H]^2[G]$$
+
+From guest mass balance:
+$$[G_0] = [G] + K_{HG}[H][G] + K_{H_2G}K_d[H]^2[G]$$
+$$[G_0] = [G](1 + K_{HG}[H] + K_{H_2G}K_d[H]^2)$$
+
+Therefore:
+$$[G] = \frac{[G_0]}{1 + K_{HG}[H] + K_{H_2G}K_d[H]^2}$$
+
+From host mass balance:
+$$[H_0] = [H] + K_{HG}[H][G] + 2K_d[H]^2 + 2K_{H_2G}K_d[H]^2[G]$$
+
+Substituting the expression for [G]:
+$$[H_0] = [H]\left(1 + \frac{K_{HG}[G_0]}{1 + K_{HG}[H] + K_{H_2G}K_d[H]^2}\right) + 2K_d[H]^2\left(1 + \frac{K_{H_2G}[G_0]}{1 + K_{HG}[H] + K_{H_2G}K_d[H]^2}\right)$$
+
+This leads to a complex polynomial equation in [H] that typically requires **iterative numerical solution**.
+
+### Iterative Solution Method
+
+Due to the complexity of the algebraic solution, this system is typically solved iteratively:
+
+1. **Initial guess**: Start with reasonable estimates for [H] and [G]
+2. **Calculate complexes**: Use equilibrium expressions to find [HG], [H₂], [H₂G]
+3. **Update free concentrations**: Use mass balance equations
+4. **Check convergence**: Repeat until changes are below tolerance
+5. **Calculate chemical shift**: Use final concentrations
+
+### Chemical Shift Calculation (Guest-Observed)
+
+For guest-observed NMR, only species containing guest molecules contribute:
+
+$$\delta_{obs} = \frac{\delta_{G}[G] + \delta_{HG}[HG] + \delta_{H_2G}[H_2G]}{[G_0]}$$
+
+The chemical shift change relative to free guest:
+$$\Delta\delta = \delta_{obs} - \delta_G = \frac{\delta_{HG}[HG] + \delta_{H_2G}[H_2G]}{[G_0]}$$
+
+### Physical Interpretation
+
+This model describes systems where:
+- **Host-guest binding** competes with **host dimerization**
+- **Host dimers can also bind guest** molecules
+- The system exhibits complex behavior depending on relative binding constants
+- Higher host concentrations can favor either HG or H₂G formation depending on the equilibrium constants
+- This model is particularly relevant for systems where host aggregation is significant
+
+### Thermodynamic Relationships
+
+The overall equilibrium for H₂G formation can be viewed as:
+$$2H + G \rightleftharpoons H_2G$$
+
+With overall constant: $K_{overall} = K_d \times K_{H_2G}$
+
+This relationship helps in understanding the relative importance of the different pathways to complex formation.
+
+---
+
 ## Chemical Shift Calculations
 
 ### Fundamental Principle
@@ -257,11 +420,6 @@ $$\Delta\delta = \frac{\delta_{HG}[G_{in\_HG}] + \delta_{complex}[G_{in\_complex
 #### 2:1 Model
 - Guest molecules: $[G_{\text{free}}]$, $[G_{\text{in HG}}] = [HG]$, and $[G_{\text{in H}_2\text{G}}] = [H_2G]$
 - $\Delta\delta = \frac{\delta_{\text{inf1}} \cdot [HG] + \delta_{\text{inf2}} \cdot [H_2G]}{[G_0]}$
-
-### Parameter Interpretation
-
-- **$\delta_{inf}$, $\delta_{inf1}$, $\delta_{inf2}$**: These represent the chemical shift changes of the guest when fully bound in the respective complex environments
-- **Physical meaning**: These are the limiting chemical shifts that would be observed if all guest molecules were in that specific binding environment
 
 ---
 

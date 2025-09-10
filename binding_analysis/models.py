@@ -180,41 +180,64 @@ def binding_dimer(
         G0: Total guest concentration(s)
         Ka: Host-guest binding constant (M⁻¹)
         Kd: Host dimerization constant (M⁻¹)
-        d_inf_1: Chemical shift of free host
-        d_inf_2: Chemical shift of bound host
+        d_inf_1: Chemical shift change for guest in HG complex (guest-observed)
+        d_inf_2: Chemical shift change for free guest (usually 0, for reference)
 
     Returns:
-        Calculated chemical shift changes (Δδ) relative to first point
+        Calculated chemical shift changes (Δδ) for guest-observed NMR
     """
     H0, G0 = np.asarray(H0), np.asarray(G0)
-    d_obs = np.zeros_like(H0, dtype=float)
+    d_delta_comp = np.zeros_like(H0, dtype=float)
     epsilon = 1e-10
 
     for i in range(len(H0)):
         H0_i, G0_i = H0[i], G0[i]
 
-        # Quadratic equation for H_free
-        a = -2 * Kd
-        b = -(G0_i * Ka + 1)
-        c = H0_i
+        # Cubic equation coefficients for H_free
+        # Derived from: 2*Kd*Ka*[H]³ + 2*Kd*[H]² + Ka*(G0-H0)*[H] + H0 = 0
+        a = 2 * Kd * Ka
+        b = 2 * Kd  
+        c = Ka * (G0_i - H0_i)
+        d = H0_i
 
-        roots = np.roots([a, b, c])
-        real_roots = roots[np.isreal(roots)].real
-        valid_roots = real_roots[real_roots > epsilon]
+        # Handle degenerate cases
+        if abs(a) < epsilon:  # No cubic term
+            if abs(b) < epsilon:  # Linear equation
+                if abs(c) < epsilon:
+                    H_free = epsilon
+                else:
+                    H_free = -d / c
+            else:  # Quadratic equation
+                discriminant = c**2 - 4*b*d
+                if discriminant >= 0:
+                    sqrt_disc = np.sqrt(discriminant)
+                    root1 = (-c + sqrt_disc) / (2*b)
+                    root2 = (-c - sqrt_disc) / (2*b)
+                    H_free = max(root1, root2) if max(root1, root2) > epsilon else epsilon
+                else:
+                    H_free = epsilon
+        else:  # Full cubic equation
+            coefficients = [a, b, c, d]
+            roots = np.roots(coefficients)
+            real_roots = roots[np.isreal(roots)].real
+            positive_real_roots = real_roots[real_roots > epsilon]
+            
+            if len(positive_real_roots) > 0:
+                # Choose the physically meaningful root
+                # Usually the smallest positive root
+                H_free = np.min(positive_real_roots)
+            else:
+                H_free = epsilon
 
-        H_free = np.min(valid_roots) if len(valid_roots) > 0 else epsilon
+        # Calculate species concentrations
+        G_free = G0_i / (1 + Ka * H_free)
+        HG = Ka * H_free * G_free
+        H2 = Kd * H_free**2
 
-        # Chemical shift calculation
-        numerator = (d_inf_1 * G0_i) / (1 + Ka * H_free) + (
-            d_inf_2 * Ka * H_free * G0_i / (1 + Ka * H_free)
-        )
-        denominator = (G0_i / (1 + Ka * H_free)) + (Ka * H_free * G0_i / (1 + Ka * H_free))
+        # For guest-observed NMR: weighted average of guest environments
+        # G_free contributes 0 (reference), HG contributes d_inf_1
+        d_delta_comp[i] = (d_inf_1 * HG) / G0_i
 
-        d_obs[i] = numerator / denominator
-
-    # Convert to delta-delta (relative to first point)
-    d_delta_comp = d_obs - d_obs[0]
-    d_delta_comp[0] = 0
     return d_delta_comp
 
 
@@ -244,64 +267,86 @@ def multi_model(
         KHG: Host-guest binding constant (M⁻¹)
         Kd: Host dimerization constant (M⁻¹)
         KH2G: Dimer-guest binding constant (M⁻¹)
-        dG: Chemical shift of free guest
-        dHG: Chemical shift of HG complex
-        dH2G: Chemical shift of H₂G complex
+        dG: Chemical shift of free guest (reference, usually 0)
+        dHG: Chemical shift of guest in HG complex
+        dH2G: Chemical shift of guest in H₂G complex
         max_iter: Maximum iterations for convergence
         tol: Convergence tolerance
 
     Returns:
-        Calculated chemical shift changes (Δδ) relative to first point
+        Calculated chemical shift changes (Δδ) for guest-observed NMR
     """
     H0, G0 = np.asarray(H0), np.asarray(G0)
-    d_obs = np.zeros_like(H0, dtype=float)
+    d_delta_comp = np.zeros_like(H0, dtype=float)
     epsilon = 1e-10
 
     for i in range(len(H0)):
         H0_i, G0_i = H0[i], G0[i]
-        G_free = G0_i  # Initial guess
-
+        
+        # Initial guess for free concentrations
+        H_free = H0_i / 2  # Start with reasonable guess
+        G_free = G0_i / 2
+        
         # Iterative solution for equilibrium concentrations
         for iteration in range(max_iter):
-            # Solve for H_free given G_free
-            aH = 2 * Kd + 2 * KH2G * G_free
-            bH = 1 + KHG * G_free
-            cH = -H0_i
-
-            rootsH = np.roots([aH, bH, cH])
-            realH = rootsH[np.isreal(rootsH)].real
-            valid_H = realH[realH > epsilon]
-
-            H_free = np.min(valid_H) if len(valid_H) > 0 else epsilon
-
-            # Solve for G_free given H_free
-            aG = KH2G * H_free**2 + KHG * H_free + 1
-            bG = -G0_i
-
-            rootsG = np.roots([aG, bG])
-            realG = rootsG[np.isreal(rootsG)].real
-            valid_G = realG[realG > epsilon]
-
-            G_free_new = np.min(valid_G) if len(valid_G) > 0 else epsilon
-
+            H_free_old = H_free
+            G_free_old = G_free
+            
+            # Calculate complex concentrations from current free concentrations
+            H2 = Kd * H_free**2
+            HG = KHG * H_free * G_free
+            H2G = KH2G * H2 * G_free
+            
+            # Update free concentrations from mass balance
+            # From host mass balance: H0 = H_free + HG + 2*H2 + 2*H2G
+            # From guest mass balance: G0 = G_free + HG + H2G
+            
+            # Guest mass balance (simpler)
+            G_free = G0_i / (1 + KHG * H_free + KH2G * Kd * H_free**2)
+            
+            # Host mass balance (quadratic in H_free)
+            # H0 = H_free + KHG*H_free*G_free + 2*Kd*H_free^2 + 2*KH2G*Kd*H_free^2*G_free
+            # H0 = H_free * (1 + KHG*G_free + 2*Kd*H_free + 2*KH2G*Kd*H_free*G_free)
+            
+            # Rearrange to: 2*Kd*(1 + KH2G*G_free)*H_free^2 + (1 + KHG*G_free)*H_free - H0 = 0
+            a = 2 * Kd * (1 + KH2G * G_free)
+            b = 1 + KHG * G_free
+            c = -H0_i
+            
+            if abs(a) < epsilon:  # Linear case
+                H_free = -c / b if abs(b) > epsilon else epsilon
+            else:  # Quadratic case
+                discriminant = b**2 - 4*a*c
+                if discriminant >= 0:
+                    sqrt_disc = np.sqrt(discriminant)
+                    root1 = (-b + sqrt_disc) / (2*a)
+                    root2 = (-b - sqrt_disc) / (2*a)
+                    H_free = max(root1, root2) if max(root1, root2) > epsilon else epsilon
+                else:
+                    H_free = epsilon
+            
             # Check convergence
-            if abs(G_free_new - G_free) < tol:
+            if (abs(H_free - H_free_old) < tol and abs(G_free - G_free_old) < tol):
                 break
-            G_free = G_free_new
+        
+        # Calculate final species concentrations
+        H2 = Kd * H_free**2
+        HG = KHG * H_free * G_free
+        H2G = KH2G * H2 * G_free
+        
+        # Guest-observed chemical shift calculation
+        # Only species containing guest contribute: G_free, HG, H2G
+        # Standard weighted average: δ_obs = Σ(δ_i × [species_i]) / [total_guest]
+        
+        total_guest = G_free + HG + H2G
+        if total_guest > epsilon:
+            delta_obs = (dG * G_free + dHG * HG + dH2G * H2G) / total_guest
+        else:
+            delta_obs = dG  # Fallback to free guest shift
+        
+        # Convert to Δδ relative to free guest (dG as reference)
+        d_delta_comp[i] = delta_obs - dG
 
-        # Calculate chemical shift
-        numerator = (
-            dG * Kd * H_free**2
-            + dHG * KHG * H_free * G_free
-            + dH2G * KH2G * H_free**2 * G_free
-        )
-        denominator = Kd * H_free**2 + KHG * H_free * G_free + KH2G * H_free**2 * G_free
-
-        d_obs[i] = numerator / denominator if denominator > epsilon else 0
-
-    # Convert to delta-delta (relative to first point)
-    d_delta_comp = d_obs - d_obs[0]
-    d_delta_comp[0] = 0
     return d_delta_comp
 
 
