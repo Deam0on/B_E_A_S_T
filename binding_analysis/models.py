@@ -42,7 +42,7 @@ def select_physical_root(roots, lower, upper, epsilon=1e-10):
 
 
 def binding_isotherm_1_1(
-    H0: ArrayLike, G0: ArrayLike, Ka: float, d_free: float, d_inf: float
+    H0: ArrayLike, G0: ArrayLike, Ka: float, d_inf: float
 ) -> np.ndarray:
     """
     Calculate chemical shift changes for 1:1 host-guest binding.
@@ -168,7 +168,7 @@ def binding_isotherm_2_1(
 
 
 def binding_dimer(
-    H0: ArrayLike, G0: ArrayLike, Ka: float, Kd: float, d_inf_1: float, d_inf_2: float
+    H0: ArrayLike, G0: ArrayLike, Ka: float, Kd: float, d_inf_1: float
 ) -> np.ndarray:
     """
     Calculate chemical shift changes for host-guest binding with host dimerization.
@@ -337,13 +337,13 @@ def model_definitions(
     return {
         "HG": {
             "function": binding_isotherm_1_1,
-            "initial_guess": [100, 100, 100],  # Ka, d_free, d_inf
-            "bounds": ([0, -np.inf, -np.inf], [np.inf, np.inf, np.inf]),
-            "lambda": lambda H0, Ka, d_free, d_inf: binding_isotherm_1_1(
-                H0, G0, Ka, d_free, d_inf
+            "initial_guess": [100, 100],  # Ka, d_inf
+            "bounds": ([0, -np.inf], [np.inf, np.inf]),
+            "lambda": lambda H0, Ka, d_inf: binding_isotherm_1_1(
+                H0, G0, Ka, d_inf
             ),
             "description": "1:1 Host-Guest binding (H + G ⇌ HG)",
-            "parameter_names": ["K(HG)", "d(free)", "d(HG)"],
+            "parameter_names": ["K(HG)", "d(HG)"],
         },
         "HG₂": {
             "function": binding_isotherm_1_2,
@@ -367,13 +367,13 @@ def model_definitions(
         },
         "HG + H₂": {
             "function": binding_dimer,
-            "initial_guess": [100, 100, 100, 100],  # Ka, Kd, d_inf_1, d_inf_2
-            "bounds": ([0, 0, -np.inf, -np.inf], [np.inf] * 4),
-            "lambda": lambda H0, Ka, Kd, d_inf_1, d_inf_2: binding_dimer(
-                H0, G0, Ka, Kd, d_inf_1, d_inf_2
+            "initial_guess": [100, 100, 100],  # Ka, Kd, d_inf_1
+            "bounds": ([0, 0, -np.inf], [np.inf] * 3),
+            "lambda": lambda H0, Ka, Kd, d_inf_1: binding_dimer(
+                H0, G0, Ka, Kd, d_inf_1
             ),
             "description": "Host-Guest binding with dimerization (H + G ⇌ HG, 2H ⇌ H₂)",
-            "parameter_names": ["K(HG)", "K(H₂)", "d(HG)", "d(H₂)"],
+            "parameter_names": ["K(HG)", "K(H₂)", "d(HG)"],
         },
         "H₂G + HG + H₂": {
             "function": multi_model,
