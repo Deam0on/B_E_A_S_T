@@ -658,12 +658,20 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
                     enable_custom_corr=True,
                 )
 
+                # Create parameter dictionary with names
+                param_names = model.get("parameter_names", [f"param_{i+1}" for i in range(len(params))])
+                named_parameters = {name: value for name, value in zip(param_names, params)}
+                named_errors = {f"{name}_error": error for name, error in zip(param_names, std_err)}
+                
                 output_rows.append(
                     {
                         "file": filename,
                         "model": model_name,
                         "parameters": params.tolist(),
+                        "parameter_names": param_names,
+                        "named_parameters": named_parameters,
                         "standard_errors": std_err.tolist(),
+                        "named_errors": named_errors,
                         "r_squared": r2,
                         "AIC": aic,
                         "BIC": bic,
@@ -685,7 +693,10 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
                 )
 
                 logging.info(f"Model {model_name} fit completed")
-                logging.info(f"Parameters: {params}")
+                # Log parameters with proper names
+                param_names = model.get("parameter_names", [f"param_{i+1}" for i in range(len(params))])
+                for name, value, error in zip(param_names, params, std_err):
+                    logging.info(f"  {name}: {value:.6f} ± {error:.6f}")
                 logging.debug(f"Parm - results: {results}")
 
             except Exception as e:

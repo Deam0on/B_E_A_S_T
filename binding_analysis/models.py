@@ -343,6 +343,7 @@ def model_definitions(
                 H0, G0, Ka, d_free, d_inf
             ),
             "description": "1:1 Host-Guest binding (H + G ⇌ HG)",
+            "parameter_names": ["K(HG)", "d(free)", "d(HG)"],
         },
         "HG₂": {
             "function": binding_isotherm_1_2,
@@ -352,6 +353,7 @@ def model_definitions(
                 H0, G0, Ka, Kd, d_inf_1, d_inf_2
             ),
             "description": "1:2 Host-Guest binding (H + G ⇌ HG, HG + G ⇌ HG₂)",
+            "parameter_names": ["K(HG)", "K(HG₂)", "d(HG)", "d(HG₂)"],
         },
         "H₂G": {
             "function": binding_isotherm_2_1,
@@ -361,6 +363,7 @@ def model_definitions(
                 H0, G0, Ka, Kd, d_inf_1, d_inf_2
             ),
             "description": "2:1 Host-Guest binding (H + G ⇌ HG, H + HG ⇌ H₂G)",
+            "parameter_names": ["K(HG)", "K(H₂G)", "d(HG)", "d(H₂G)"],
         },
         "HG + H₂": {
             "function": binding_dimer,
@@ -370,6 +373,7 @@ def model_definitions(
                 H0, G0, Ka, Kd, d_inf_1, d_inf_2
             ),
             "description": "Host-Guest binding with dimerization (H + G ⇌ HG, 2H ⇌ H₂)",
+            "parameter_names": ["K(HG)", "K(H₂)", "d(HG)", "d(H₂)"],
         },
         "H₂G + HG + H₂": {
             "function": multi_model,
@@ -386,5 +390,6 @@ def model_definitions(
                 H0, G0, KHG, Kd, KH2G, dG, dHG, dH2G
             ),
             "description": "Multi-equilibrium system (H + G ⇌ HG, 2H ⇌ H₂, H₂ + G ⇌ H₂G)",
+            "parameter_names": ["K(HG)", "K(H₂)", "K(H₂G)", "d(G)", "d(HG)", "d(H₂G)"],
         },
     }
