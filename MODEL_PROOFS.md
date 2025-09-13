@@ -10,13 +10,11 @@ This document provides detailed mathematical derivations for the 1:1, 1:2, and 2
 
 The simplest binding model describes the formation of a 1:1 complex between host (H) and guest (G):
 
-```
-H + G ⇌ HG
-```
+$$H + G \rightleftharpoons HG$$
 
 **Equilibrium constant:**
 
-$$K_a = \frac{[HG]}{[H][G]}$$
+$$K_{HG} = \frac{[HG]}{[H][G]}$$
 
 ### Mass Balance Equations
 
@@ -37,29 +35,29 @@ $$[G] = [G_0] - [HG]$$
 
 Substituting into the equilibrium expression:
 
-$$K_a = \frac{[HG]}{([H_0] - [HG])([G_0] - [HG])}$$
+$$K_{HG} = \frac{[HG]}{([H_0] - [HG])([G_0] - [HG])}$$
 
 Rearranging:
 
-$$K_a([H_0] - [HG])([G_0] - [HG]) = [HG]$$
+$$K_{HG}([H_0] - [HG])([G_0] - [HG]) = [HG]$$
 
 Expanding:
 
-$$K_a([H_0][G_0] - [H_0][HG] - [G_0][HG] + [HG]^2) = [HG]$$
+$$K_{HG}([H_0][G_0] - [H_0][HG] - [G_0][HG] + [HG]^2) = [HG]$$
 
-$$K_a[H_0][G_0] - K_a[H_0][HG] - K_a[G_0][HG] + K_a[HG]^2 = [HG]$$
+$$K_{HG}[H_0][G_0] - K_{HG}[H_0][HG] - K_{HG}[G_0][HG] + K_{HG}[HG]^2 = [HG]$$
 
 Rearranging into standard quadratic form:
 
-$$K_a[HG]^2 - (K_a[H_0] + K_a[G_0] + 1)[HG] + K_a[H_0][G_0] = 0$$
+$$K_{HG}[HG]^2 - (K_{HG}[H_0] + K_{HG}[G_0] + 1)[HG] + K_{HG}[H_0][G_0] = 0$$
 
-Dividing by $K_a$:
+Dividing by $K_{HG}$:
 
-$$[HG]^2 - ([H_0] + [G_0] + \frac{1}{K_a})[HG] + [H_0][G_0] = 0$$
+$$[HG]^2 - ([H_0] + [G_0] + \frac{1}{K_{HG}})[HG] + [H_0][G_0] = 0$$
 
 **Quadratic formula solution:**
 
-$$[HG] = \frac{([H_0] + [G_0] + \frac{1}{K_a}) \pm \sqrt{([H_0] + [G_0] + \frac{1}{K_a})^2 - 4[H_0][G_0]}}{2}$$
+$$[HG] = \frac{([H_0] + [G_0] + \frac{1}{K_{HG}}) \pm \sqrt{([H_0] + [G_0] + \frac{1}{K_{HG}})^2 - 4[H_0][G_0]}}{2}$$
 
 ---
 
@@ -69,15 +67,13 @@ $$[HG] = \frac{([H_0] + [G_0] + \frac{1}{K_a}) \pm \sqrt{([H_0] + [G_0] + \frac{
 
 This model describes sequential binding of two guests to one host:
 
-```
-H + G ⇌ HG     (Ka)
-HG + G ⇌ HG₂   (Kd)
-```
+$$H + G \rightleftharpoons HG \quad (K_{HG})$$
+$$HG + G \rightleftharpoons HG_2 \quad (K_{HG_2})$$
 
 **Equilibrium constants:**
 
-$$K_a = \frac{[HG]}{[H][G]}$$
-$$K_d = \frac{[HG_2]}{[HG][G]}$$
+$$K_{HG} = \frac{[HG]}{[H][G]}$$
+$$K_{HG_2} = \frac{[HG_2]}{[HG][G]}$$
 
 ### Mass Balance Equations
 
@@ -93,38 +89,38 @@ $$[G_0] = [G] + [HG] + 2[HG_2]$$
 
 From the equilibrium expressions:
 
-$$[HG] = K_a[H][G]$$
-$$[HG_2] = K_d[HG][G] = K_a K_d[H][G]^2$$
+$$[HG] = K_{HG}[H][G]$$
+$$[HG_2] = K_{HG_2}[HG][G] = K_{HG} K_{HG_2}[H][G]^2$$
 
 From host mass balance:
 
-$$[H_0] = [H] + K_a[H][G] + K_a K_d[H][G]^2$$
-$$[H_0] = [H](1 + K_a[G] + K_a K_d[G]^2)$$
+$$[H_0] = [H] + K_{HG}[H][G] + K_{HG} K_{HG_2}[H][G]^2$$
+$$[H_0] = [H](1 + K_{HG}[G] + K_{HG} K_{HG_2}[G]^2)$$
 
 Therefore:
 
-$$[H] = \frac{[H_0]}{1 + K_a[G] + K_a K_d[G]^2}$$
+$$[H] = \frac{[H_0]}{1 + K_{HG}[G] + K_{HG} K_{HG_2}[G]^2}$$
 
 Substituting back:
 
-$$[HG] = \frac{K_a[H_0][G]}{1 + K_a[G] + K_a K_d[G]^2}$$
-$$[HG_2] = \frac{K_a K_d[H_0][G]^2}{1 + K_a[G] + K_a K_d[G]^2}$$
+$$[HG] = \frac{K_{HG}[H_0][G]}{1 + K_{HG}[G] + K_{HG} K_{HG_2}[G]^2}$$
+$$[HG_2] = \frac{K_{HG} K_{HG_2}[H_0][G]^2}{1 + K_{HG}[G] + K_{HG} K_{HG_2}[G]^2}$$
 
 From guest mass balance:
 
-$$[G_0] = [G] + \frac{K_a[H_0][G]}{1 + K_a[G] + K_a K_d[G]^2} + 2\frac{K_a K_d[H_0][G]^2}{1 + K_a[G] + K_a K_d[G]^2}$$
+$$[G_0] = [G] + \frac{K_{HG}[H_0][G]}{1 + K_{HG}[G] + K_{HG} K_{HG_2}[G]^2} + 2\frac{K_{HG} K_{HG_2}[H_0][G]^2}{1 + K_{HG}[G] + K_{HG} K_{HG_2}[G]^2}$$
 
 Multiplying through by the denominator:
 
-$$[G_0](1 + K_a[G] + K_a K_d[G]^2) = [G](1 + K_a[G] + K_a K_d[G]^2) + K_a[H_0][G] + 2K_a K_d[H_0][G]^2$$
+$$[G_0](1 + K_{HG}[G] + K_{HG} K_{HG_2}[G]^2) = [G](1 + K_{HG}[G] + K_{HG} K_{HG_2}[G]^2) + K_{HG}[H_0][G] + 2K_{HG} K_{HG_2}[H_0][G]^2$$
 
 Rearranging:
 
-$$[G_0] + [G_0]K_a[G] + [G_0]K_a K_d[G]^2 = [G] + K_a[G]^2 + K_a K_d[G]^3 + K_a[H_0][G] + 2K_a K_d[H_0][G]^2$$
+$$[G_0] + [G_0]K_{HG}[G] + [G_0]K_{HG} K_{HG_2}[G]^2 = [G] + K_{HG}[G]^2 + K_{HG} K_{HG_2}[G]^3 + K_{HG}[H_0][G] + 2K_{HG} K_{HG_2}[H_0][G]^2$$
 
 Collecting terms:
 
-$$K_a K_d[G]^3 + K_a(2K_d[H_0] - K_d[G_0] + 1)[G]^2 + (K_a([H_0] - [G_0])+1)[G] - ([G_0]) = 0$$
+$$K_{HG} K_{HG_2}[G]^3 + K_{HG}(2K_{HG_2}[H_0] - K_{HG_2}[G_0] + 1)[G]^2 + (K_{HG}([H_0] - [G_0])+1)[G] - ([G_0]) = 0$$
 
 **Cubic equation in [G] (free guest concentration):**
 
@@ -132,9 +128,9 @@ $$a[G]^3 + b[G]^2 + c[G] + d = 0$$
 
 Where:
 
-- $a = K_a K_d$
-- $b = K_a(2K_d[H_0] - K_d[G_0] + 1)$
-- $c = K_a([H_0] - [G_0]) + 1$
+- $a = K_{HG} K_{HG_2}$
+- $b = K_{HG}(2K_{HG_2}[H_0] - K_{HG_2}[G_0] + 1)$
+- $c = K_{HG}([H_0] - [G_0]) + 1$
 - $d = -[G_0]$
 
 ---
@@ -145,15 +141,13 @@ Where:
 
 This model describes sequential binding of two hosts to one guest:
 
-```
-H + G ⇌ HG      (Ka)
-H + HG ⇌ H₂G    (Kd)
-```
+$$H + G \rightleftharpoons HG \quad (K_{HG})$$
+$$H + HG \rightleftharpoons H_2G \quad (K_{H_2G})$$
 
 **Equilibrium constants:**
 
-$$K_a = \frac{[HG]}{[H][G]}$$
-$$K_d = \frac{[H_2G]}{[H][HG]}$$
+$$K_{HG} = \frac{[HG]}{[H][G]}$$
+$$K_{H_2G} = \frac{[H_2G]}{[H][HG]}$$
 
 ### Mass Balance Equations
 
@@ -169,38 +163,38 @@ $$[G_0] = [G] + [HG] + [H_2G]$$
 
 From the equilibrium expressions:
 
-$$[HG] = K_a[H][G]$$
-$$[H_2G] = K_d[H][HG] = K_a K_d[H]^2[G]$$
+$$[HG] = K_{HG}[H][G]$$
+$$[H_2G] = K_{H_2G}[H][HG] = K_{HG} K_{H_2G}[H]^2[G]$$
 
 From guest mass balance:
 
-$$[G_0] = [G] + K_a[H][G] + K_a K_d[H]^2[G]$$
-$$[G_0] = [G](1 + K_a[H] + K_a K_d[H]^2)$$
+$$[G_0] = [G] + K_{HG}[H][G] + K_{HG} K_{H_2G}[H]^2[G]$$
+$$[G_0] = [G](1 + K_{HG}[H] + K_{HG} K_{H_2G}[H]^2)$$
 
 Therefore:
 
-$$[G] = \frac{[G_0]}{1 + K_a[H] + K_a K_d[H]^2}$$
+$$[G] = \frac{[G_0]}{1 + K_{HG}[H] + K_{HG} K_{H_2G}[H]^2}$$
 
 Substituting back:
 
-$$[HG] = \frac{K_a[H][G_0]}{1 + K_a[H] + K_a K_d[H]^2}$$
-$$[H_2G] = \frac{K_a K_d[H]^2[G_0]}{1 + K_a[H] + K_a K_d[H]^2}$$
+$$[HG] = \frac{K_{HG}[H][G_0]}{1 + K_{HG}[H] + K_{HG} K_{H_2G}[H]^2}$$
+$$[H_2G] = \frac{K_{HG} K_{H_2G}[H]^2[G_0]}{1 + K_{HG}[H] + K_{HG} K_{H_2G}[H]^2}$$
 
 From host mass balance:
 
-$$[H_0] = [H] + \frac{K_a[H][G_0]}{1 + K_a[H] + K_a K_d[H]^2} + 2\frac{K_a K_d[H]^2[G_0]}{1 + K_a[H] + K_a K_d[H]^2}$$
+$$[H_0] = [H] + \frac{K_{HG}[H][G_0]}{1 + K_{HG}[H] + K_{HG} K_{H_2G}[H]^2} + 2\frac{K_{HG} K_{H_2G}[H]^2[G_0]}{1 + K_{HG}[H] + K_{HG} K_{H_2G}[H]^2}$$
 
 Multiplying through by the denominator:
 
-$$[H_0](1 + K_a[H] + K_a K_d[H]^2) = [H](1 + K_a[H] + K_a K_d[H]^2) + K_a[H][G_0] + 2K_a K_d[H]^2[G_0]$$
+$$[H_0](1 + K_{HG}[H] + K_{HG} K_{H_2G}[H]^2) = [H](1 + K_{HG}[H] + K_{HG} K_{H_2G}[H]^2) + K_{HG}[H][G_0] + 2K_{HG} K_{H_2G}[H]^2[G_0]$$
 
 Rearranging:
 
-$$[H_0] + [H_0]K_a[H] + [H_0]K_a K_d[H]^2 = [H] + K_a[H]^2 + K_a K_d[H]^3 + K_a[G_0][H] + 2K_a K_d[G_0][H]^2$$
+$$[H_0] + [H_0]K_{HG}[H] + [H_0]K_{HG} K_{H_2G}[H]^2 = [H] + K_{HG}[H]^2 + K_{HG} K_{H_2G}[H]^3 + K_{HG}[G_0][H] + 2K_{HG} K_{H_2G}[G_0][H]^2$$
 
 Collecting terms:
 
-$$K_a K_d[H]^3 + K_a(2K_d[G_0] - K_d[H_0] + 1)[H]^2 + (K_a([G_0] - [H_0])+1)[H] - ([H_0]) = 0$$
+$$K_{HG} K_{H_2G}[H]^3 + K_{HG}(2K_{H_2G}[G_0] - K_{H_2G}[H_0] + 1)[H]^2 + (K_{HG}([G_0] - [H_0])+1)[H] - ([H_0]) = 0$$
 
 **Cubic equation in [H] (free host concentration):**
 
@@ -208,9 +202,9 @@ $$a[H]^3 + b[H]^2 + c[H] + d = 0$$
 
 Where:
 
-- $a = K_a K_d$
-- $b = K_a(2K_d[G_0] - K_d[H_0] + 1)$
-- $c = K_a([G_0] - [H_0]) + 1$
+- $a = K_{HG} K_{H_2G}$
+- $b = K_{HG}(2K_{H_2G}[G_0] - K_{H_2G}[H_0] + 1)$
+- $c = K_{HG}([G_0] - [H_0]) + 1$
 - $d = -[H_0]$
 
 ---
@@ -221,15 +215,13 @@ Where:
 
 This model describes host-guest binding in competition with host dimerization:
 
-```
-H + G ⇌ HG     (Ka)
-2H ⇌ H₂       (Kd)
-```
+$$H + G \rightleftharpoons HG \quad (K_{HG})$$
+$$2H \rightleftharpoons H_2 \quad (K_{H_2})$$
 
 **Equilibrium constants:**
 
-$$K_a = \frac{[HG]}{[H][G]}$$
-$$K_d = \frac{[H_2]}{[H]^2}$$
+$$K_{HG} = \frac{[HG]}{[H][G]}$$
+$$K_{H_2} = \frac{[H_2]}{[H]^2}$$
 
 ### Mass Balance Equations
 
@@ -245,37 +237,37 @@ $$[G_0] = [G] + [HG]$$
 
 From the equilibrium expressions:
 
-$$[HG] = K_a[H][G]$$
-$$[H_2] = K_d[H]^2$$
+$$[HG] = K_{HG}[H][G]$$
+$$[H_2] = K_{H_2}[H]^2$$
 
 From guest mass balance:
 
-$$[G_0] = [G] + K_a[H][G]$$
-$$[G_0] = [G](1 + K_a[H])$$
+$$[G_0] = [G] + K_{HG}[H][G]$$
+$$[G_0] = [G](1 + K_{HG}[H])$$
 
 Therefore:
 
-$$[G] = \frac{[G_0]}{1 + K_a[H]}$$
+$$[G] = \frac{[G_0]}{1 + K_{HG}[H]}$$
 
 Substituting back:
 
-$$[HG] = \frac{K_a[H][G_0]}{1 + K_a[H]}$$
+$$[HG] = \frac{K_{HG}[H][G_0]}{1 + K_{HG}[H]}$$
 
 From host mass balance:
 
-$$[H_0] = [H] + \frac{K_a[H][G_0]}{1 + K_a[H]} + 2K_d[H]^2$$
+$$[H_0] = [H] + \frac{K_{HG}[H][G_0]}{1 + K_{HG}[H]} + 2K_{H_2}[H]^2$$
 
-Multiplying through by $(1 + K_a[H])$:
+Multiplying through by $(1 + K_{HG}[H])$:
 
-$$[H_0](1 + K_a[H]) = [H](1 + K_a[H]) + K_a[H][G_0] + 2K_d[H]^2(1 + K_a[H])$$
+$$[H_0](1 + K_{HG}[H]) = [H](1 + K_{HG}[H]) + K_{HG}[H][G_0] + 2K_{H_2}[H]^2(1 + K_{HG}[H])$$
 
 Expanding:
 
-$$[H_0] + [H_0]K_a[H] = [H] + K_a[H]^2 + K_a[H][G_0] + 2K_d[H]^2 + 2K_dK_a[H]^3$$
+$$[H_0] + [H_0]K_{HG}[H] = [H] + K_{HG}[H]^2 + K_{HG}[H][G_0] + 2K_{H_2}[H]^2 + 2K_{H_2}K_{HG}[H]^3$$
 
 Rearranging:
 
-$$2K_dK_a[H]^3 + (K_a + 2K_d)[H]^2 + (K_a([G_0] - [H_0])+1)[H] - [H_0] = 0$$
+$$2K_{H_2}K_{HG}[H]^3 + (K_{HG} + 2K_{H_2})[H]^2 + (K_{HG}([G_0] - [H_0])+1)[H] - [H_0] = 0$$
 
 **Cubic equation in [H] (free host concentration):**
 
@@ -283,9 +275,9 @@ $$a[H]^3 + b[H]^2 + c[H] + d = 0$$
 
 Where:
 
-- $a = 2K_aK_d$
-- $b = K_a + 2K_d$
-- $c = K_a([G_0] - [H_0]) + 1$
+- $a = 2K_{HG}K_{H_2}$
+- $b = K_{HG} + 2K_{H_2}$
+- $c = K_{HG}([G_0] - [H_0]) + 1$
 - $d = -[H_0]$
 
 ---
@@ -304,7 +296,7 @@ H + HG ⇌ H₂G    (KH2G)
 
 **Equilibrium constants:**
 $$K_{HG} = \frac{[HG]}{[H][G]}$$
-$$K_d = \frac{[H_2]}{[H]^2}$$
+$$K_{H_2} = \frac{[H_2]}{[H]^2}$$
 $$K_{H_2G} = \frac{[H_2G]}{[H][HG]}$$
 
 ### Mass Balance Equations
@@ -320,7 +312,7 @@ $$[G_0] = [G] + [HG] + [H_2G]$$
 From the equilibrium expressions:
 
 $$[HG] = K_{HG}[H][G]$$
-$$[H_2] = K_d[H]^2$$
+$$[H_2] = K_{H_2}[H]^2$$
 $$[H_2G] = K_{H_2G}[H][HG] = K_{H_2G}K_{HG}[H]^2[G]$$
 
 From guest mass balance:
@@ -339,19 +331,19 @@ $$[H_2G] = \frac{K_{H_2G}K_{HG}[H]^2[G_0]}{1 + K_{HG}[H] + K_{H_2G}K_{HG}[H]^2}$
 
 From host mass balance:
 
-$$[H_0] = [H] + \frac{K_{HG}[H][G_0]}{1 + K_{HG}[H] + K_{H_2G}K_{HG}[H]^2} + 2K_d[H]^2 + 2\frac{K_{H_2G}K_{HG}[H]^2[G_0]}{1 + K_{HG}[H] + K_{H_2G}K_{HG}[H]^2}$$
+$$[H_0] = [H] + \frac{K_{HG}[H][G_0]}{1 + K_{HG}[H] + K_{H_2G}K_{HG}[H]^2} + 2K_{H_2}[H]^2 + 2\frac{K_{H_2G}K_{HG}[H]^2[G_0]}{1 + K_{HG}[H] + K_{H_2G}K_{HG}[H]^2}$$
 
 Multiplying through by the denominator:
 
-$$[H_0](1 + K_{HG}[H] + K_{H_2G}K_{HG}[H]^2) = [H](1 + K_{HG}[H] + K_{H_2G}K_{HG}[H]^2) + K_{HG}[H][G_0] + 2K_d[H]^2(1 + K_{HG}[H] + K_{H_2G}K_{HG}[H]^2) + 2K_{H_2G}K_{HG}[H]^2[G_0]$$
+$$[H_0](1 + K_{HG}[H] + K_{H_2G}K_{HG}[H]^2) = [H](1 + K_{HG}[H] + K_{H_2G}K_{HG}[H]^2) + K_{HG}[H][G_0] + 2K_{H_2}[H]^2(1 + K_{HG}[H] + K_{H_2G}K_{HG}[H]^2) + 2K_{H_2G}K_{HG}[H]^2[G_0]$$
 
 Expanding and collecting terms:
 
-$$[H_0] + [H_0]K_{HG}[H] + [H_0]K_{H_2G}K_{HG}[H]^2 = [H] + K_{HG}[H]^2 + K_{H_2G}K_{HG}[H]^3 + K_{HG}[H][G_0] + 2K_d[H]^2 + 2K_dK_{HG}[H]^3 + 2K_dK_{H_2G}K_{HG}[H]^4 + 2K_{H_2G}K_{HG}[H]^2[G_0]$$
+$$[H_0] + [H_0]K_{HG}[H] + [H_0]K_{H_2G}K_{HG}[H]^2 = [H] + K_{HG}[H]^2 + K_{H_2G}K_{HG}[H]^3 + K_{HG}[H][G_0] + 2K_{H_2}[H]^2 + 2K_{H_2}K_{HG}[H]^3 + 2K_{H_2}K_{H_2G}K_{HG}[H]^4 + 2K_{H_2G}K_{HG}[H]^2[G_0]$$
 
 Rearranging into polynomial form:
 
-$$2K_dK_{H_2G}K_{HG}[H]^4 + (K_{H_2G}K_{HG} + 2K_dK_{HG})[H]^3 + (2K_d + K_{HG} + 2K_{H_2G}K_{HG}[G_0] - K_{H_2G}K_{HG}[H_0])[H]^2 + (K_{HG}[G_0] - K_{HG}[H_0] + 1)[H] - [H_0] = 0$$
+$$2K_{H_2}K_{H_2G}K_{HG}[H]^4 + (K_{H_2G}K_{HG} + 2K_{H_2}K_{HG})[H]^3 + (2K_{H_2} + K_{HG} + 2K_{H_2G}K_{HG}[G_0] - K_{H_2G}K_{HG}[H_0])[H]^2 + (K_{HG}[G_0] - K_{HG}[H_0] + 1)[H] - [H_0] = 0$$
 
 This leads to a **quartic polynomial equation** in [H] that typically requires **iterative numerical solution**.
 
