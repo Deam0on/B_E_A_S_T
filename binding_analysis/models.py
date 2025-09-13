@@ -15,6 +15,7 @@ import numpy as np
 # Type aliases for clarity
 ArrayLike = Union[np.ndarray, list, float]
 
+
 def select_physical_root(roots, lower, upper, epsilon=1e-10):
     """
     Select a physically valid root from real roots.
@@ -30,7 +31,9 @@ def select_physical_root(roots, lower, upper, epsilon=1e-10):
     """
     real_roots = np.real(roots[np.isreal(roots)])
     # Keep roots within the physical interval
-    candidates = real_roots[(real_roots > lower + epsilon) & (real_roots <= upper + epsilon)]
+    candidates = real_roots[
+        (real_roots > lower + epsilon) & (real_roots <= upper + epsilon)
+    ]
     if candidates.size > 0:
         # If multiple, pick the smallest (to stay physical/stable)
         return np.min(candidates)
@@ -68,7 +71,7 @@ def binding_isotherm_1_1(
     HG = 0.5 * (term - sqrt_term)
 
     # Chemical shift calculation
-    d_delta_comp = (d_inf * (HG / G0))
+    d_delta_comp = d_inf * (HG / G0)
 
     return d_delta_comp
 
@@ -97,7 +100,7 @@ def binding_isotherm_1_2(
     H0, G0 = np.asarray(H0), np.asarray(G0)
     d_delta_comp = np.zeros_like(H0, dtype=float)
     epsilon = 1e-10
-    
+
     for i in range(len(H0)):
         H0_i, G0_i = H0[i], G0[i]
 
@@ -231,14 +234,14 @@ def multi_model(
     This model describes a complex system with multiple equilibria:
     H + G ⇌ HG      (KHG)
     2H ⇌ H₂        (Kd)
-    H₂ + G ⇌ H₂G    (KH2G)
+    H + HG ⇌ H₂G    (KH2G)
 
     Args:
         H0: Total host concentration(s)
         G0: Total guest concentration(s)
         KHG: Host-guest binding constant (M⁻¹)
         Kd: Host dimerization constant (M⁻¹)
-        KH2G: Dimer-guest binding constant (M⁻¹)
+        KH2G: Host-HG binding constant for H₂G formation (M⁻¹)
         dG: Chemical shift of free guest (reference, usually 0)
         dHG: Chemical shift of guest in HG complex
         dH2G: Chemical shift of guest in H₂G complex
@@ -254,66 +257,76 @@ def multi_model(
 
     for i in range(len(H0)):
         H0_i, G0_i = H0[i], G0[i]
-        
+
         # Initial guess for free concentrations
         H_free = H0_i / 2  # Start with reasonable guess
         G_free = G0_i / 2
-        
+
         # Iterative solution for equilibrium concentrations
         for _ in range(max_iter):
             H_free_old = H_free
             G_free_old = G_free
-            
+
             # Calculate complex concentrations from current free concentrations
             H2 = Kd * H_free**2
             HG = KHG * H_free * G_free
-            H2G = KH2G * H2 * G_free
-            
+            H2G = KH2G * H_free * HG  # Changed: H + HG ⇌ H₂G
+
             # Update free concentrations from mass balance
             # From host mass balance: H0 = H_free + HG + 2*H2 + 2*H2G
             # From guest mass balance: G0 = G_free + HG + H2G
-            
-            # Guest mass balance (simpler)
+
+            # Guest mass balance: G0 = G_free + HG + H2G
+            # G0 = G_free + KHG*H_free*G_free + KH2G*H_free*HG
+            # G0 = G_free + KHG*H_free*G_free + KH2G*H_free*KHG*H_free*G_free
+            # G0 = G_free * (1 + KHG*H_free + KH2G*KHG*H_free^2)
             H_old, G_old = H_free, G_free
-            G_free = G0_i / (1 + KHG * H_free + KH2G * Kd * H_free**2)
-            
-            # Host mass balance (quadratic in H_free)
-            # H0 = H_free + KHG*H_free*G_free + 2*Kd*H_free^2 + 2*KH2G*Kd*H_free^2*G_free
-            # H0 = H_free * (1 + KHG*G_free + 2*Kd*H_free + 2*KH2G*Kd*H_free*G_free)
-            
-            # Rearrange to: 2*Kd*(1 + KH2G*G_free)*H_free^2 + (1 + KHG*G_free)*H_free - H0 = 0
-            a = 2 * Kd * (1 + KH2G * G_free)
+            G_free = G0_i / (1 + KHG * H_free + KH2G * KHG * H_free**2)
+
+            # Recalculate with updated G_free
+            HG = KHG * H_free * G_free
+            H2G = KH2G * H_free * HG
+
+            # Host mass balance: H0 = H_free + HG + 2*H2 + 2*H2G
+            # H0 = H_free + KHG*H_free*G_free + 2*Kd*H_free^2 + 2*KH2G*H_free*KHG*H_free*G_free
+            # H0 = H_free * (1 + KHG*G_free + 2*Kd*H_free + 2*KH2G*KHG*H_free*G_free)
+
+            # Rearrange to quadratic: (2*Kd + 2*KH2G*KHG*G_free)*H_free^2 + (1 + KHG*G_free)*H_free - H0 = 0
+            a = 2 * Kd + 2 * KH2G * KHG * G_free
             b = 1 + KHG * G_free
             c = -H0_i
 
             if abs(a) < epsilon:
                 H_free = -c / b if abs(b) > epsilon else epsilon
             else:
-                disc = b**2 - 4*a*c
+                disc = b**2 - 4 * a * c
                 if disc >= 0:
                     sqrt_disc = np.sqrt(disc)
-                    roots = np.array([(-b + sqrt_disc) / (2*a), (-b - sqrt_disc) / (2*a)])
+                    roots = np.array(
+                        [(-b + sqrt_disc) / (2 * a), (-b - sqrt_disc) / (2 * a)]
+                    )
                     H_free = select_physical_root(roots, 0.0, H0_i, epsilon)
                 else:
                     H_free = epsilon
+
             if abs(H_free - H_old) < tol and abs(G_free - G_old) < tol:
                 break
-        
+
         # Calculate final species concentrations
         H2 = Kd * H_free**2
         HG = KHG * H_free * G_free
-        H2G = KH2G * H2 * G_free
-        
+        H2G = KH2G * H_free * HG
+
         # Guest-observed chemical shift calculation
         # Only species containing guest contribute: G_free, HG, H2G
         # Standard weighted average: δ_obs = Σ(δ_i × [species_i]) / [total_guest]
-        
+
         total_guest = G_free + HG + H2G
         if total_guest > epsilon:
             delta_obs = (dG * G_free + dHG * HG + dH2G * H2G) / total_guest
         else:
             delta_obs = dG
-        
+
         # Convert to Δδ relative to free guest (dG as reference)
         d_delta_comp[i] = delta_obs - dG
 
@@ -339,9 +352,7 @@ def model_definitions(
             "function": binding_isotherm_1_1,
             "initial_guess": [100, 100],  # Ka, d_inf
             "bounds": ([0, -np.inf], [np.inf, np.inf]),
-            "lambda": lambda H0, Ka, d_inf: binding_isotherm_1_1(
-                H0, G0, Ka, d_inf
-            ),
+            "lambda": lambda H0, Ka, d_inf: binding_isotherm_1_1(H0, G0, Ka, d_inf),
             "description": "1:1 Host-Guest binding (H + G ⇌ HG)",
             "parameter_names": ["K(HG)", "d(HG)"],
         },
@@ -389,7 +400,7 @@ def model_definitions(
             "lambda": lambda H0, KHG, Kd, KH2G, dG, dHG, dH2G: multi_model(
                 H0, G0, KHG, Kd, KH2G, dG, dHG, dH2G
             ),
-            "description": "Multi-equilibrium system (H + G ⇌ HG, 2H ⇌ H₂, H₂ + G ⇌ H₂G)",
+            "description": "Multi-equilibrium system (H + G ⇌ HG, 2H ⇌ H₂, H + HG ⇌ H₂G)",
             "parameter_names": ["K(HG)", "K(H₂)", "K(H₂G)", "d(G)", "d(HG)", "d(H₂G)"],
         },
     }

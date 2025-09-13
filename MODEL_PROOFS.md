@@ -299,13 +299,13 @@ This model describes a complex system with three competing equilibria:
 ```
 H + G ⇌ HG      (KHG)
 2H ⇌ H₂        (Kd)
-H₂ + G ⇌ H₂G    (KH2G)
+H + HG ⇌ H₂G    (KH2G)
 ```
 
 **Equilibrium constants:**
 $$K_{HG} = \frac{[HG]}{[H][G]}$$
 $$K_d = \frac{[H_2]}{[H]^2}$$
-$$K_{H_2G} = \frac{[H_2G]}{[H_2][G]}$$
+$$K_{H_2G} = \frac{[H_2G]}{[H][HG]}$$
 
 ### Mass Balance Equations
 
@@ -321,26 +321,39 @@ From the equilibrium expressions:
 
 $$[HG] = K_{HG}[H][G]$$
 $$[H_2] = K_d[H]^2$$
-$$[H_2G] = K_{H_2G}[H_2][G] = K_{H_2G}K_d[H]^2[G]$$
+$$[H_2G] = K_{H_2G}[H][HG] = K_{H_2G}K_{HG}[H]^2[G]$$
 
 From guest mass balance:
 
-$$[G_0] = [G] + K_{HG}[H][G] + K_{H_2G}K_d[H]^2[G]$$
-$$[G_0] = [G](1 + K_{HG}[H] + K_{H_2G}K_d[H]^2)$$
+$$[G_0] = [G] + K_{HG}[H][G] + K_{H_2G}K_{HG}[H]^2[G]$$
+$$[G_0] = [G](1 + K_{HG}[H] + K_{H_2G}K_{HG}[H]^2)$$
 
 Therefore:
 
-$$[G] = \frac{[G_0]}{1 + K_{HG}[H] + K_{H_2G}K_d[H]^2}$$
+$$[G] = \frac{[G_0]}{1 + K_{HG}[H] + K_{H_2G}K_{HG}[H]^2}$$
+
+Substituting back:
+
+$$[HG] = \frac{K_{HG}[H][G_0]}{1 + K_{HG}[H] + K_{H_2G}K_{HG}[H]^2}$$
+$$[H_2G] = \frac{K_{H_2G}K_{HG}[H]^2[G_0]}{1 + K_{HG}[H] + K_{H_2G}K_{HG}[H]^2}$$
 
 From host mass balance:
 
-$$[H_0] = [H] + K_{HG}[H][G] + 2K_d[H]^2 + 2K_{H_2G}K_d[H]^2[G]$$
+$$[H_0] = [H] + \frac{K_{HG}[H][G_0]}{1 + K_{HG}[H] + K_{H_2G}K_{HG}[H]^2} + 2K_d[H]^2 + 2\frac{K_{H_2G}K_{HG}[H]^2[G_0]}{1 + K_{HG}[H] + K_{H_2G}K_{HG}[H]^2}$$
 
-Substituting the expression for [G]:
+Multiplying through by the denominator:
 
-$$[H_0] = [H]\left(1 + \frac{K_{HG}[G_0]}{1 + K_{HG}[H] + K_{H_2G}K_d[H]^2}\right) + 2K_d[H]^2\left(1 + \frac{K_{H_2G}[G_0]}{1 + K_{HG}[H] + K_{H_2G}K_d[H]^2}\right)$$
+$$[H_0](1 + K_{HG}[H] + K_{H_2G}K_{HG}[H]^2) = [H](1 + K_{HG}[H] + K_{H_2G}K_{HG}[H]^2) + K_{HG}[H][G_0] + 2K_d[H]^2(1 + K_{HG}[H] + K_{H_2G}K_{HG}[H]^2) + 2K_{H_2G}K_{HG}[H]^2[G_0]$$
 
-This leads to a complex polynomial equation in [H] that typically requires **iterative numerical solution**.
+Expanding and collecting terms:
+
+$$[H_0] + [H_0]K_{HG}[H] + [H_0]K_{H_2G}K_{HG}[H]^2 = [H] + K_{HG}[H]^2 + K_{H_2G}K_{HG}[H]^3 + K_{HG}[H][G_0] + 2K_d[H]^2 + 2K_dK_{HG}[H]^3 + 2K_dK_{H_2G}K_{HG}[H]^4 + 2K_{H_2G}K_{HG}[H]^2[G_0]$$
+
+Rearranging into polynomial form:
+
+$$2K_dK_{H_2G}K_{HG}[H]^4 + (K_{H_2G}K_{HG} + 2K_dK_{HG})[H]^3 + (2K_d + K_{HG} + 2K_{H_2G}K_{HG}[G_0] - K_{H_2G}K_{HG}[H_0])[H]^2 + (K_{HG}[G_0] - K_{HG}[H_0] + 1)[H] - [H_0] = 0$$
+
+This leads to a **quartic polynomial equation** in [H] that typically requires **iterative numerical solution**.
 
 ### Iterative Solution Method
 
@@ -377,9 +390,13 @@ The overall equilibrium for H₂G formation can be viewed as:
 
 $$2H + G \rightleftharpoons H_2G$$
 
-With overall constant: $K_{overall} = K_d \times K_{H_2G}$
+This can occur through two pathways:
+1. **Sequential pathway**: $H + G \rightleftharpoons HG$, then $H + HG \rightleftharpoons H_2G$
+2. **Alternative pathway**: $2H \rightleftharpoons H_2$, then $H_2 + G \rightleftharpoons H_2G$ (not present in this model)
 
-This relationship helps in understanding the relative importance of the different pathways to complex formation.
+The overall constant through the sequential pathway: $K_{overall} = K_{HG} \times K_{H_2G}$
+
+This relationship helps in understanding the relative importance of the different pathways to complex formation. The formation of H₂G is directly dependent on the availability of both free host and the HG complex.
 
 ---
 
