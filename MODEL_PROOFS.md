@@ -288,11 +288,10 @@ Where:
 
 This model describes a complex system with three competing equilibria:
 
-```
-H + G ⇌ HG      (KHG)
-2H ⇌ H₂        (Kd)
-H + HG ⇌ H₂G    (KH2G)
-```
+
+$$H + G \rightleftharpoons HG \quad (K_{HG})$$
+$$2H \rightleftharpoons HH_2 \quad (K_{H_2})$$
+$$H + HG \rightleftharpoons H_2G \quad (K_{H_2G})$$
 
 **Equilibrium constants:**
 $$K_{HG} = \frac{[HG]}{[H][G]}$$
