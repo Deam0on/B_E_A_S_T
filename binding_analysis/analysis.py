@@ -43,10 +43,10 @@ def smart_initial_guess(
     max_iter: int = 10,
 ) -> np.ndarray:
     """
-    Intelligently refine initial parameter guesses through grid search.
+    Intelligently refine initial parameter guesses using multiple strategies.
 
-    This function systematically perturbs each parameter in the initial guess
-    to find a better starting point for the curve fitting.
+    This redesigned function combines data-driven estimation with multi-scale
+    optimization to find much better starting points for curve fitting.
 
     Args:
         model_func: The model function to test
@@ -54,44 +54,246 @@ def smart_initial_guess(
         bounds: Parameter bounds (lower, upper)
         H0: Host concentration data
         d_delta_exp: Experimental data to fit
-        step: Step size for parameter perturbation
+        step: Step size for parameter perturbation (legacy parameter)
         max_iter: Maximum number of iterations
 
     Returns:
         Improved initial guess
     """
-    best_guess = np.array(guess)
-    best_rmse = np.inf
+    
+    # Phase 1: Data-driven parameter estimation
+    data_driven_guess = _estimate_parameters_from_data(H0, d_delta_exp, guess, bounds)
+    
+    # Phase 2: Multi-scale grid search with adaptive steps
+    grid_optimized_guess = _adaptive_grid_search(
+        model_func, data_driven_guess, bounds, H0, d_delta_exp, max_iter
+    )
+    
+    # Phase 3: Fine-tune with coordinate descent
+    final_guess = _coordinate_descent_refinement(
+        model_func, grid_optimized_guess, bounds, H0, d_delta_exp
+    )
+    
+    return final_guess
 
-    for iteration in range(max_iter):
+
+def _estimate_parameters_from_data(H0: np.ndarray, d_delta_exp: np.ndarray, 
+                                   initial_guess: List[float], 
+                                   bounds: Tuple[List[float], List[float]]) -> np.ndarray:
+    """
+    Estimate parameters directly from experimental data characteristics.
+    
+    This function analyzes the binding curve shape to provide intelligent
+    initial estimates for binding constants and chemical shift parameters.
+    """
+    guess = np.array(initial_guess, dtype=float)
+    lower_bounds, upper_bounds = bounds
+    
+    # Basic data analysis
+    max_shift = np.max(np.abs(d_delta_exp))
+    min_shift = np.min(d_delta_exp)
+    
+    # Skip if no significant binding observed
+    if max_shift < 1.0:
+        return guess
+    
+    # Find saturation behavior (use last 20% of data points)
+    n_points = len(d_delta_exp)
+    tail_start = max(1, int(0.8 * n_points))
+    saturation_level = np.mean(np.abs(d_delta_exp[tail_start:]))
+    
+    # Estimate Ka from half-saturation point
+    half_sat_target = saturation_level / 2.0
+    
+    # Find the point closest to half-saturation
+    if max_shift > half_sat_target:
+        half_idx = np.argmin(np.abs(np.abs(d_delta_exp) - half_sat_target))
+        half_sat_H = H0[half_idx]
+        
+        # Estimate Ka based on binding model assumptions
+        # For 1:1 binding: Ka ≈ 1/([H]_half) when guest is in excess
+        if half_sat_H > 0:
+            ka_estimate = 1.0 / half_sat_H
+            
+            # Apply reasonable bounds based on typical NMR binding constants
+            ka_estimate = np.clip(ka_estimate, 1, 10000)
+            
+            # Update Ka parameter (usually first parameter)
+            if len(guess) > 0 and 0 < len(lower_bounds):
+                ka_bounded = np.clip(ka_estimate, lower_bounds[0], upper_bounds[0])
+                guess[0] = ka_bounded
+    
+    # Estimate chemical shift parameters from data magnitude
+    shift_estimate = max_shift * 1.2  # Slightly larger than observed maximum
+    
+    # Update chemical shift parameters (usually the last parameters)
+    for i in range(len(guess)):
+        # Look for parameters that could be chemical shifts (unbounded below, large upper bound)
+        if (i < len(lower_bounds) and 
+            lower_bounds[i] == -np.inf and 
+            upper_bounds[i] == np.inf):
+            
+            # This looks like a chemical shift parameter
+            if shift_estimate != 0:
+                guess[i] = shift_estimate if d_delta_exp[-1] > d_delta_exp[0] else -shift_estimate
+    
+    # For multi-parameter models, apply heuristics
+    if len(guess) >= 4:  # Models like HG₂, H₂G
+        # Second binding constant is typically weaker (statistical factor of ~4)
+        if len(guess) > 1 and guess[0] > 0:
+            guess[1] = guess[0] / 4.0
+            guess[1] = np.clip(guess[1], lower_bounds[1] if len(lower_bounds) > 1 else 0.1, 
+                             upper_bounds[1] if len(upper_bounds) > 1 else guess[0])
+    
+    return guess
+
+
+def _adaptive_grid_search(model_func, initial_guess: np.ndarray, 
+                         bounds: Tuple[List[float], List[float]],
+                         H0: np.ndarray, d_delta_exp: np.ndarray,
+                         max_iter: int = 10) -> np.ndarray:
+    """
+    Perform adaptive multi-scale grid search optimization.
+    
+    This uses different step sizes for different parameter types and
+    progressively refines the search around the best candidates.
+    """
+    best_guess = initial_guess.copy()
+    lower_bounds, upper_bounds = bounds
+    
+    try:
+        # Initial evaluation
+        best_rmse = np.sqrt(np.mean((model_func(H0, *best_guess) - d_delta_exp) ** 2))
+    except Exception:
+        best_rmse = np.inf
+    
+    # Define adaptive step sizes based on parameter characteristics
+    step_factors = []
+    for i in range(len(best_guess)):
+        param_val = abs(best_guess[i])
+        
+        if param_val == 0:
+            step_factors.append(1.0)
+        elif param_val < 1:
+            step_factors.append(0.1)  # Small steps for parameters < 1
+        elif param_val < 100:
+            step_factors.append(param_val * 0.2)  # 20% steps for medium parameters
+        else:
+            step_factors.append(param_val * 0.5)  # 50% steps for large parameters
+    
+    # Multi-scale search: coarse to fine
+    scale_factors = [2.0, 1.0, 0.5, 0.2]  # Multiple scales
+    
+    for scale in scale_factors:
+        improved_this_scale = False
+        
+        for iteration in range(max_iter // len(scale_factors)):
+            improved_this_iter = False
+            
+            # Try all parameter combinations
+            for i in range(len(best_guess)):
+                current_step = step_factors[i] * scale
+                
+                # Try both directions with current step size
+                for direction in [-1, 1]:
+                    candidate = best_guess.copy()
+                    candidate[i] += direction * current_step
+                    
+                    # Respect bounds
+                    if i < len(lower_bounds):
+                        candidate[i] = np.clip(candidate[i], lower_bounds[i], upper_bounds[i])
+                    
+                    try:
+                        fit_vals = model_func(H0, *candidate)
+                        rmse = np.sqrt(np.mean((fit_vals - d_delta_exp) ** 2))
+                        
+                        if rmse < best_rmse:
+                            best_guess = candidate.copy()
+                            best_rmse = rmse
+                            improved_this_iter = True
+                            improved_this_scale = True
+                            
+                    except Exception:
+                        continue
+            
+            # If no improvement in this iteration, try smaller steps
+            if not improved_this_iter:
+                for i in range(len(step_factors)):
+                    step_factors[i] *= 0.5
+        
+        # If no improvement at this scale, move to next scale
+        if not improved_this_scale:
+            continue
+    
+    return best_guess
+
+
+def _coordinate_descent_refinement(model_func, initial_guess: np.ndarray,
+                                 bounds: Tuple[List[float], List[float]],
+                                 H0: np.ndarray, d_delta_exp: np.ndarray) -> np.ndarray:
+    """
+    Fine-tune parameters using coordinate descent with golden section search.
+    
+    This provides final refinement by optimizing each parameter individually
+    using a more sophisticated 1D optimization approach.
+    """
+    from scipy.optimize import minimize_scalar
+    
+    best_guess = initial_guess.copy()
+    lower_bounds, upper_bounds = bounds
+    
+    try:
+        best_rmse = np.sqrt(np.mean((model_func(H0, *best_guess) - d_delta_exp) ** 2))
+    except Exception:
+        return best_guess
+    
+    # Refine each parameter individually
+    max_refinement_iter = 3
+    
+    for refinement_iter in range(max_refinement_iter):
         improved = False
-
+        
         for i in range(len(best_guess)):
-            for delta in [-step, step]:
+            # Define objective function for parameter i
+            def param_objective(x):
                 candidate = best_guess.copy()
-                candidate[i] += delta
-
-                # Ensure bounds are respected
-                lower_bounds, upper_bounds = bounds
-                candidate[i] = np.clip(candidate[i], lower_bounds[i], upper_bounds[i])
-
+                candidate[i] = x
                 try:
                     fit_vals = model_func(H0, *candidate)
-                    rmse = np.sqrt(np.mean((fit_vals - d_delta_exp) ** 2))
-
-                    if rmse < best_rmse:
-                        best_guess = candidate
-                        best_rmse = rmse
-                        improved = True
-
+                    return np.sqrt(np.mean((fit_vals - d_delta_exp) ** 2))
                 except Exception:
-                    # Skip if model evaluation fails
+                    return np.inf
+            
+            # Set search bounds for this parameter
+            if i < len(lower_bounds) and i < len(upper_bounds):
+                param_lower = max(lower_bounds[i], best_guess[i] - abs(best_guess[i]))
+                param_upper = min(upper_bounds[i], best_guess[i] + abs(best_guess[i]))
+                
+                # Ensure valid bounds
+                if param_lower >= param_upper:
                     continue
-
-        # Early exit if no improvement found
+                    
+                try:
+                    # Use scalar optimization for this parameter
+                    result = minimize_scalar(
+                        param_objective,
+                        bounds=(param_lower, param_upper),
+                        method='bounded',
+                        options={'maxiter': 20}
+                    )
+                    
+                    if result.success and result.fun < best_rmse:
+                        best_guess[i] = result.x
+                        best_rmse = result.fun
+                        improved = True
+                        
+                except Exception:
+                    continue
+        
+        # Stop if no improvement
         if not improved:
             break
-
+    
     return best_guess
 
 
