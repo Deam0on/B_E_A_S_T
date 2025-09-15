@@ -779,12 +779,22 @@ def compare_models_by_metric(
                     )
 
                 elif metric_name == "Cook's Distance":
+                    # Add debug logging
+                    cooks = row.get("cooks_max")
+                    cooks_extreme = row.get("cooks_extreme") 
+                    logging.debug(f"Cook's Distance debug: cooks_max={cooks}, cooks_extreme={cooks_extreme}")
+                    
                     if cooks is not None:
                         passed = cooks < 1.0
+                        # Create more informative display for Cook's Distance
+                        display_value = f"{cooks:.3f}"
+                        if cooks_extreme is not None:
+                            display_value += f" ({cooks_extreme} extreme)"
+                        
                         table_data.append(
                             [
                                 metric_name,
-                                f"{cooks:.3f}",
+                                display_value,
                                 "< 1.0",
                                 "0 to ∞",
                                 interpret_diagnostic("cooks_distance", cooks, 1.0, passed),
@@ -797,7 +807,7 @@ def compare_models_by_metric(
                                 "N/A",
                                 "< 1.0",
                                 "0 to ∞",
-                                "Insufficient data points for Cook's Distance calculation",
+                                "Cook's Distance not calculated (insufficient data points or error)",
                             ]
                         )
 
@@ -1068,9 +1078,14 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
                         ),
                         "H_over_G": (H0 / G0).tolist(),
                         "nfev": n_iter,
-                        **diagnostics,
+                        **diagnostics,  # This should include cooks_max and cooks_extreme
                     }
                 )
+                
+                # Add debug logging to verify Cook's Distance is in diagnostics
+                logging.debug(f"Diagnostics keys: {list(diagnostics.keys())}")
+                logging.debug(f"Cook's max: {diagnostics.get('cooks_max')}")
+                logging.debug(f"Cook's extreme: {diagnostics.get('cooks_extreme')}")
 
                 logging.info(f"Model {model_name} fit completed")
                 # Log parameters with proper names
