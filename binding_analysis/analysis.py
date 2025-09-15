@@ -61,6 +61,20 @@ def smart_initial_guess(
         Improved initial guess
     """
     
+    # Ensure initial guess respects bounds and has minimum values
+    guess = np.array(guess, dtype=float)
+    lower_bounds, upper_bounds = bounds
+    
+    # Apply strict bounds checking with minimum values
+    for i in range(len(guess)):
+        if i < len(lower_bounds) and i < len(upper_bounds):
+            # Ensure Ka (usually first parameter) has minimum value > 0
+            if i == 0:  # Binding constant
+                min_ka = max(lower_bounds[i], 1e-6)  # Minimum Ka = 1e-6 M^-1
+                guess[i] = np.clip(guess[i], min_ka, upper_bounds[i])
+            else:
+                guess[i] = np.clip(guess[i], lower_bounds[i], upper_bounds[i])
+    
     # Phase 1: Data-driven parameter estimation
     data_driven_guess = _estimate_parameters_from_data(H0, d_delta_exp, guess, bounds)
     
@@ -73,6 +87,15 @@ def smart_initial_guess(
     final_guess = _coordinate_descent_refinement(
         model_func, grid_optimized_guess, bounds, H0, d_delta_exp
     )
+    
+    # Final bounds check to ensure no invalid values
+    for i in range(len(final_guess)):
+        if i < len(lower_bounds) and i < len(upper_bounds):
+            if i == 0:  # Binding constant
+                min_ka = max(lower_bounds[i], 1e-6)
+                final_guess[i] = np.clip(final_guess[i], min_ka, upper_bounds[i])
+            else:
+                final_guess[i] = np.clip(final_guess[i], lower_bounds[i], upper_bounds[i])
     
     return final_guess
 
@@ -118,10 +141,17 @@ def _estimate_parameters_from_data(H0: np.ndarray, d_delta_exp: np.ndarray,
             # Apply reasonable bounds based on typical NMR binding constants
             ka_estimate = np.clip(ka_estimate, 1, 10000)
             
-            # Update Ka parameter (usually first parameter)
+            # Update Ka parameter (usually first parameter) with minimum bound
             if len(guess) > 0 and 0 < len(lower_bounds):
-                ka_bounded = np.clip(ka_estimate, lower_bounds[0], upper_bounds[0])
+                min_ka = max(lower_bounds[0], 1e-6)  # Ensure minimum Ka > 0
+                ka_bounded = np.clip(ka_estimate, min_ka, upper_bounds[0])
                 guess[0] = ka_bounded
+    
+    # Ensure Ka is never zero or negative
+    if len(guess) > 0:
+        min_ka = max(lower_bounds[0] if len(lower_bounds) > 0 else 1e-6, 1e-6)
+        if guess[0] <= 0:
+            guess[0] = min_ka
     
     # Estimate chemical shift parameters from data magnitude
     shift_estimate = max_shift * 1.2  # Slightly larger than observed maximum
@@ -141,8 +171,9 @@ def _estimate_parameters_from_data(H0: np.ndarray, d_delta_exp: np.ndarray,
     if len(guess) >= 4:  # Models like HG₂, H₂G
         # Second binding constant is typically weaker (statistical factor of ~4)
         if len(guess) > 1 and guess[0] > 0:
-            guess[1] = guess[0] / 4.0
-            guess[1] = np.clip(guess[1], lower_bounds[1] if len(lower_bounds) > 1 else 0.1, 
+            guess[1] = max(guess[0] / 4.0, 1e-6)  # Ensure minimum value
+            guess[1] = np.clip(guess[1], 
+                             max(lower_bounds[1], 1e-6) if len(lower_bounds) > 1 else 1e-6, 
                              upper_bounds[1] if len(upper_bounds) > 1 else guess[0])
     
     return guess
@@ -161,9 +192,19 @@ def _adaptive_grid_search(model_func, initial_guess: np.ndarray,
     best_guess = initial_guess.copy()
     lower_bounds, upper_bounds = bounds
     
+    # Ensure Ka parameters have minimum values
+    for i in range(len(best_guess)):
+        if i < len(lower_bounds):
+            if i == 0 or i == 1:  # Ka and Kd parameters
+                min_val = max(lower_bounds[i], 1e-6)
+                best_guess[i] = max(best_guess[i], min_val)
+    
     try:
-        # Initial evaluation
-        best_rmse = np.sqrt(np.mean((model_func(H0, *best_guess) - d_delta_exp) ** 2))
+        # Initial evaluation with error handling
+        test_vals = model_func(H0, *best_guess)
+        if np.any(np.isnan(test_vals)) or np.any(np.isinf(test_vals)):
+            raise ValueError("Initial guess produces invalid model values")
+        best_rmse = np.sqrt(np.mean((test_vals - d_delta_exp) ** 2))
     except Exception:
         best_rmse = np.inf
     
@@ -199,12 +240,20 @@ def _adaptive_grid_search(model_func, initial_guess: np.ndarray,
                     candidate = best_guess.copy()
                     candidate[i] += direction * current_step
                     
-                    # Respect bounds
+                    # Respect bounds with special handling for Ka parameters
                     if i < len(lower_bounds):
-                        candidate[i] = np.clip(candidate[i], lower_bounds[i], upper_bounds[i])
+                        if i == 0 or i == 1:  # Ka and Kd parameters
+                            min_val = max(lower_bounds[i], 1e-6)
+                            candidate[i] = np.clip(candidate[i], min_val, upper_bounds[i])
+                        else:
+                            candidate[i] = np.clip(candidate[i], lower_bounds[i], upper_bounds[i])
                     
                     try:
                         fit_vals = model_func(H0, *candidate)
+                        # Check for invalid results
+                        if np.any(np.isnan(fit_vals)) or np.any(np.isinf(fit_vals)):
+                            continue
+                            
                         rmse = np.sqrt(np.mean((fit_vals - d_delta_exp) ** 2))
                         
                         if rmse < best_rmse:
@@ -242,8 +291,18 @@ def _coordinate_descent_refinement(model_func, initial_guess: np.ndarray,
     best_guess = initial_guess.copy()
     lower_bounds, upper_bounds = bounds
     
+    # Ensure Ka parameters have minimum values
+    for i in range(len(best_guess)):
+        if i < len(lower_bounds):
+            if i == 0 or i == 1:  # Ka and Kd parameters
+                min_val = max(lower_bounds[i], 1e-6)
+                best_guess[i] = max(best_guess[i], min_val)
+    
     try:
-        best_rmse = np.sqrt(np.mean((model_func(H0, *best_guess) - d_delta_exp) ** 2))
+        test_vals = model_func(H0, *best_guess)
+        if np.any(np.isnan(test_vals)) or np.any(np.isinf(test_vals)):
+            return best_guess  # Return without refinement if initial guess is bad
+        best_rmse = np.sqrt(np.mean((test_vals - d_delta_exp) ** 2))
     except Exception:
         return best_guess
     
@@ -260,14 +319,21 @@ def _coordinate_descent_refinement(model_func, initial_guess: np.ndarray,
                 candidate[i] = x
                 try:
                     fit_vals = model_func(H0, *candidate)
+                    if np.any(np.isnan(fit_vals)) or np.any(np.isinf(fit_vals)):
+                        return np.inf
                     return np.sqrt(np.mean((fit_vals - d_delta_exp) ** 2))
                 except Exception:
                     return np.inf
             
             # Set search bounds for this parameter
             if i < len(lower_bounds) and i < len(upper_bounds):
-                param_lower = max(lower_bounds[i], best_guess[i] - abs(best_guess[i]))
-                param_upper = min(upper_bounds[i], best_guess[i] + abs(best_guess[i]))
+                if i == 0 or i == 1:  # Ka and Kd parameters
+                    min_val = max(lower_bounds[i], 1e-6)
+                    param_lower = max(min_val, best_guess[i] - abs(best_guess[i]) * 0.5)
+                    param_upper = min(upper_bounds[i], best_guess[i] + abs(best_guess[i]) * 0.5)
+                else:
+                    param_lower = max(lower_bounds[i], best_guess[i] - abs(best_guess[i]))
+                    param_upper = min(upper_bounds[i], best_guess[i] + abs(best_guess[i]))
                 
                 # Ensure valid bounds
                 if param_lower >= param_upper:

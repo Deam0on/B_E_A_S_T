@@ -57,22 +57,24 @@ def binding_isotherm_1_1(
         H0: Total host concentration(s)
         G0: Total guest concentration(s)
         Ka: Association constant (M⁻¹)
-        d_free: Chemical shift of free host
-        d_inf: Chemical shift of bound host (HG complex)
+        d_inf: Chemical shift of bound host
 
     Returns:
         Calculated chemical shift changes (Δδ)
     """
     H0, G0 = np.asarray(H0), np.asarray(G0)
-
+    
+    # Protect against division by zero
+    if Ka <= 0:
+        Ka = 1e-10
+    
     # Quadratic formula solution for HG concentration
     term = G0 + H0 + (1 / Ka)
     sqrt_term = np.sqrt(term * term - 4 * G0 * H0)
     HG = 0.5 * (term - sqrt_term)
 
-    # Chemical shift calculation
+    # Chemical shift calculation (guest-observed)
     d_delta_comp = d_inf * (HG / G0)
-
     return d_delta_comp
 
 
