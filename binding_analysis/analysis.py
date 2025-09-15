@@ -778,17 +778,28 @@ def compare_models_by_metric(
                         ]
                     )
 
-                elif metric_name == "Cook's Distance" and cooks is not None:
-                    passed = cooks < 1.0
-                    table_data.append(
-                        [
-                            metric_name,
-                            f"{cooks:.3f}",
-                            "< 1.0",
-                            "0 to ∞",
-                            interpret_diagnostic("cooks_distance", cooks, 1.0, passed),
-                        ]
-                    )
+                elif metric_name == "Cook's Distance":
+                    if cooks is not None:
+                        passed = cooks < 1.0
+                        table_data.append(
+                            [
+                                metric_name,
+                                f"{cooks:.3f}",
+                                "< 1.0",
+                                "0 to ∞",
+                                interpret_diagnostic("cooks_distance", cooks, 1.0, passed),
+                            ]
+                        )
+                    else:
+                        table_data.append(
+                            [
+                                metric_name,
+                                "N/A",
+                                "< 1.0",
+                                "0 to ∞",
+                                "Insufficient data points for Cook's Distance calculation",
+                            ]
+                        )
 
                 elif metric_name == "Breusch-Godfrey" and bg_white is not None:
                     bg_test_name = row.get("bg_test", "Breusch-Godfrey")
