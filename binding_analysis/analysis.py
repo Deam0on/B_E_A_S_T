@@ -582,21 +582,21 @@ def compare_models_by_metric(
 
         # Build section headers and metric keys
         section_headers = {
-            "Criteria": ["R²", "RMSE", "Weighted RMSE", "AIC", "BIC"],
-            "Core Tests": [
-                "Normality test",
+            "=== Criteria ===": ["R²", "RMSE", "Weighted RMSE", "AIC", "BIC"],
+            "=== Core Tests ===": [
+                "Shapiro-Wilk p",
                 "Ljung-Box p",
-                "RESET p",
+                "RESET p", 
                 "Pearson corr",
                 "Spearman corr",
                 "Rolling R²",
             ],
-            "Optional Tests": [
+            "=== Optional Tests ===": [
                 "Run ratio",
                 "Spectral ratio",
-                "Zero-crossings",
-                "Cook’s Distance",
-                "Breusch-Godfrey",
+                "Zero-crossings", 
+                "Cook's Distance",
+                "Breusch-Godfrey p",
             ],
         }
 
@@ -779,14 +779,13 @@ def compare_models_by_metric(
                     )
 
                 elif metric_name == "Cook's Distance":
-                    # Add debug logging
+                    # This should always execute when Cook's Distance is in the Optional Tests section
                     cooks = row.get("cooks_max")
                     cooks_extreme = row.get("cooks_extreme") 
-                    logging.debug(f"Cook's Distance debug: cooks_max={cooks}, cooks_extreme={cooks_extreme}")
+                    logging.info(f"Processing Cook's Distance: cooks_max={cooks}, cooks_extreme={cooks_extreme}")
                     
                     if cooks is not None:
                         passed = cooks < 1.0
-                        # Create more informative display for Cook's Distance
                         display_value = f"{cooks:.3f}"
                         if cooks_extreme is not None:
                             display_value += f" ({cooks_extreme} extreme)"
