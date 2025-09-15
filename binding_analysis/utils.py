@@ -309,9 +309,6 @@ def autocorrelation_tests(H0, residuals, model_name, lags=10):
 
     lags = min(10, n // 5)
 
-    # logging.info("-" * 70)
-    # logging.info(f"Residual diagnostics for model: {model_name}")
-
     # Ljung-Box
     if n >= 2 * lags + 1:
         lb_test = acorr_ljungbox(residuals, lags=[min(lags, n - 2)], return_df=True)
@@ -320,7 +317,6 @@ def autocorrelation_tests(H0, residuals, model_name, lags=10):
         results.update(
             {"ljung_stat": lb_stat, "ljung_p": lb_p, "ljung_failed": lb_p < 0.05}
         )
-        # logging.info(f"Ljung-Box:     stat = {lb_stat:.3f}, p = {lb_p:.4f}")
     else:
         logging.info("Ljung-Box test skipped (too few data points).")
         results.update({"ljung_stat": None, "ljung_p": None, "ljung_failed": None})
@@ -338,7 +334,6 @@ def autocorrelation_tests(H0, residuals, model_name, lags=10):
     results.update(
         {"bg_test": bg_name, "bg_stat": bg_stat, "bg_p": bg_p, "bg_failed": bg_p < 0.05}
     )
-    # logging.info(f"{bg_name}: stat = {bg_stat:.3f}, p = {bg_p:.4f}")
 
     # Ramsey RESET test
     if n >= 15:
@@ -354,7 +349,6 @@ def autocorrelation_tests(H0, residuals, model_name, lags=10):
                     "reset_failed": reset_test.pvalue < 0.05,
                 }
             )
-            # logging.info(f"Ramsey RESET:  stat = {reset_test.fvalue:.3f}, p = {reset_test.pvalue:.4f}")
         except Exception as e:
             logging.warning(f"RESET test failed: {e}")
     else:
@@ -368,11 +362,12 @@ def autocorrelation_tests(H0, residuals, model_name, lags=10):
             max_cook = np.max(cooks_d)
             n_extreme = np.sum(cooks_d > (4 / n))
             results.update({"cooks_max": max_cook, "cooks_extreme": n_extreme})
-            # logging.info(f"Cook’s Distance: max = {max_cook:.4f}, extreme (>4/n): {n_extreme}")
+            # Add logging to make Cook's Distance visible in output
+            logging.info(f"Cook's Distance: max = {max_cook:.4f}, extreme (>4/n): {n_extreme}")
         except Exception as e:
-            logging.warning(f"Cook’s Distance failed: {e}")
+            logging.warning(f"Cook's Distance failed: {e}")
     else:
-        logging.info("Cook’s Distance skipped (too few data points).")
+        logging.info("Cook's Distance skipped (too few data points).")
 
     # Zero-crossing randomness test
     try:
@@ -385,11 +380,11 @@ def autocorrelation_tests(H0, residuals, model_name, lags=10):
         similarity = 100 * (1 - abs(zero_crossings - sim_mean) / sim_mean)
         results["zero_crossings"] = zero_crossings
         results["crossing_similarity"] = similarity
-        # logging.info(f"Zero-crossings: {zero_crossings} | Similarity to white noise: {similarity:.2f}%")
+        # Add logging to make zero-crossings visible in output
+        logging.info(f"Zero-crossings: {zero_crossings} | Similarity to white noise: {similarity:.2f}%")
     except Exception as e:
         logging.warning(f"Zero-crossing similarity test failed: {e}")
 
-    logging.info("-" * 70)
     return results
 
 
