@@ -492,6 +492,17 @@ def save_combined_csv(results: List[Dict[str, Any]], output_file: str) -> None:
                     "zero_crossings": result.get("zero_crossings"),
                     "composite_flagged": result.get("composite_flagged"),
                     "composite_stats": str(result.get("composite_stats")),
+                    # Additional diagnostic fields that were missing
+                    "normality_pass": result.get("normality_pass"),
+                    "shapiro_stat": result.get("shapiro_stat"),
+                    "shapiro_p": result.get("shapiro_p"),
+                    "skewness": result.get("skewness"),
+                    "kurtosis": result.get("kurtosis"),
+                    "pearson_corr": result.get("composite_stats", {}).get("pearson_corr") if result.get("composite_stats") else None,
+                    "spearman_corr": result.get("composite_stats", {}).get("spearman_corr") if result.get("composite_stats") else None, 
+                    "spectral_ratio": result.get("composite_stats", {}).get("spectral_ratio") if result.get("composite_stats") else None,
+                    "avg_rolling_r2": result.get("composite_stats", {}).get("avg_rolling_r2") if result.get("composite_stats") else None,
+                    "run_ratio": result.get("composite_stats", {}).get("run_ratio") if result.get("composite_stats") else None,
                 }
             )
 

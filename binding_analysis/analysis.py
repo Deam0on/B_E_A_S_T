@@ -457,6 +457,10 @@ def interpret_diagnostic(
             "Residuals are not normally distributed. This could mean outliers, skewed error structure, "
             "or heavier tails than expected. It may affect confidence in fitted parameters."
         ),
+        "shapiro": (
+            "Shapiro-Wilk test indicates residuals are not normally distributed. This suggests outliers, "
+            "skewness, or heavy tails that may affect parameter confidence intervals."
+        ),
         "ljung": (
             "Residuals show repeating patterns or cycles, "
             "indicating poor model fit over time or concentration range."
@@ -571,14 +575,15 @@ def compare_models_by_metric(
         bg_or_white = row.get("bg_test")
         ljung = row.get("ljung_p")
         reset_p = row.get("reset_p")
-        spectral = row.get("spectral_ratio")
-        run_ratio = row.get("run_ratio")
         comp_stats = row.get("composite_stats", {})
+        # Extract values from composite_stats if available
+        spectral = comp_stats.get("spectral_ratio") if comp_stats else None
+        run_ratio = comp_stats.get("run_ratio") if comp_stats else None
 
         # Build section headers and metric keys
         section_headers = {
             "Criteria": ["R²", "RMSE", "Weighted RMSE", "AIC", "BIC"],
-            "Main Tests": [
+            "Core Tests": [
                 "Normality test",
                 "Ljung-Box p",
                 "RESET p",
@@ -587,8 +592,8 @@ def compare_models_by_metric(
                 "Rolling R²",
             ],
             "Optional Tests": [
-                "Spectral ratio",
                 "Run ratio",
+                "Spectral ratio",
                 "Zero-crossings",
                 "Cook’s Distance",
                 "Breusch-Godfrey",
@@ -655,18 +660,32 @@ def compare_models_by_metric(
                         ]
                     )
                 elif metric_name == "Normality test":
+                    shapiro_p = row.get("shapiro_p")
                     normality_pass = row.get("normality_pass", True)
-                    table_data.append(
-                        [
-                            metric_name,
-                            "Passed" if normality_pass else "Failed",
-                            "Passed",
-                            "Passed / Failed",
-                            interpret_diagnostic(
-                                "normality", None, None, normality_pass
-                            ),
-                        ]
-                    )
+                    if shapiro_p is not None:
+                        table_data.append(
+                            [
+                                "Shapiro-Wilk p",
+                                f"{shapiro_p:.3f}",
+                                "> 0.05",
+                                "0 to 1",
+                                interpret_diagnostic(
+                                    "shapiro", shapiro_p, 0.05, shapiro_p > 0.05
+                                ),
+                            ]
+                        )
+                    else:
+                        table_data.append(
+                            [
+                                metric_name,
+                                "Passed" if normality_pass else "Failed",
+                                "Passed",
+                                "Passed / Failed",
+                                interpret_diagnostic(
+                                    "normality", None, None, normality_pass
+                                ),
+                            ]
+                        )
                 elif metric_name == "Ljung-Box p" and ljung is not None:
                     table_data.append(
                         [
@@ -772,10 +791,11 @@ def compare_models_by_metric(
                     )
 
                 elif metric_name == "Breusch-Godfrey" and bg_white is not None:
+                    bg_test_name = row.get("bg_test", "Breusch-Godfrey")
                     passed = bg_white > 0.05
                     table_data.append(
                         [
-                            metric_name,
+                            f"{bg_test_name} p",
                             f"{bg_white:.3f}",
                             "> 0.05",
                             "0 to 1",
@@ -835,9 +855,22 @@ def advanced_residual_diagnostics(
     # Run autocorrelation tests
     autocorr = autocorrelation_tests(H0, residuals, model_name)
 
-    # Basic normality check (3-sigma rule)
-    residuals_std = (residuals - np.mean(residuals)) / np.std(residuals)
-    normality_pass = np.all(np.abs(residuals_std) < 3)
+    # Shapiro-Wilk normality test (as mentioned in README)
+    from scipy import stats
+    try:
+        if len(residuals) >= 3 and len(residuals) <= 5000:  # Shapiro-Wilk range limits
+            shapiro_stat, shapiro_p = stats.shapiro(residuals)
+            normality_pass = shapiro_p > 0.05
+        else:
+            # Fallback to 3-sigma rule for very small or very large datasets
+            residuals_std = (residuals - np.mean(residuals)) / np.std(residuals)
+            normality_pass = np.all(np.abs(residuals_std) < 3)
+            shapiro_stat, shapiro_p = None, None
+    except Exception:
+        # Fallback to 3-sigma rule
+        residuals_std = (residuals - np.mean(residuals)) / np.std(residuals)
+        normality_pass = np.all(np.abs(residuals_std) < 3)
+        shapiro_stat, shapiro_p = None, None
 
     # Calculate skewness and kurtosis
     import pandas as pd
@@ -855,6 +888,8 @@ def advanced_residual_diagnostics(
         "skewness": skewness,
         "kurtosis": kurt,
         "normality_pass": normality_pass,
+        "shapiro_stat": shapiro_stat,
+        "shapiro_p": shapiro_p,
         **autocorr,
         **custom_results,
     }
