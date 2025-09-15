@@ -16,8 +16,36 @@ import numpy as np
 ArrayLike = Union[np.ndarray, list, float]
 
 
+def select_physical_root(roots, lower, upper, epsilon=1e-10):
+    """
+    Select a physically valid root from real roots.
+
+    Args:
+        roots: array-like of candidate roots (complex allowed)
+        lower: lower bound (e.g. 0)
+        upper: upper bound (e.g. total concentration G0 or H0)
+        epsilon: tolerance for positivity
+
+    Returns:
+        Selected root (float)
+    """
+    real_roots = np.real(roots[np.isreal(roots)])
+    # Keep roots within the physical interval
+    candidates = real_roots[
+        (real_roots > lower + epsilon) & (real_roots <= upper + epsilon)
+    ]
+    if candidates.size > 0:
+        # If multiple, pick the smallest (to stay physical/stable)
+        return np.min(candidates)
+    # Fallback: pick the smallest positive root if nothing in interval
+    positives = real_roots[real_roots > lower + epsilon]
+    if positives.size > 0:
+        return np.min(positives)
+    return epsilon
+
+
 def binding_isotherm_1_1(
-    H0: ArrayLike, G0: ArrayLike, Ka: float, d_free: float, d_inf: float
+    H0: ArrayLike, G0: ArrayLike, Ka: float, d_inf: float
 ) -> np.ndarray:
     """
     Calculate chemical shift changes for 1:1 host-guest binding.
@@ -29,21 +57,23 @@ def binding_isotherm_1_1(
         H0: Total host concentration(s)
         G0: Total guest concentration(s)
         Ka: Association constant (M⁻¹)
-        d_free: Chemical shift of free host
-        d_inf: Chemical shift of bound host (HG complex)
+        d_inf: Chemical shift of bound host
 
     Returns:
         Calculated chemical shift changes (Δδ)
     """
     H0, G0 = np.asarray(H0), np.asarray(G0)
-
+    
+    # Protect against division by zero and ensure Ka > 0
+    Ka_safe = max(Ka, 1e-6)  # Minimum Ka = 1e-6 M^-1
+    
     # Quadratic formula solution for HG concentration
-    term = G0 + H0 + (1 / Ka)
+    term = G0 + H0 + (1 / Ka_safe)
     sqrt_term = np.sqrt(term * term - 4 * G0 * H0)
     HG = 0.5 * (term - sqrt_term)
 
-    # Chemical shift calculation
-    d_delta_comp = (d_free * (HG - G0) / G0) + (d_inf * (HG / G0))
+    # Chemical shift calculation (guest-observed)
+    d_delta_comp = d_inf * (HG / G0)
     return d_delta_comp
 
 
@@ -77,24 +107,19 @@ def binding_isotherm_1_2(
 
         # Cubic equation coefficients for G_free
         a = Ka * Kd
-        b = Ka * ((2 * Kd * H0_i) - (Kd * G0_i) + 1)
+        b = Ka * (2 * Kd * H0_i - Kd * G0_i + 1)
         c = Ka * (H0_i - G0_i) + 1
         d = -G0_i
 
-        coefficients = [a, b, c, d]
-        roots = np.roots(coefficients)
-        real_roots = roots[np.isreal(roots)].real
-        positive_real_roots = real_roots[real_roots > epsilon]
+        roots = np.roots([a, b, c, d])
+        G_free = select_physical_root(roots, 0.0, G0_i, epsilon)
 
-        G_free = (
-            np.min(positive_real_roots) if len(positive_real_roots) > 0 else epsilon
-        )
-
-        # Chemical shift calculation
-        numerator = d_inf_1 * G0_i * Ka * G_free + d_inf_2 * G0_i * Ka * Kd * G_free**2
+        # Calculate complex concentrations
         denominator = 1 + Ka * G_free + Ka * Kd * G_free**2
+        HG = (Ka * H0_i * G_free) / denominator
+        HG2 = (Ka * Kd * H0_i * G_free**2) / denominator
 
-        d_delta_comp[i] = numerator / denominator
+        d_delta_comp[i] = (d_inf_1 * HG + d_inf_2 * 2 * HG2) / G0_i
 
     return d_delta_comp
 
@@ -129,32 +154,25 @@ def binding_isotherm_2_1(
 
         # Cubic equation coefficients for H_free
         a = Ka * Kd
-        b = Ka * ((2 * Kd * G0_i) - (Kd * H0_i) + 1)
+        b = Ka * (2 * Kd * G0_i - Kd * H0_i + 1)
         c = Ka * (G0_i - H0_i) + 1
         d = -H0_i
 
-        coefficients = [a, b, c, d]
-        roots = np.roots(coefficients)
-        real_roots = roots[np.isreal(roots)].real
-        positive_real_roots = real_roots[real_roots > epsilon]
+        roots = np.roots([a, b, c, d])
+        H_free = select_physical_root(roots, 0.0, H0_i, epsilon)
 
-        H_free = (
-            np.min(positive_real_roots) if len(positive_real_roots) > 0 else epsilon
-        )
+        # Calculate complex concentrations
+        denominator = 1 + Ka * H_free + Ka * Kd * H_free**2
+        HG = (Ka * H_free * G0_i) / denominator
+        H2G = (Ka * Kd * H_free**2 * G0_i) / denominator
 
-        # Chemical shift calculation
-        numerator = (
-            d_inf_1 * G0_i * Ka * H_free + 2 * d_inf_2 * G0_i * Ka * Kd * H_free**2
-        )
-        denominator = G0_i * (1 + Ka * H_free + Ka * Kd * H_free**2)
-
-        d_delta_comp[i] = numerator / denominator
+        d_delta_comp[i] = (d_inf_1 * HG + d_inf_2 * H2G) / G0_i
 
     return d_delta_comp
 
 
 def binding_dimer(
-    H0: ArrayLike, G0: ArrayLike, Ka: float, Kd: float, d_inf_1: float, d_inf_2: float
+    H0: ArrayLike, G0: ArrayLike, Ka: float, Kd: float, d_inf_1: float
 ) -> np.ndarray:
     """
     Calculate chemical shift changes for host-guest binding with host dimerization.
@@ -168,41 +186,34 @@ def binding_dimer(
         G0: Total guest concentration(s)
         Ka: Host-guest binding constant (M⁻¹)
         Kd: Host dimerization constant (M⁻¹)
-        d_inf_1: Chemical shift of free host
-        d_inf_2: Chemical shift of bound host
+        d_inf_1: Chemical shift change for guest in HG complex (guest-observed)
+        d_inf_2: Chemical shift change for free guest (usually 0, for reference)
 
     Returns:
-        Calculated chemical shift changes (Δδ) relative to first point
+        Calculated chemical shift changes (Δδ) for guest-observed NMR
     """
     H0, G0 = np.asarray(H0), np.asarray(G0)
-    d_obs = np.zeros_like(H0, dtype=float)
+    d_delta_comp = np.zeros_like(H0, dtype=float)
     epsilon = 1e-10
 
     for i in range(len(H0)):
         H0_i, G0_i = H0[i], G0[i]
 
-        # Quadratic equation for H_free
-        a = -2 * Kd
-        b = -(G0_i * Ka + 1)
-        c = H0_i
+        # Cubic equation coefficients for H_free
+        # 2*Ka*Kd*[H]^3 + (Ka + 2*Kd)*[H]^2 + (Ka*(G0-H0) + 1)*[H] - H0 = 0
+        a = 2.0 * Ka * Kd
+        b = Ka + 2.0 * Kd
+        c = Ka * (G0_i - H0_i) + 1.0
+        d = -H0_i
 
-        roots = np.roots([a, b, c])
-        real_roots = roots[np.isreal(roots)].real
-        valid_roots = real_roots[real_roots > epsilon]
+        roots = np.roots([a, b, c, d])
+        H_free = select_physical_root(roots, 0.0, H0_i, epsilon)
+        G_free = G0_i / (1 + Ka * H_free)
 
-        H_free = np.min(valid_roots) if len(valid_roots) > 0 else epsilon
+        HG = Ka * H_free * G_free
 
-        # Chemical shift calculation
-        numerator = (d_inf_1 * G0_i) / (1 + Ka * H_free) + (
-            d_inf_2 * Ka * H_free * G0_i
-        )
-        denominator = (G0_i / (1 + Ka * H_free)) + (Ka * H_free * G0_i)
+        d_delta_comp[i] = (d_inf_1 * HG) / G0_i
 
-        d_obs[i] = numerator / denominator
-
-    # Convert to delta-delta (relative to first point)
-    d_delta_comp = d_obs - d_obs[0]
-    d_delta_comp[0] = 0
     return d_delta_comp
 
 
@@ -224,72 +235,102 @@ def multi_model(
     This model describes a complex system with multiple equilibria:
     H + G ⇌ HG      (KHG)
     2H ⇌ H₂        (Kd)
-    H₂ + G ⇌ H₂G    (KH2G)
+    H + HG ⇌ H₂G    (KH2G)
 
     Args:
         H0: Total host concentration(s)
         G0: Total guest concentration(s)
         KHG: Host-guest binding constant (M⁻¹)
         Kd: Host dimerization constant (M⁻¹)
-        KH2G: Dimer-guest binding constant (M⁻¹)
-        dG: Chemical shift of free guest
-        dHG: Chemical shift of HG complex
-        dH2G: Chemical shift of H₂G complex
+        KH2G: Host-HG binding constant for H₂G formation (M⁻¹)
+        dG: Chemical shift of free guest (reference, usually 0)
+        dHG: Chemical shift of guest in HG complex
+        dH2G: Chemical shift of guest in H₂G complex
         max_iter: Maximum iterations for convergence
         tol: Convergence tolerance
 
     Returns:
-        Calculated chemical shift changes (Δδ) relative to first point
+        Calculated chemical shift changes (Δδ) for guest-observed NMR
     """
     H0, G0 = np.asarray(H0), np.asarray(G0)
-    d_obs = np.zeros_like(H0, dtype=float)
+    d_delta_comp = np.zeros_like(H0, dtype=float)
     epsilon = 1e-10
 
     for i in range(len(H0)):
         H0_i, G0_i = H0[i], G0[i]
-        G_free = G0_i  # Initial guess
+
+        # Initial guess for free concentrations
+        H_free = H0_i / 2  # Start with reasonable guess
+        G_free = G0_i / 2
 
         # Iterative solution for equilibrium concentrations
-        for iteration in range(max_iter):
-            # Solve for H_free given G_free
-            aH = 2 * Kd + 2 * KH2G * G_free
-            bH = 1 + KHG * G_free
-            cH = -H0_i
+        for _ in range(max_iter):
+            H_free_old = H_free
+            G_free_old = G_free
 
-            rootsH = np.roots([aH, bH, cH])
-            realH = rootsH[np.isreal(rootsH)].real
-            valid_H = realH[realH > epsilon]
+            # Calculate complex concentrations from current free concentrations
+            H2 = Kd * H_free**2
+            HG = KHG * H_free * G_free
+            H2G = KH2G * H_free * HG  # Changed: H + HG ⇌ H₂G
 
-            H_free = np.min(valid_H) if len(valid_H) > 0 else epsilon
+            # Update free concentrations from mass balance
+            # From host mass balance: H0 = H_free + HG + 2*H2 + 2*H2G
+            # From guest mass balance: G0 = G_free + HG + H2G
 
-            # Solve for G_free given H_free
-            aG = KH2G * H_free**2 + KHG * H_free + 1
-            bG = -G0_i
+            # Guest mass balance: G0 = G_free + HG + H2G
+            # G0 = G_free + KHG*H_free*G_free + KH2G*H_free*HG
+            # G0 = G_free + KHG*H_free*G_free + KH2G*H_free*KHG*H_free*G_free
+            # G0 = G_free * (1 + KHG*H_free + KH2G*KHG*H_free^2)
+            H_old, G_old = H_free, G_free
+            G_free = G0_i / (1 + KHG * H_free + KH2G * KHG * H_free**2)
 
-            rootsG = np.roots([aG, bG])
-            realG = rootsG[np.isreal(rootsG)].real
-            valid_G = realG[realG > epsilon]
+            # Recalculate with updated G_free
+            HG = KHG * H_free * G_free
+            H2G = KH2G * H_free * HG
 
-            G_free_new = np.min(valid_G) if len(valid_G) > 0 else epsilon
+            # Host mass balance: H0 = H_free + HG + 2*H2 + 2*H2G
+            # H0 = H_free + KHG*H_free*G_free + 2*Kd*H_free^2 + 2*KH2G*H_free*KHG*H_free*G_free
+            # H0 = H_free * (1 + KHG*G_free + 2*Kd*H_free + 2*KH2G*KHG*H_free*G_free)
 
-            # Check convergence
-            if abs(G_free_new - G_free) < tol:
+            # Rearrange to quadratic: (2*Kd + 2*KH2G*KHG*G_free)*H_free^2 + (1 + KHG*G_free)*H_free - H0 = 0
+            a = 2 * Kd + 2 * KH2G * KHG * G_free
+            b = 1 + KHG * G_free
+            c = -H0_i
+
+            if abs(a) < epsilon:
+                H_free = -c / b if abs(b) > epsilon else epsilon
+            else:
+                disc = b**2 - 4 * a * c
+                if disc >= 0:
+                    sqrt_disc = np.sqrt(disc)
+                    roots = np.array(
+                        [(-b + sqrt_disc) / (2 * a), (-b - sqrt_disc) / (2 * a)]
+                    )
+                    H_free = select_physical_root(roots, 0.0, H0_i, epsilon)
+                else:
+                    H_free = epsilon
+
+            if abs(H_free - H_old) < tol and abs(G_free - G_old) < tol:
                 break
-            G_free = G_free_new
 
-        # Calculate chemical shift
-        numerator = (
-            dG * Kd * H_free**2
-            + dHG * KHG * H_free * G_free
-            + dH2G * KH2G * H_free**2 * G_free
-        )
-        denominator = Kd * H_free**2 + KHG * H_free * G_free + KH2G * H_free**2 * G_free
+        # Calculate final species concentrations
+        H2 = Kd * H_free**2
+        HG = KHG * H_free * G_free
+        H2G = KH2G * H_free * HG
 
-        d_obs[i] = numerator / denominator if denominator > epsilon else 0
+        # Guest-observed chemical shift calculation
+        # Only species containing guest contribute: G_free, HG, H2G
+        # Standard weighted average: δ_obs = Σ(δ_i × [species_i]) / [total_guest]
 
-    # Convert to delta-delta (relative to first point)
-    d_delta_comp = d_obs - d_obs[0]
-    d_delta_comp[0] = 0
+        total_guest = G_free + HG + H2G
+        if total_guest > epsilon:
+            delta_obs = (dG * G_free + dHG * HG + dH2G * H2G) / total_guest
+        else:
+            delta_obs = dG
+
+        # Convert to Δδ relative to free guest (dG as reference)
+        d_delta_comp[i] = delta_obs - dG
+
     return d_delta_comp
 
 
@@ -310,12 +351,11 @@ def model_definitions(
     return {
         "HG": {
             "function": binding_isotherm_1_1,
-            "initial_guess": [100, 100, 100],  # Ka, d_free, d_inf
-            "bounds": ([0, -np.inf, -np.inf], [np.inf, np.inf, np.inf]),
-            "lambda": lambda H0, Ka, d_free, d_inf: binding_isotherm_1_1(
-                H0, G0, Ka, d_free, d_inf
-            ),
+            "initial_guess": [100, 100],  # Ka, d_inf
+            "bounds": ([0, -np.inf], [np.inf, np.inf]),
+            "lambda": lambda H0, Ka, d_inf: binding_isotherm_1_1(H0, G0, Ka, d_inf),
             "description": "1:1 Host-Guest binding (H + G ⇌ HG)",
+            "parameter_names": ["K(HG)", "d(HG)"],
         },
         "HG₂": {
             "function": binding_isotherm_1_2,
@@ -325,6 +365,7 @@ def model_definitions(
                 H0, G0, Ka, Kd, d_inf_1, d_inf_2
             ),
             "description": "1:2 Host-Guest binding (H + G ⇌ HG, HG + G ⇌ HG₂)",
+            "parameter_names": ["K(HG)", "K(HG₂)", "d(HG)", "d(HG₂)"],
         },
         "H₂G": {
             "function": binding_isotherm_2_1,
@@ -334,15 +375,17 @@ def model_definitions(
                 H0, G0, Ka, Kd, d_inf_1, d_inf_2
             ),
             "description": "2:1 Host-Guest binding (H + G ⇌ HG, H + HG ⇌ H₂G)",
+            "parameter_names": ["K(HG)", "K(H₂G)", "d(HG)", "d(H₂G)"],
         },
         "HG + H₂": {
             "function": binding_dimer,
-            "initial_guess": [100, 100, 100, 100],  # Ka, Kd, d_inf_1, d_inf_2
-            "bounds": ([0, 0, -np.inf, -np.inf], [np.inf] * 4),
-            "lambda": lambda H0, Ka, Kd, d_inf_1, d_inf_2: binding_dimer(
-                H0, G0, Ka, Kd, d_inf_1, d_inf_2
+            "initial_guess": [100, 100, 100],  # Ka, Kd, d_inf_1
+            "bounds": ([0, 0, -np.inf], [np.inf] * 3),
+            "lambda": lambda H0, Ka, Kd, d_inf_1: binding_dimer(
+                H0, G0, Ka, Kd, d_inf_1
             ),
             "description": "Host-Guest binding with dimerization (H + G ⇌ HG, 2H ⇌ H₂)",
+            "parameter_names": ["K(HG)", "K(H₂)", "d(HG)"],
         },
         "H₂G + HG + H₂": {
             "function": multi_model,
@@ -358,6 +401,7 @@ def model_definitions(
             "lambda": lambda H0, KHG, Kd, KH2G, dG, dHG, dH2G: multi_model(
                 H0, G0, KHG, Kd, KH2G, dG, dHG, dH2G
             ),
-            "description": "Multi-equilibrium system (H + G ⇌ HG, 2H ⇌ H₂, H₂ + G ⇌ H₂G)",
+            "description": "Multi-equilibrium system (H + G ⇌ HG, 2H ⇌ H₂, H + HG ⇌ H₂G)",
+            "parameter_names": ["K(HG)", "K(H₂)", "K(H₂G)", "d(G)", "d(HG)", "d(H₂G)"],
         },
     }

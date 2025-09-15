@@ -443,11 +443,17 @@ def save_combined_csv(results: List[Dict[str, Any]], output_file: str) -> None:
             rows.append(row)
 
         # Add parameter information
+        param_names = result.get(
+            "parameter_names",
+            [f"param_{i+1}" for i in range(len(result["parameters"]))],
+        )
         for i, param in enumerate(result["parameters"]):
+            param_name = param_names[i] if i < len(param_names) else f"param_{i+1}"
             rows.append(
                 {
                     "file": result["file"],
                     "model": result["model"],
+                    "parameter_name": param_name,
                     "parameter_index": i + 1,
                     "parameter_value": param,
                     "standard_error": (

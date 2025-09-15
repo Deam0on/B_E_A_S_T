@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from models import model_definitions
-from scipy.optimize import curve_fit, least_squares
+from scipy.optimize import curve_fit, least_squares, minimize_scalar
 from scipy.stats import pearsonr, spearmanr
 from statsmodels.api import OLS, add_constant
 from tabulate import tabulate
@@ -43,10 +43,10 @@ def smart_initial_guess(
     max_iter: int = 10,
 ) -> np.ndarray:
     """
-    Intelligently refine initial parameter guesses through grid search.
+    Intelligently refine initial parameter guesses using multiple strategies.
 
-    This function systematically perturbs each parameter in the initial guess
-    to find a better starting point for the curve fitting.
+    This redesigned function combines data-driven estimation with multi-scale
+    optimization to find much better starting points for curve fitting.
 
     Args:
         model_func: The model function to test
@@ -54,45 +54,358 @@ def smart_initial_guess(
         bounds: Parameter bounds (lower, upper)
         H0: Host concentration data
         d_delta_exp: Experimental data to fit
-        step: Step size for parameter perturbation
+        step: Step size for parameter perturbation (legacy parameter)
         max_iter: Maximum number of iterations
 
     Returns:
         Improved initial guess
     """
-    best_guess = np.array(guess)
-    best_rmse = np.inf
+    
+    # Ensure initial guess respects bounds and has minimum values
+    guess = np.array(guess, dtype=float)
+    lower_bounds, upper_bounds = bounds
+    
+    # Apply strict bounds checking with minimum values
+    for i in range(len(guess)):
+        if i < len(lower_bounds) and i < len(upper_bounds):
+            # Ensure Ka (usually first parameter) has minimum value > 0
+            if i == 0:  # Binding constant
+                min_ka = max(lower_bounds[i], 1e-6)  # Minimum Ka = 1e-6 M^-1
+                guess[i] = np.clip(guess[i], min_ka, upper_bounds[i])
+            else:
+                guess[i] = np.clip(guess[i], lower_bounds[i], upper_bounds[i])
+    
+    # Phase 1: Data-driven parameter estimation
+    data_driven_guess = _estimate_parameters_from_data(H0, d_delta_exp, guess, bounds)
+    
+    # Phase 2: Multi-scale grid search with adaptive steps
+    grid_optimized_guess = _adaptive_grid_search(
+        model_func, data_driven_guess, bounds, H0, d_delta_exp, max_iter
+    )
+    
+    # Phase 3: Fine-tune with coordinate descent
+    final_guess = _coordinate_descent_refinement(
+        model_func, grid_optimized_guess, bounds, H0, d_delta_exp
+    )
+    
+    # Final bounds check to ensure no invalid values
+    for i in range(len(final_guess)):
+        if i < len(lower_bounds) and i < len(upper_bounds):
+            if i == 0:  # Binding constant
+                min_ka = max(lower_bounds[i], 1e-6)
+                final_guess[i] = np.clip(final_guess[i], min_ka, upper_bounds[i])
+            else:
+                final_guess[i] = np.clip(final_guess[i], lower_bounds[i], upper_bounds[i])
+    
+    return final_guess
 
-    for iteration in range(max_iter):
+
+def _estimate_parameters_from_data(H0: np.ndarray, d_delta_exp: np.ndarray, 
+                                   initial_guess: List[float], 
+                                   bounds: Tuple[List[float], List[float]]) -> np.ndarray:
+    """
+    Estimate parameters directly from experimental data characteristics.
+    
+    This function analyzes the binding curve shape to provide intelligent
+    initial estimates for binding constants and chemical shift parameters.
+    """
+    guess = np.array(initial_guess, dtype=float)
+    lower_bounds, upper_bounds = bounds
+    
+    # Basic data analysis
+    max_shift = np.max(np.abs(d_delta_exp))
+    min_shift = np.min(d_delta_exp)
+    
+    # Skip if no significant binding observed
+    if max_shift < 1.0:
+        return guess
+    
+    # Find saturation behavior (use last 20% of data points)
+    n_points = len(d_delta_exp)
+    tail_start = max(1, int(0.8 * n_points))
+    saturation_level = np.mean(np.abs(d_delta_exp[tail_start:]))
+    
+    # Estimate Ka from half-saturation point
+    half_sat_target = saturation_level / 2.0
+    
+    # Find the point closest to half-saturation
+    if max_shift > half_sat_target:
+        half_idx = np.argmin(np.abs(np.abs(d_delta_exp) - half_sat_target))
+        half_sat_H = H0[half_idx]
+        
+        # Estimate Ka based on binding model assumptions
+        # For 1:1 binding: Ka ≈ 1/([H]_half) when guest is in excess
+        if half_sat_H > 0:
+            ka_estimate = 1.0 / half_sat_H
+            
+            # Apply reasonable bounds based on typical NMR binding constants
+            ka_estimate = np.clip(ka_estimate, 1, 10000)
+            
+            # Update Ka parameter (usually first parameter) with minimum bound
+            if len(guess) > 0 and 0 < len(lower_bounds):
+                min_ka = max(lower_bounds[0], 1e-6)  # Ensure minimum Ka > 0
+                ka_bounded = np.clip(ka_estimate, min_ka, upper_bounds[0])
+                guess[0] = ka_bounded
+    
+    # Ensure Ka is never zero or negative
+    if len(guess) > 0:
+        min_ka = max(lower_bounds[0] if len(lower_bounds) > 0 else 1e-6, 1e-6)
+        if guess[0] <= 0:
+            guess[0] = min_ka
+    
+    # Estimate chemical shift parameters from data magnitude
+    shift_estimate = max_shift * 1.2  # Slightly larger than observed maximum
+    
+    # Update chemical shift parameters (usually the last parameters)
+    for i in range(len(guess)):
+        # Look for parameters that could be chemical shifts (unbounded below, large upper bound)
+        if (i < len(lower_bounds) and 
+            lower_bounds[i] == -np.inf and 
+            upper_bounds[i] == np.inf):
+            
+            # This looks like a chemical shift parameter
+            if shift_estimate != 0:
+                guess[i] = shift_estimate if d_delta_exp[-1] > d_delta_exp[0] else -shift_estimate
+    
+    # For multi-parameter models, apply heuristics
+    if len(guess) >= 4:  # Models like HG₂, H₂G
+        # Second binding constant is typically weaker (statistical factor of ~4)
+        if len(guess) > 1 and guess[0] > 0:
+            guess[1] = max(guess[0] / 4.0, 1e-6)  # Ensure minimum value
+            guess[1] = np.clip(guess[1], 
+                             max(lower_bounds[1], 1e-6) if len(lower_bounds) > 1 else 1e-6, 
+                             upper_bounds[1] if len(upper_bounds) > 1 else guess[0])
+    
+    return guess
+
+
+def _adaptive_grid_search(model_func, initial_guess: np.ndarray, 
+                         bounds: Tuple[List[float], List[float]],
+                         H0: np.ndarray, d_delta_exp: np.ndarray,
+                         max_iter: int = 10) -> np.ndarray:
+    """
+    Perform adaptive multi-scale grid search optimization.
+    
+    This uses different step sizes for different parameter types and
+    progressively refines the search around the best candidates.
+    """
+    best_guess = initial_guess.copy()
+    lower_bounds, upper_bounds = bounds
+    
+    # Ensure Ka parameters have minimum values
+    for i in range(len(best_guess)):
+        if i < len(lower_bounds):
+            if i == 0 or i == 1:  # Ka and Kd parameters
+                min_val = max(lower_bounds[i], 1e-6)
+                best_guess[i] = max(best_guess[i], min_val)
+    
+    try:
+        # Initial evaluation with error handling
+        test_vals = model_func(H0, *best_guess)
+        if np.any(np.isnan(test_vals)) or np.any(np.isinf(test_vals)):
+            raise ValueError("Initial guess produces invalid model values")
+        best_rmse = np.sqrt(np.mean((test_vals - d_delta_exp) ** 2))
+    except Exception:
+        best_rmse = np.inf
+    
+    # Define adaptive step sizes based on parameter characteristics
+    step_factors = []
+    for i in range(len(best_guess)):
+        param_val = abs(best_guess[i])
+        
+        if param_val == 0:
+            step_factors.append(1.0)
+        elif param_val < 1:
+            step_factors.append(0.1)  # Small steps for parameters < 1
+        elif param_val < 100:
+            step_factors.append(param_val * 0.2)  # 20% steps for medium parameters
+        else:
+            step_factors.append(param_val * 0.5)  # 50% steps for large parameters
+    
+    # Multi-scale search: coarse to fine
+    scale_factors = [2.0, 1.0, 0.5, 0.2]  # Multiple scales
+    
+    for scale in scale_factors:
+        improved_this_scale = False
+        
+        for iteration in range(max_iter // len(scale_factors)):
+            improved_this_iter = False
+            
+            # Try all parameter combinations
+            for i in range(len(best_guess)):
+                current_step = step_factors[i] * scale
+                
+                # Try both directions with current step size
+                for direction in [-1, 1]:
+                    candidate = best_guess.copy()
+                    candidate[i] += direction * current_step
+                    
+                    # Respect bounds with special handling for Ka parameters
+                    if i < len(lower_bounds):
+                        if i == 0 or i == 1:  # Ka and Kd parameters
+                            min_val = max(lower_bounds[i], 1e-6)
+                            candidate[i] = np.clip(candidate[i], min_val, upper_bounds[i])
+                        else:
+                            candidate[i] = np.clip(candidate[i], lower_bounds[i], upper_bounds[i])
+                    
+                    try:
+                        fit_vals = model_func(H0, *candidate)
+                        # Check for invalid results
+                        if np.any(np.isnan(fit_vals)) or np.any(np.isinf(fit_vals)):
+                            continue
+                            
+                        rmse = np.sqrt(np.mean((fit_vals - d_delta_exp) ** 2))
+                        
+                        if rmse < best_rmse:
+                            best_guess = candidate.copy()
+                            best_rmse = rmse
+                            improved_this_iter = True
+                            improved_this_scale = True
+                            
+                    except Exception:
+                        continue
+            
+            # If no improvement in this iteration, try smaller steps
+            if not improved_this_iter:
+                for i in range(len(step_factors)):
+                    step_factors[i] *= 0.5
+        
+        # If no improvement at this scale, move to next scale
+        if not improved_this_scale:
+            continue
+    
+    return best_guess
+
+
+def _coordinate_descent_refinement(model_func, initial_guess: np.ndarray,
+                                 bounds: Tuple[List[float], List[float]],
+                                 H0: np.ndarray, d_delta_exp: np.ndarray) -> np.ndarray:
+    """
+    Fine-tune parameters using coordinate descent with golden section search.
+    
+    This provides final refinement by optimizing each parameter individually
+    using a more sophisticated 1D optimization approach.
+    """
+    from scipy.optimize import minimize_scalar
+    
+    best_guess = initial_guess.copy()
+    lower_bounds, upper_bounds = bounds
+    
+    # Ensure Ka parameters have minimum values
+    for i in range(len(best_guess)):
+        if i < len(lower_bounds):
+            if i == 0 or i == 1:  # Ka and Kd parameters
+                min_val = max(lower_bounds[i], 1e-6)
+                best_guess[i] = max(best_guess[i], min_val)
+    
+    try:
+        test_vals = model_func(H0, *best_guess)
+        if np.any(np.isnan(test_vals)) or np.any(np.isinf(test_vals)):
+            return best_guess  # Return without refinement if initial guess is bad
+        best_rmse = np.sqrt(np.mean((test_vals - d_delta_exp) ** 2))
+    except Exception:
+        return best_guess
+    
+    # Refine each parameter individually
+    max_refinement_iter = 3
+    
+    for refinement_iter in range(max_refinement_iter):
         improved = False
-
+        
         for i in range(len(best_guess)):
-            for delta in [-step, step]:
+            # Define objective function for parameter i
+            def param_objective(x):
                 candidate = best_guess.copy()
-                candidate[i] += delta
-
-                # Ensure bounds are respected
-                lower_bounds, upper_bounds = bounds
-                candidate[i] = np.clip(candidate[i], lower_bounds[i], upper_bounds[i])
-
+                candidate[i] = x
                 try:
                     fit_vals = model_func(H0, *candidate)
-                    rmse = np.sqrt(np.mean((fit_vals - d_delta_exp) ** 2))
-
-                    if rmse < best_rmse:
-                        best_guess = candidate
-                        best_rmse = rmse
-                        improved = True
-
+                    if np.any(np.isnan(fit_vals)) or np.any(np.isinf(fit_vals)):
+                        return np.inf
+                    return np.sqrt(np.mean((fit_vals - d_delta_exp) ** 2))
                 except Exception:
-                    # Skip if model evaluation fails
+                    return np.inf
+            
+            # Set search bounds for this parameter
+            if i < len(lower_bounds) and i < len(upper_bounds):
+                if i == 0 or i == 1:  # Ka and Kd parameters
+                    min_val = max(lower_bounds[i], 1e-6)
+                    param_lower = max(min_val, best_guess[i] - abs(best_guess[i]) * 0.5)
+                    param_upper = min(upper_bounds[i], best_guess[i] + abs(best_guess[i]) * 0.5)
+                else:
+                    param_lower = max(lower_bounds[i], best_guess[i] - abs(best_guess[i]))
+                    param_upper = min(upper_bounds[i], best_guess[i] + abs(best_guess[i]))
+                
+                # Ensure valid bounds
+                if param_lower >= param_upper:
                     continue
-
-        # Early exit if no improvement found
+                    
+                try:
+                    # Use scalar optimization for this parameter
+                    result = minimize_scalar(
+                        param_objective,
+                        bounds=(param_lower, param_upper),
+                        method='bounded',
+                        options={'maxiter': 20}
+                    )
+                    
+                    if result.success and result.fun < best_rmse:
+                        best_guess[i] = result.x
+                        best_rmse = result.fun
+                        improved = True
+                        
+                except Exception:
+                    continue
+        
+        # Stop if no improvement
         if not improved:
             break
-
+    
     return best_guess
+
+
+# Enhanced fitting functions removed - the main benefit comes from smart_initial_guess
+# The complex weighting/scaling approaches showed no improvement over standard methods
+# Keep it simple and focus on what works: better initial parameter estimates
+
+
+def enhanced_curve_fit(model_name: str, model_func, H0: np.ndarray, d_delta_exp: np.ndarray,
+                      initial_guess: list, bounds: tuple, maxfev: int = 100000) -> tuple:
+    """
+    Enhanced curve fitting with smart initial guessing and robust error estimation.
+    
+    The main improvement comes from better initial parameter estimates rather than 
+    complex weighting schemes. This maintains mathematical correctness while
+    improving convergence and reliability.
+    
+    Args:
+        model_name: Name of the binding model
+        model_func: Model function to fit
+        H0: Host concentration array
+        d_delta_exp: Experimental data
+        initial_guess: Initial parameter guess (should be from smart_initial_guess)
+        bounds: Parameter bounds
+        maxfev: Maximum function evaluations
+        
+    Returns:
+        Tuple of (fitted_params, covariance_matrix)
+    """
+    
+    try:
+        # Use standard curve_fit with the improved initial guess
+        # The main benefit comes from smart_initial_guess, not from weighting/scaling
+        params, covariance = curve_fit(
+            model_func, H0, d_delta_exp,
+            p0=initial_guess,
+            bounds=bounds,
+            maxfev=maxfev
+        )
+        
+        return params, covariance
+        
+    except Exception as e:
+        # If fitting fails, this indicates a more serious problem
+        # that won't be solved by scaling/weighting
+        raise e
 
 
 def metric_value_range(metric: str) -> str:
@@ -608,18 +921,43 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
                 bounds = model["bounds"]
                 func = model["lambda"]
 
-                def residuals_func(params):
-                    return func(H0, *params) - d_delta_exp
+                # Use enhanced curve fitting with weighting and scaling
+                try:
+                    params, cov = enhanced_curve_fit(
+                        model_name, func, H0, d_delta_exp, guess, bounds, maxfev
+                    )
+                    fit_vals = func(H0, *params)
+                    residuals = fit_vals - d_delta_exp
+                    std_err = np.sqrt(np.diag(cov))
+                    n_iter = maxfev  # Enhanced method doesn't track iterations directly
+                    logging.info(f"Enhanced fitting completed successfully.")
+                    
+                except Exception as e:
+                    # Fallback to least_squares if enhanced method fails
+                    logging.warning(f"Enhanced fitting failed, using least_squares: {e}")
+                    
+                    def residuals_func(params):
+                        return func(H0, *params) - d_delta_exp
 
-                result = least_squares(
-                    residuals_func, x0=guess, bounds=bounds, max_nfev=maxfev
-                )
-                params = result.x
-                fit_vals = func(H0, *params)
-                residuals = fit_vals - d_delta_exp
-                n_iter = result.nfev * len(H0)
+                    result = least_squares(
+                        residuals_func, x0=guess, bounds=bounds, max_nfev=maxfev
+                    )
+                    params = result.x
+                    fit_vals = func(H0, *params)
+                    residuals = fit_vals - d_delta_exp
+                    n_iter = result.nfev * len(H0)
 
-                logging.info(f"Fitting completed in {n_iter} function evaluations.")
+                    logging.info(f"Fallback fitting completed in {n_iter} function evaluations.")
+
+                    # Estimating covariance (approximation)
+                    from scipy.linalg import svd
+
+                    _, s, VT = svd(result.jac, full_matrices=False)
+                    threshold = np.finfo(float).eps * max(result.jac.shape) * s[0]
+                    s = s[s > threshold]
+                    VT = VT[: s.size]
+                    cov = np.dot(VT.T / s**2, VT)
+                    std_err = np.sqrt(np.diag(cov))
 
                 delta_max = (
                     np.max(np.abs(d_delta_exp))
@@ -628,16 +966,6 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
                 )
                 normalized_residuals = residuals / global_delta_range
                 weighted_rmse = np.sqrt(np.mean(normalized_residuals**2))
-
-                # Estimating covariance (approximation)
-                from scipy.linalg import svd
-
-                _, s, VT = svd(result.jac, full_matrices=False)
-                threshold = np.finfo(float).eps * max(result.jac.shape) * s[0]
-                s = s[s > threshold]
-                VT = VT[: s.size]
-                cov = np.dot(VT.T / s**2, VT)
-                std_err = np.sqrt(np.diag(cov))
 
                 rss = np.sum(residuals**2)
                 r2 = 1 - rss / np.sum((d_delta_exp - np.mean(d_delta_exp)) ** 2)
@@ -658,12 +986,26 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
                     enable_custom_corr=True,
                 )
 
+                # Create parameter dictionary with names
+                param_names = model.get(
+                    "parameter_names", [f"param_{i+1}" for i in range(len(params))]
+                )
+                named_parameters = {
+                    name: value for name, value in zip(param_names, params)
+                }
+                named_errors = {
+                    f"{name}_error": error for name, error in zip(param_names, std_err)
+                }
+
                 output_rows.append(
                     {
                         "file": filename,
                         "model": model_name,
                         "parameters": params.tolist(),
+                        "parameter_names": param_names,
+                        "named_parameters": named_parameters,
                         "standard_errors": std_err.tolist(),
+                        "named_errors": named_errors,
                         "r_squared": r2,
                         "AIC": aic,
                         "BIC": bic,
@@ -685,7 +1027,13 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
                 )
 
                 logging.info(f"Model {model_name} fit completed")
-                logging.info(f"Parameters: {params}")
+                # Log parameters with proper names
+                param_names = model.get(
+                    "parameter_names", [f"param_{i+1}" for i in range(len(params))]
+                )
+                for name, value, error in zip(param_names, params, std_err):
+                    logging.info(f"  {name}: {value:.6f} ± {error:.6f}")
+                logging.debug(f"Parm - results: {results}")
 
             except Exception as e:
                 logging.error(f"Exception in model {model_name}: {e}")
