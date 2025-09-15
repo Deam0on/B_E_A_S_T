@@ -64,12 +64,11 @@ def binding_isotherm_1_1(
     """
     H0, G0 = np.asarray(H0), np.asarray(G0)
     
-    # Protect against division by zero
-    if Ka <= 0:
-        Ka = 1e-10
+    # Protect against division by zero and ensure Ka > 0
+    Ka_safe = max(Ka, 1e-6)  # Minimum Ka = 1e-6 M^-1
     
     # Quadratic formula solution for HG concentration
-    term = G0 + H0 + (1 / Ka)
+    term = G0 + H0 + (1 / Ka_safe)
     sqrt_term = np.sqrt(term * term - 4 * G0 * H0)
     HG = 0.5 * (term - sqrt_term)
 
