@@ -596,7 +596,7 @@ def compare_models_by_metric(
                 "Spectral ratio",
                 "Zero-crossings", 
                 "Cook's Distance",
-                "Breusch-Godfrey p",
+                "Breusch-Godfrey",
             ],
         }
 
