@@ -741,19 +741,19 @@ def compare_models_by_metric(
                             interpret_diagnostic("rolling_r2", r, 0.35, r < 0.35),
                         ]
                     )
-                elif metric_name == "Spectral ratio" and spectral is not None:
-                    table_data.append(
-                        [
-                            metric_name,
-                            f"{spectral:.2f}",
-                            "< 0.3",
-                            "0 to 1",
-                            interpret_diagnostic(
-                                "spectral_ratio", spectral, 0.3, spectral < 0.3
-                            ),
-                        ]
-                    )
-                elif metric_name == "Run ratio" and run_ratio is not None:
+                # elif metric_name == "Spectral ratio" and spectral is not None:
+                #     table_data.append(
+                #         [
+                #             metric_name,
+                #             f"{spectral:.2f}",
+                #             "< 0.3",
+                #             "0 to 1",
+                #             interpret_diagnostic(
+                #                 "spectral_ratio", spectral, 0.3, spectral < 0.3
+                #             ),
+                #         ]
+                #     )
+                elif metric_name == "Runs test ratio" and run_ratio is not None:
                     passed = 0.65 < run_ratio < 1.35
                     table_data.append(
                         [
