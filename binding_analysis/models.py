@@ -324,12 +324,9 @@ def multi_model(
 
         total_guest = G_free + HG + H2G
         if total_guest > epsilon:
-            delta_obs = (dG * G_free + dHG * HG + dH2G * H2G) / total_guest
+            d_delta_comp[i] = (dHG * HG + dH2G * H2G) / total_guest
         else:
-            delta_obs = dG
-
-        # Convert to Δδ relative to free guest (dG as reference)
-        d_delta_comp[i] = delta_obs - dG
+            d_delta_comp[i] = 0
 
     return d_delta_comp
 
@@ -395,13 +392,12 @@ def model_definitions(
                 100,
                 100,
                 100,
-                100,
-            ],  # KHG, Kd, KH2G, dG, dHG, dH2G
-            "bounds": ([0, 0, 0, -np.inf, -np.inf, -np.inf], [np.inf] * 6),
-            "lambda": lambda H0, KHG, Kd, KH2G, dG, dHG, dH2G: multi_model(
-                H0, G0, KHG, Kd, KH2G, dG, dHG, dH2G
+            ],  # KHG, Kd, KH2G, dHG, dH2G
+            "bounds": ([0, 0, 0, -np.inf, -np.inf], [np.inf] * 5),
+            "lambda": lambda H0, KHG, Kd, KH2G, dHG, dH2G: multi_model(
+                H0, G0, KHG, Kd, KH2G, dHG, dH2G
             ),
             "description": "Multi-equilibrium system (H + G ⇌ HG, 2H ⇌ H₂, H + HG ⇌ H₂G)",
-            "parameter_names": ["K(HG)", "K(H₂)", "K(H₂G)", "d(G)", "d(HG)", "d(H₂G)"],
+            "parameter_names": ["K(HG)", "K(H₂)", "K(H₂G)", "d(HG)", "d(H₂G)"],
         },
     }
