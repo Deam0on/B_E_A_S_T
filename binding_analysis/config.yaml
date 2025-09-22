@@ -55,10 +55,10 @@ models:
 
   # Multi-equilibrium system (H + G ⇌ HG, 2H ⇌ H₂, H₂ + G ⇌ H₂G)
   "multi":
-    initial_guess: [100, 100, 100, 100, 100, 100]  # [KHG, Kd, KH2G, dG, dHG, dH2G]
+    initial_guess: [100, 100, 100, 100, 100]  # [KHG, Kd, KH2G, dHG, dH2G]
     bounds:
-      lower: [0, 0, 0, -1e6, -1e6, -1e6]           # Binding constants positive, shifts can be negative
-      upper: [1e6, 1e6, 1e6, 1e6, 1e6, 1e6]
+      lower: [0, 0, 0, -1e6, -1e6]           # Binding constants positive, shifts can be negative
+      upper: [1e6, 1e6, 1e6, 1e6, 1e6]
 
 # Diagnostic test thresholds (p-values)
 diagnostics:
