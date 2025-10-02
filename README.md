@@ -116,7 +116,7 @@ python binding_analysis/binding_analysis_tool.py \
 
 Example data files are provided in the `example_data/` folder.
 
-For detailed input format requirements, see [Input Format and File Structure](https://github.com/Deam0on/B_E_A_S_T/wiki/Input-Format-and-File-Structure) wiki page.
+For detailed input format requirements, see [Input Format and File Structure](https://github.com/Deam0on/B_E_A_S_T/wiki/Input_and_File_Structure) wiki page.
 
 ---
 
@@ -131,7 +131,7 @@ This tool supports multiple binding models for analyzing host-guest interactions
 - **Multi-equilibrium (H₂G + HG + H₂)** - Complex system with multiple equilibria
 
 For detailed mathematical derivations and model descriptions, see:
-- [Binding Models and Theory](https://github.com/Deam0on/B_E_A_S_T/wiki/Binding-Models-and-Theory) wiki page
+- [Binding Models and Theory](https://github.com/Deam0on/B_E_A_S_T/wiki/Binding_Models_and_Theory) wiki page
 - [MODEL_PROOFS.md](MODEL_PROOFS.md) for complete mathematical derivations
 
 ---
@@ -161,7 +161,7 @@ Each run creates output in the specified results directory:
 
 ## Configuration
 
-The tool's behavior can be customized via `config.yaml`. See the [Configuration Guide](https://github.com/Deam0on/B_E_A_S_T/wiki/Configuration-Guide) wiki page for details on:
+The tool's behavior can be customized via `config.yaml`. See the [Configuration Guide](https://github.com/Deam0on/B_E_A_S_T/wiki/Configuration_Guide) wiki page for details on:
 
 - Model-specific parameters and bounds
 - Diagnostic test thresholds
@@ -173,8 +173,8 @@ The tool's behavior can be customized via `config.yaml`. See the [Configuration 
 ## Additional Resources
 
 - [Project Wiki](https://github.com/Deam0on/B_E_A_S_T/wiki) - Complete documentation
-- [CLI Usage and Flags](https://github.com/Deam0on/B_E_A_S_T/wiki/CLI-Usage-and-Flags) - Detailed command-line reference
-- [Google Colab Integration](https://github.com/Deam0on/B_E_A_S_T/wiki/Google-Colab-Integration) - Cloud-based usage guide
+- [CLI Usage and Flags](https://github.com/Deam0on/B_E_A_S_T/wiki/CLI_Usage_and_Flags) - Detailed command-line reference
+- [Google Colab Integration](https://github.com/Deam0on/B_E_A_S_T/wiki/Google_Colab_Integration) - Cloud-based usage guide
 
 For questions or contributions, open an issue or pull request on the [GitHub repo](https://github.com/Deam0on/B_E_A_S_T).
 
