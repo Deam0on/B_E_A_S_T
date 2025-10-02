@@ -415,7 +415,7 @@ $$\Delta\delta = \frac{\delta_{HG}[G_{in\_HG}] + \delta_{complex}[G_{in\_complex
 
 ### Model-Specific Implementations
 
-#### 1:1 Model
+#### 1:1 & Host Dimerization Models 
 - Guest molecules: $[G_{\text{free}}]$ and $[G_{\text{in HG}}] = [HG]$
 - $\Delta\delta = \frac{\delta_{\text{inf}} \cdot [HG]}{[G_0]}$
 
@@ -423,7 +423,7 @@ $$\Delta\delta = \frac{\delta_{HG}[G_{in\_HG}] + \delta_{complex}[G_{in\_complex
 - Guest molecules: $[G_{\text{free}}]$, $[G_{\text{in HG}}] = [HG]$, and $[G_{\text{in HG}_2}] = 2[HG_2]$
 - $\Delta\delta = \frac{\delta_{\text{inf1}} \cdot [HG] + \delta_{\text{inf2}} \cdot 2[HG_2]}{[G_0]}$
 
-#### 2:1 Model
+#### 2:1 & Multi-Equilibrium Models
 - Guest molecules: $[G_{\text{free}}]$, $[G_{\text{in HG}}] = [HG]$, and $[G_{\text{in H}_2\text{G}}] = [H_2G]$
 - $\Delta\delta = \frac{\delta_{\text{inf1}} \cdot [HG] + \delta_{\text{inf2}} \cdot [H_2G]}{[G_0]}$
 
