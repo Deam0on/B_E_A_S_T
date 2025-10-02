@@ -144,7 +144,7 @@ A comprehensive suite of statistical diagnostics is applied to evaluate model qu
 - **Core Tests** - Essential statistical validation tests
 - **Optional Tests** - Advanced pattern detection and outlier analysis
 
-See the [Fit Diagnostics](https://github.com/Deam0on/B_E_A_S_T/wiki/Fit-Diagnostics) wiki page for test details, acceptable values, and interpretation.
+See the [Fit Diagnostics](https://github.com/Deam0on/B_E_A_S_T/wiki/Fit_Diagnostics) wiki page for test details, acceptable values, and interpretation.
 
 ---
 
