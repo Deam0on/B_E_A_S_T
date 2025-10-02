@@ -223,7 +223,6 @@ def multi_model(
     KHG: float,
     Kd: float,
     KH2G: float,
-    dG: float,
     dHG: float,
     dH2G: float,
     max_iter: int = 100000,
