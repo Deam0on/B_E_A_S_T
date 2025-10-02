@@ -9,11 +9,11 @@ This Python-based analysis tool is designed for evaluating titration data from N
 ## Features
 
 - **Model Support**:
-  - Includes `HG`, `HG + H₂`, `HG + H₂G`, `HG + HG₂`, `HG + H₂ + H₂G` binding models
-  - Model logic is modularized – easily extendable via the `models/` folder
+  - Includes `1:1 (HG)`, `1:2 (HG + HG₂)`, `2:1 (HG + H₂G)`, `Dimer (HG + H₂)`, and `Multi-equilibrium (H₂G + HG + H₂)` binding models
+  - Model logic is modularized – easily extendable via the `models.py` module
 
 - **Flexible Fitting & Configuration**:
-  - Curve fitting using `scipy.optimize.curve_fit`
+  - Curve fitting using `scipy.optimize.curve_fit` with enhanced initial parameter estimation
   - Smart initial guess refinement strategy to avoid poor local minima
   - All key settings (initial guesses, bounds, residual test thresholds) configurable via `config.yaml`
 
@@ -31,20 +31,20 @@ This Python-based analysis tool is designed for evaluating titration data from N
     - Lag-1 Pearson & Spearman correlation of residuals (PC & SC)
     - Rolling window R² analysis (local structure detection)
   - **Optional Tests**:
-    - Runs Test Ratio (sign clustering via run ratio)
-    - Similarity of the residual's zero-crossing behavior (ZC)
-    - Cook’s Distance (outlier/influence detection)
-    - Breusch-Godfrey / White’s test (auxiliary regression on lagged residuals)
+    - Run ratio (sign clustering via runs test)
+    - Zero-crossings count (ZC)
+    - Cook's Distance (outlier/influence detection)
+    - Breusch-Godfrey test (higher-order autocorrelation)
 
 - **Visualization**:
   - Fitted curve vs experimental Δδ
   - Raw and normalized residuals
-  - Optional colored model overlays
+  - Multi-model comparison plots with color coding
 
 - **Structured Output**:
-  - Results saved in CSV format (per model and per point)
+  - Results saved in CSV format (per model, per point, and combined)
   - Diagnostic plots saved as PNG
-  - Human-readable diagnostic tables in log
+  - Human-readable diagnostic tables in console and log
 
 - **User Experience**:
   - Logging to terminal and `results/log.txt`
@@ -60,7 +60,7 @@ This Python-based analysis tool is designed for evaluating titration data from N
 
 Launch in [Google Colab](https://colab.research.google.com/github/Deam0on/B_E_A_S_T/blob/main/example_data/colab_template.ipynb)
 
-Set of experimental data can be found under `example_data/`
+A set of experimental data can be found under `example_data/`
 
 ### Option 2: Run Locally
 
@@ -68,101 +68,130 @@ Set of experimental data can be found under `example_data/`
 
 ```bash
 git clone https://github.com/Deam0on/B_E_A_S_T.git
-cd B_E_A_S_T/binding_analysis
+cd B_E_A_S_T
 ```
 
 2. Install dependencies:
 
 ```bash
-pip install -r requirements.txt
+pip install -r binding_analysis/requirements.txt
 ```
 
-3. Place `.csv` files into the `data_input/` directory.
+3. Place `.csv` files into the `data_input/` directory (or specify a custom directory).
 
 4. Run the tool:
 
 ```bash
-python binding_analysis_tool.py [OPTIONS]
+python binding_analysis/binding_analysis_tool.py [OPTIONS]
 ```
 
 ### Available Options:
 
 | Argument            | Description |
 |---------------------|-------------|
-| `--config PATH`     | Path to custom `config.yaml` file (default: `config.yaml`) |
+| `--config PATH`     | Path to custom `config.yaml` file (default: `binding_analysis/config.yaml`) |
 | `--input_dir DIR`   | Override input folder path (default: `data_input`) |
 | `--output_dir DIR`  | Override output folder path (default: `results`) |
-| `--skip_tests`      | Disable residual diagnostics like Ljung-Box, BG/White, RESET, Cook’s Distance |
-| `--no_normalized`   | Suppress normalized residual plots (Δδ-relative) from output |
+| `--skip_tests`      | Disable advanced residual diagnostics |
+| `--no_normalized`   | Suppress normalized residual plots from output |
 
 ### Example:
 
 ```bash
-python binding_analysis_tool.py \
-  --input_dir custom_data \
-  --output_dir custom_results \
-  --skip_tests \
-  --no_normalized
+python binding_analysis/binding_analysis_tool.py \
+  --input_dir example_data \
+  --output_dir results \
+  --config binding_analysis/config.yaml
 ```
 
 5. Review the output in the `results/` folder:
-   - `*_results.csv`: fit parameters and stats
-   - `*_plot.png`: fit and residuals
+   - `*_results.csv`: fit parameters and stats per model
+   - `*_combined.csv`: aggregated results across all models
+   - `*_plot.png`: fit curves and residuals
    - `log.txt`: execution log
 
 ---
 
 ## Input File Format
 
-All data used in the paper is uploaded in `example_data/` folder
+Example data files are provided in the `example_data/` folder.
 
-See [Input Format and File Structure](https://github.com/Deam0on/B_E_A_S_T/wiki/Input_and_File_Structure)
+For detailed input format requirements, see [Input Format and File Structure](https://github.com/Deam0on/B_E_A_S_T/wiki/Input-Format-and-File-Structure) wiki page.
 
 ---
 
-## Binding Models — Equations and Definitions
+## Binding Models
 
-This repository includes multiple binding models used to fit NMR titration data. Below are the corresponding equations and definitions of parameters.
+This tool supports multiple binding models for analyzing host-guest interactions:
 
-For detailed model description, see [Binding Models and Theory](https://github.com/Deam0on/B_E_A_S_T/wiki/Binding_Models_and_Theory)
+- **1:1 (HG)** - Simple host-guest binding
+- **1:2 (HG + HG₂)** - Sequential binding of two guests
+- **2:1 (HG + H₂G)** - Sequential binding of two hosts
+- **Dimer (HG + H₂)** - Host-guest binding with host dimerization
+- **Multi-equilibrium (H₂G + HG + H₂)** - Complex system with multiple equilibria
+
+For detailed mathematical derivations and model descriptions, see:
+- [Binding Models and Theory](https://github.com/Deam0on/B_E_A_S_T/wiki/Binding-Models-and-Theory) wiki page
+- [MODEL_PROOFS.md](MODEL_PROOFS.md) for complete mathematical derivations
 
 ---
 
 ## Fit Diagnostics
 
-A suite of statistical diagnostics is applied to each model's residuals, grouped into:
+A comprehensive suite of statistical diagnostics is applied to evaluate model quality:
 
-- **Criteria** - Standard fit quality metrics
-- **Core Tests** - Essential statistical tests for model validation
+- **Criteria** - Standard fit quality metrics (R², RMSE, AIC, BIC)
+- **Core Tests** - Essential statistical validation tests
 - **Optional Tests** - Advanced pattern detection and outlier analysis
 
-These are rendered into a per-model table for easy comparison.
-
-See the [Fit Diagnostics wiki page](https://github.com/Deam0on/B_E_A_S_T/wiki/Fit_Diagnostics) for test details, acceptable values, and interpretation.
+See the [Fit Diagnostics](https://github.com/Deam0on/B_E_A_S_T/wiki/Fit-Diagnostics) wiki page for test details, acceptable values, and interpretation.
 
 ---
 
 ## Output Summary
 
-Each run creates a `results/` folder with:
+Each run creates output in the specified results directory:
 
-- Per-sample **CSV summaries** (with fit, residuals, metrics, flags)
-- Per-sample **plots**: data, residuals, and optionally normalized residuals
-- A comprehensive **log.txt** with step-by-step model evaluation
+- **CSV files**: Per-sample results with fit parameters, residuals, metrics, and diagnostic flags
+- **Combined CSV**: Aggregated results across all models for easy comparison
+- **PNG plots**: Data visualization with fitted curves and residual analysis
+- **log.txt**: Comprehensive execution log with model evaluation details
 
 ---
+
+## Configuration
+
+The tool's behavior can be customized via `config.yaml`. See the [Configuration Guide](https://github.com/Deam0on/B_E_A_S_T/wiki/Configuration-Guide) wiki page for details on:
+
+- Model-specific parameters and bounds
+- Diagnostic test thresholds
+- Output preferences
+- Advanced fitting options
+
+---
+
 ## Additional Resources
 
-- [Project Wiki](https://github.com/Deam0on/B_E_A_S_T/wiki)
+- [Project Wiki](https://github.com/Deam0on/B_E_A_S_T/wiki) - Complete documentation
+- [CLI Usage and Flags](https://github.com/Deam0on/B_E_A_S_T/wiki/CLI-Usage-and-Flags) - Detailed command-line reference
+- [Google Colab Integration](https://github.com/Deam0on/B_E_A_S_T/wiki/Google-Colab-Integration) - Cloud-based usage guide
 
 For questions or contributions, open an issue or pull request on the [GitHub repo](https://github.com/Deam0on/B_E_A_S_T).
 
 ---
 
+## Citation
+
+If you use BEAST in your research, please see [CITATION.cff](CITATION.cff) for more details.
+
+---
+
 ## License
 
-This project is released under the MIT License. See `LICENSE` for details.
+This project is released under the MIT License. See [LICENSE](LICENSE) for details.
+
+---
 
 ## Support this project
 
-You can support me via [liberpay](https://liberapay.com/Deamoon)
+You can support development via [Liberapay](https://liberapay.com/Deamoon)
