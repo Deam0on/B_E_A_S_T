@@ -582,7 +582,12 @@ def compare_models_by_metric(
 
         # Build section headers and metric keys
         section_headers = {
-            "=== Criteria ===": ["R²", "RMSE", "Weighted RMSE", "AIC", "BIC"],
+            "=== Criteria ===": [
+                "R²", 
+                "RMSE", 
+                "Weighted RMSE", 
+                "AIC", 
+                "BIC"],
             "=== Core Tests ===": [
                 "Shapiro-Wilk p",
                 "Ljung-Box p",
@@ -593,7 +598,6 @@ def compare_models_by_metric(
             ],
             "=== Optional Tests ===": [
                 "Run ratio",
-                "Spectral ratio",
                 "Zero-crossings", 
                 "Cook's Distance",
                 "Breusch-Godfrey",
@@ -741,27 +745,17 @@ def compare_models_by_metric(
                             interpret_diagnostic("rolling_r2", r, 0.35, r < 0.35),
                         ]
                     )
-                # elif metric_name == "Spectral ratio" and spectral is not None:
-                #     table_data.append(
-                #         [
-                #             metric_name,
-                #             f"{spectral:.2f}",
-                #             "< 0.3",
-                #             "0 to 1",
-                #             interpret_diagnostic(
-                #                 "spectral_ratio", spectral, 0.3, spectral < 0.3
-                #             ),
-                #         ]
-                #     )
-                elif metric_name == "Runs test ratio" and run_ratio is not None:
-                    passed = 0.65 < run_ratio < 1.35
+                # This section was commented out - uncomment it:
+                elif metric_name == "Run ratio" and "run_ratio" in comp_stats:  # CHANGED FROM run_ratio variable
+                    run_ratio_val = comp_stats["run_ratio"]  # Get from comp_stats
+                    passed = 0.65 < run_ratio_val < 1.35
                     table_data.append(
                         [
                             metric_name,
-                            f"{run_ratio:.2f}",
-                            "≈ 1.0",
+                            f"{run_ratio_val:.2f}",
+                            "0.65 - 1.35",
                             "0 to ~2.0",
-                            interpret_diagnostic("run_ratio", run_ratio, None, passed),
+                            interpret_diagnostic("run_ratio", run_ratio_val, None, passed),
                         ]
                     )
                 elif metric_name == "Zero-crossings" and crossing_sim is not None:
@@ -777,7 +771,6 @@ def compare_models_by_metric(
                             ),
                         ]
                     )
-
                 elif metric_name == "Cook's Distance":
                     # This should always execute when Cook's Distance is in the Optional Tests section
                     cooks = row.get("cooks_max")
@@ -986,6 +979,7 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
                     std_err = np.sqrt(np.diag(cov))
                     n_iter = maxfev  # Enhanced method doesn't track iterations directly
                     logging.info(f"Enhanced fitting completed successfully.")
+                    logging.info(f"Function evaluations: {n_iter}")
                     
                 except Exception as e:
                     # Fallback to least_squares if enhanced method fails
