@@ -663,7 +663,7 @@ def compare_models_by_metric(
                             "Stricter than AIC for model comparison",
                         ]
                     )
-                elif metric_name == "Normality test":
+                elif metric_name == "Shapiro-Wilk p":
                     shapiro_p = row.get("shapiro_p")
                     normality_pass = row.get("normality_pass", True)
                     if shapiro_p is not None:
