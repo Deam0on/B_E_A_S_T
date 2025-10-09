@@ -364,7 +364,7 @@ $$\delta_{obs} = \frac{\delta_{G}[G] + \delta_{HG}[HG] + \delta_{H_2G}[H_2G]}{[G
 
 The chemical shift change relative to free guest:
 
-$$\Delta\delta = \delta_{obs} - \delta_G = \frac{\delta_{HG}[HG] + \delta_{H_2G}[H_2G]}{[G_0]}$$
+$$\Delta\delta = \delta_{obs} - \delta_G = \frac{\Delta\delta_{HG}[HG] + \Delta\delta_{H_2G}[H_2G]}{[G_0]}$$
 
 ### Physical Interpretation
 
@@ -411,7 +411,7 @@ $$\Delta\delta = \delta_{obs} - \delta_{free}$$
 
 Since $\delta_{free}$ serves as the reference (zero point):
 
-$$\Delta\delta = \frac{\delta_{HG}[G_{in\_HG}] + \delta_{complex}[G_{in\_complex}]}{[G_0]}$$
+$$\Delta\delta = \frac{\Delta\delta_{HG}[G_{in\_HG}] + \Delta\delta_{complex}[G_{in\_complex}]}{[G_0]}$$
 
 ### Model-Specific Implementations
 
