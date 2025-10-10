@@ -25,7 +25,7 @@ if req_file.exists():
 
 setup(
     name="beast-binding-analysis",
-    version="1.0.0",
+    version="1.1.7",
     author="Filip Hládek",
     author_email="info.f@hladek.cz",
     license="MIT",
