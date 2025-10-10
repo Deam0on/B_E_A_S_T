@@ -10,7 +10,7 @@ This Python-based analysis tool is designed for evaluating titration data from N
 
 - **Model Support**:
   - Includes `1:1 (HG)`, `1:2 (HG + HG₂)`, `2:1 (HG + H₂G)`, `Dimer (HG + H₂)`, and `Multi-equilibrium (H₂G + HG + H₂)` binding models
-  - Model logic is modularized – easily extendable via the `models.py` module
+  - Model logic is modularized – number of models easily extendable via the `models.py` module
 
 - **Flexible Fitting & Configuration**:
   - Curve fitting using `scipy.optimize.curve_fit` with enhanced initial parameter estimation
