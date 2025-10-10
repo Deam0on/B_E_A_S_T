@@ -1,8 +1,8 @@
-cff-version: 1.1.7
+cff-version: 1.1.8
 message: "If you use this software, please cite it as below."
 type: software
 title: "BEAST - Binding Evaluation and Analysis Software Tool"
-version: 1.1.7
+version: 1.1.8
 date-released: 2025-01-01
 url: "https://github.com/Deam0on/B_E_A_S_T"
 repository-code: "https://github.com/Deam0on/B_E_A_S_T"
@@ -34,6 +34,6 @@ preferred-citation:
     - family-names: "Hládek"
       given-names: "Filip"
       email: "info.f@hladek.cz"
-  version: 1.1.7
+  version: 1.1.8
   url: "https://github.com/Deam0on/B_E_A_S_T"
   year: 2025

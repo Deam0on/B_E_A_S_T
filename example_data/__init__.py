@@ -6,10 +6,10 @@ it to various thermodynamic binding models.
 
 Author: Filip Hládek
 License: MIT
-Version: 1.1.7
+Version: 1.1.8
 """
 
-__version__ = "1.1.7"
+__version__ = "1.1.8"
 __author__ = "Filip Hládek"
 __email__ = "info.f@hladek.cz"
 __license__ = "MIT"
