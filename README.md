@@ -131,8 +131,7 @@ This tool supports multiple binding models for analyzing host-guest interactions
 - **Multi-equilibrium (H₂G + HG + H₂)** - Complex system with multiple equilibria
 
 For detailed mathematical derivations and model descriptions, see:
-- [Binding Models and Theory](https://github.com/Deam0on/B_E_A_S_T/wiki/Binding_Models_and_Theory) wiki page
-- [MODEL PROOFS](MODEL_PROOFS.md) for complete mathematical derivations
+[Binding Models and Theory](https://github.com/Deam0on/B_E_A_S_T/wiki/Binding_Models_and_Theory) wiki page
 
 ---
 
