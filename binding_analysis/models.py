@@ -99,6 +99,11 @@ def binding_isotherm_1_2(
         Calculated chemical shift changes (Δδ)
     """
     H0, G0 = np.asarray(H0), np.asarray(G0)
+    
+    # Add protection against invalid Ka/Kd values
+    Ka = max(Ka, 1e-6)
+    Kd = max(Kd, 1e-6)
+    
     d_delta_comp = np.zeros_like(H0, dtype=float)
     epsilon = 1e-10
 
@@ -146,6 +151,11 @@ def binding_isotherm_2_1(
         Calculated chemical shift changes (Δδ)
     """
     H0, G0 = np.asarray(H0), np.asarray(G0)
+    
+    # Add protection against invalid Ka/Kd values
+    Ka = max(Ka, 1e-6)
+    Kd = max(Kd, 1e-6)
+    
     d_delta_comp = np.zeros_like(H0, dtype=float)
     epsilon = 1e-10
 
@@ -193,6 +203,11 @@ def binding_dimer(
         Calculated chemical shift changes (Δδ) for guest-observed NMR
     """
     H0, G0 = np.asarray(H0), np.asarray(G0)
+    
+    # Add protection against invalid Ka/Kd values
+    Ka = max(Ka, 1e-6)
+    Kd = max(Kd, 1e-6)
+    
     d_delta_comp = np.zeros_like(H0, dtype=float)
     epsilon = 1e-10
 
@@ -252,6 +267,12 @@ def multi_model(
         Calculated chemical shift changes (Δδ) for guest-observed NMR
     """
     H0, G0 = np.asarray(H0), np.asarray(G0)
+    
+    # Add protection against invalid K values
+    KHG = max(KHG, 1e-6)
+    Kd = max(Kd, 1e-6)
+    KH2G = max(KH2G, 1e-6)
+    
     d_delta_comp = np.zeros_like(H0, dtype=float)
     epsilon = 1e-10
 

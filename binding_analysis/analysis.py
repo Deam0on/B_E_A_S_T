@@ -371,40 +371,58 @@ def _coordinate_descent_refinement(model_func, initial_guess: np.ndarray,
 def enhanced_curve_fit(model_name: str, model_func, H0: np.ndarray, d_delta_exp: np.ndarray,
                       initial_guess: list, bounds: tuple, maxfev: int = 100000) -> tuple:
     """
-    Enhanced curve fitting with smart initial guessing and robust error estimation.
-    
-    The main improvement comes from better initial parameter estimates rather than 
-    complex weighting schemes. This maintains mathematical correctness while
-    improving convergence and reliability.
-    
-    Args:
-        model_name: Name of the binding model
-        model_func: Model function to fit
-        H0: Host concentration array
-        d_delta_exp: Experimental data
-        initial_guess: Initial parameter guess (should be from smart_initial_guess)
-        bounds: Parameter bounds
-        maxfev: Maximum function evaluations
-        
-    Returns:
-        Tuple of (fitted_params, covariance_matrix)
+    Enhanced curve fitting with convergence detection and fallback strategies.
     """
     
+    # Track function evaluations
+    eval_count = [0]
+    
+    def wrapped_func(x, *params):
+        eval_count[0] += 1
+        return model_func(x, *params)
+    
     try:
-        # Use standard curve_fit with the improved initial guess
-        # The main benefit comes from smart_initial_guess, not from weighting/scaling
         params, covariance = curve_fit(
-            model_func, H0, d_delta_exp,
+            wrapped_func, H0, d_delta_exp,
             p0=initial_guess,
             bounds=bounds,
             maxfev=maxfev
         )
         
+        # Log actual function evaluations
+        logging.info(f"[{model_name}] Function evaluations: {eval_count[0]}")
+        
+        # Check if maxfev was hit (indicates potential non-convergence)
+        if eval_count[0] >= maxfev * 0.95:  # Within 5% of limit
+            logging.warning(
+                f"[{model_name}] Approached maxfev limit ({eval_count[0]}/{maxfev}). "
+                "Fit may not have converged properly."
+            )
+            
+            # Calculate fit quality
+            residuals = d_delta_exp - model_func(H0, *params)
+            rmse = np.sqrt(np.mean(residuals**2))
+            max_data = np.max(np.abs(d_delta_exp))
+            
+            # If RMSE is more than 20% of data range, warn about poor fit
+            if rmse > 0.2 * max_data:
+                logging.warning(
+                    f"[{model_name}] Poor fit quality (RMSE={rmse:.4f}, "
+                    f"{100*rmse/max_data:.1f}% of data range). "
+                    "Consider trying different initial guesses."
+                )
+        
         return params, covariance
         
+    except RuntimeError as e:
+        if "maxfev" in str(e).lower():
+            logging.error(
+                f"[{model_name}] Failed to converge within {maxfev} function evaluations. "
+                f"Actual evaluations: {eval_count[0]}"
+            )
+        raise e
     except Exception as e:
-        # If fitting fails, this indicates a more serious problem
-        # that won't be solved by scaling/weighting
+        logging.error(f"[{model_name}] Fitting failed: {e}")
         raise e
 
 
@@ -920,6 +938,10 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
     skip_normres = config.get("cli_flags", {}).get("no_normalized", False)
     custom_corr_enabled = config.get("cli_flags", {}).get("custom_residual_check", True)
 
+    adaptive_maxfev = config["general"].get("adaptive_maxfev", False)
+    base_maxfev = config["general"].get("base_maxfev", 100000)
+    complex_multiplier = config["general"].get("complex_maxfev_multiplier", 5)
+
     global_delta_range = collect_global_max_deltadelta(input_folder)
     if global_delta_range is None:
         logging.warning(
@@ -958,8 +980,25 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
 
         for model_name, model in models.items():
             try:
+                # Determine maxfev based on model complexity
+                if adaptive_maxfev:
+                    num_params = len(model["initial_guess"])
+                    if num_params >= 5:  # Complex models
+                        model_maxfev = base_maxfev * complex_multiplier
+                    elif num_params >= 4:  # Medium complexity
+                        model_maxfev = base_maxfev * 2
+                    else:  # Simple models
+                        model_maxfev = base_maxfev
+                
+                    logging.info(
+                        f"[{model_name}] Using maxfev={model_maxfev} "
+                        f"({num_params} parameters)"
+                    )
+                else:
+                    model_maxfev = config["general"]["maxfev"]
+            
                 logging.info(f"\nEvaluating model: {model_name}")
-                guess = smart_initial_guess(
+                improved_guess = smart_initial_guess(
                     model["lambda"],
                     model["initial_guess"],
                     model["bounds"],
@@ -972,12 +1011,18 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
                 # Use enhanced curve fitting with weighting and scaling
                 try:
                     params, cov = enhanced_curve_fit(
-                        model_name, func, H0, d_delta_exp, guess, bounds, maxfev
+                        model_name,
+                        func,
+                        H0,
+                        d_delta_exp,
+                        improved_guess,
+                        bounds,
+                        maxfev=model_maxfev
                     )
                     fit_vals = func(H0, *params)
                     residuals = fit_vals - d_delta_exp
                     std_err = np.sqrt(np.diag(cov))
-                    n_iter = maxfev  # Enhanced method doesn't track iterations directly
+                    n_iter = model_maxfev  # Enhanced method doesn't track iterations directly
                     logging.info(f"Enhanced fitting completed successfully.")
                     logging.info(f"Function evaluations: {n_iter}")
                     
@@ -1160,3 +1205,62 @@ def plot_results(
     plt.subplots_adjust(top=0.9)
     plt.savefig(filename)
     plt.close()
+
+
+def fit_with_retry(model_name: str, model_func, H0: np.ndarray, d_delta_exp: np.ndarray,
+                   initial_guess: list, bounds: tuple, maxfev: int = 100000,
+                   max_retries: int = 3) -> tuple:
+    """
+    Attempt fitting with retry logic using perturbed initial guesses.
+    """
+    
+    last_exception = None
+    
+    for attempt in range(max_retries):
+        try:
+            if attempt == 0:
+                # First attempt: use provided guess
+                current_guess = initial_guess
+                logging.info(f"[{model_name}] Attempt {attempt + 1}/{max_retries}")
+            else:
+                # Subsequent attempts: perturb the guess
+                perturbation = 0.2 * (attempt + 1)  # Increase perturbation each time
+                current_guess = [
+                    p * (1 + np.random.uniform(-perturbation, perturbation))
+                    for p in initial_guess
+                ]
+                
+                # Ensure bounds are respected
+                lower, upper = bounds
+                for i in range(len(current_guess)):
+                    current_guess[i] = np.clip(current_guess[i], lower[i], upper[i])
+                
+                logging.warning(
+                    f"[{model_name}] Retry {attempt + 1}/{max_retries} "
+                    f"with perturbed guess (±{perturbation*100:.0f}%)"
+                )
+            
+            params, covariance = enhanced_curve_fit(
+                model_name, model_func, H0, d_delta_exp,
+                current_guess, bounds, maxfev
+            )
+            
+            # Success!
+            if attempt > 0:
+                logging.info(f"[{model_name}] Fit succeeded on attempt {attempt + 1}")
+            
+            return params, covariance
+            
+        except Exception as e:
+            last_exception = e
+            logging.warning(f"[{model_name}] Attempt {attempt + 1} failed: {e}")
+            
+            if attempt == max_retries - 1:
+                # Last attempt failed
+                logging.error(
+                    f"[{model_name}] All {max_retries} fitting attempts failed. "
+                    "Skipping this model."
+                )
+                raise last_exception
+    
+    raise last_exception
