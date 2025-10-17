@@ -365,19 +365,32 @@ def model_definitions(
     Returns:
         Dictionary of model definitions with functions, initial guesses, bounds, and lambdas
     """
+    
+    # Estimate reasonable chemical shift bounds from experimental data
+    max_delta = np.max(np.abs(d_delta_exp)) if len(d_delta_exp) > 0 else 1000
+    # Allow up to 3x the observed maximum shift (accounts for incomplete saturation)
+    delta_upper = max(max_delta * 3, 5000)
+    delta_lower = -delta_upper
+    
     return {
         "HG": {
             "function": binding_isotherm_1_1,
-            "initial_guess": [100, 100],  # Ka, d_inf
-            "bounds": ([0, -np.inf], [np.inf, np.inf]),
+            "initial_guess": [100, max_delta * 1.5],  # Ka, d_inf
+            "bounds": (
+                [1e-3, delta_lower],           # Ka ≥ 1e-3 M⁻¹, shift lower bound
+                [1e7, delta_upper]             # Ka ≤ 1e7 M⁻¹, shift upper bound
+            ),
             "lambda": lambda H0, Ka, d_inf: binding_isotherm_1_1(H0, G0, Ka, d_inf),
             "description": "1:1 Host-Guest binding (H + G ⇌ HG)",
             "parameter_names": ["K(HG)", "d(HG)"],
         },
         "HG₂": {
             "function": binding_isotherm_1_2,
-            "initial_guess": [100, 100, 100, 100],  # Ka, Kd, d_inf_1, d_inf_2
-            "bounds": ([0, 0, -np.inf, -np.inf], [np.inf, np.inf, np.inf, np.inf]),
+            "initial_guess": [100, 25, max_delta * 1.2, max_delta * 1.5],  # Ka, Kd, d_inf_1, d_inf_2
+            "bounds": (
+                [1e-3, 1e-3, delta_lower, delta_lower],     # Ka ≥ 1e-3 M⁻¹, Kd ≥ 1e-3 M⁻¹, shift bounds
+                [1e7, 1e6, delta_upper, delta_upper]        # Ka ≤ 1e7 M⁻¹, Kd ≤ 1e6 M⁻¹, shift bounds
+            ),
             "lambda": lambda H0, Ka, Kd, d_inf_1, d_inf_2: binding_isotherm_1_2(
                 H0, G0, Ka, Kd, d_inf_1, d_inf_2
             ),
@@ -386,8 +399,11 @@ def model_definitions(
         },
         "H₂G": {
             "function": binding_isotherm_2_1,
-            "initial_guess": [100, 100, 100, 100],  # Ka, Kd, d_inf_1, d_inf_2
-            "bounds": ([0, 0, -np.inf, -np.inf], [np.inf, np.inf, np.inf, np.inf]),
+            "initial_guess": [100, 25, max_delta * 1.2, max_delta * 1.5],  # Ka, Kd, d_inf_1, d_inf_2
+            "bounds": (
+                [1e-3, 1e-3, delta_lower, delta_lower],     # Ka ≥ 1e-3 M⁻¹, Kd ≥ 1e-3 M⁻¹, shift bounds
+                [1e7, 1e6, delta_upper, delta_upper]        # Ka ≤ 1e7 M⁻¹, Kd ≤ 1e6 M⁻¹, shift bounds
+            ),
             "lambda": lambda H0, Ka, Kd, d_inf_1, d_inf_2: binding_isotherm_2_1(
                 H0, G0, Ka, Kd, d_inf_1, d_inf_2
             ),
@@ -396,8 +412,11 @@ def model_definitions(
         },
         "HG + H₂": {
             "function": binding_dimer,
-            "initial_guess": [100, 100, 100],  # Ka, Kd, d_inf_1
-            "bounds": ([0, 0, -np.inf], [np.inf] * 3),
+            "initial_guess": [100, 10, max_delta * 1.5],  # Ka, Kd, d_inf_1
+            "bounds": (
+                [1e-3, 1e-3, delta_lower],          # Ka ≥ 1e-3 M⁻¹, Kd ≥ 1e-3 M⁻¹ (dimer formation), shift lower bound
+                [1e7, 1e5, delta_upper]             # Ka ≤ 1e7 M⁻¹, Kd ≤ 1e5 M⁻¹, shift upper bound
+            ),
             "lambda": lambda H0, Ka, Kd, d_inf_1: binding_dimer(
                 H0, G0, Ka, Kd, d_inf_1
             ),
@@ -407,13 +426,16 @@ def model_definitions(
         "H₂G + HG + H₂": {
             "function": multi_model,
             "initial_guess": [
-                100,
-                100,
-                100,
-                100,
-                100,
-            ],  # KHG, Kd, KH2G, dHG, dH2G
-            "bounds": ([0, 0, 0, -np.inf, -np.inf], [np.inf] * 5),
+                100,                # KHG
+                10,                 # Kd (dimer)
+                25,                 # KH2G
+                max_delta * 1.2,    # dHG
+                max_delta * 1.5,    # dH2G
+            ],
+            "bounds": (
+                [1e-3, 1e-3, 1e-3, delta_lower, delta_lower],        # All K ≥ 1e-3 M⁻¹, shift lower bounds
+                [1e7, 1e5, 1e6, delta_upper, delta_upper]           # Upper limits: KHG ≤ 1e7, Kd ≤ 1e5, KH2G ≤ 1e6, shift uppers
+            ),
             "lambda": lambda H0, KHG, Kd, KH2G, dHG, dH2G: multi_model(
                 H0, G0, KHG, Kd, KH2G, dHG, dH2G
             ),

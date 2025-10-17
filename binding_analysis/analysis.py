@@ -1010,14 +1010,15 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
 
                 # Use enhanced curve fitting with weighting and scaling
                 try:
-                    params, cov = enhanced_curve_fit(
+                    params, cov = fit_with_retry(
                         model_name,
                         func,
                         H0,
                         d_delta_exp,
                         improved_guess,
                         bounds,
-                        maxfev=model_maxfev
+                        maxfev=model_maxfev,
+                        max_retries=3
                     )
                     fit_vals = func(H0, *params)
                     residuals = fit_vals - d_delta_exp
