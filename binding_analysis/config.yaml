@@ -3,7 +3,17 @@
 
 general:
   # Maximum function evaluations for curve fitting
-  maxfev: 100000
+  # Increased to allow more complex models to converge
+  maxfev: 500000
+  
+  # Enable adaptive maxfev based on model complexity
+  adaptive_maxfev: true
+  
+  # Base maxfev for simple models (e.g., 1:1)
+  base_maxfev: 100000
+  
+  # Multiplier for complex models (e.g., multi-equilibrium)
+  complex_maxfev_multiplier: 5
   
   # Number of lags for autocorrelation tests
   lags: 10

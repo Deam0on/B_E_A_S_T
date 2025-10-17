@@ -17,6 +17,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from models import model_definitions
+from scipy import stats
+from scipy.linalg import svd
 from scipy.optimize import curve_fit, least_squares, minimize_scalar
 from scipy.stats import pearsonr, spearmanr
 from statsmodels.api import OLS, add_constant
@@ -108,6 +110,15 @@ def _estimate_parameters_from_data(H0: np.ndarray, d_delta_exp: np.ndarray,
     
     This function analyzes the binding curve shape to provide intelligent
     initial estimates for binding constants and chemical shift parameters.
+    
+    Args:
+        H0: Host concentration data
+        d_delta_exp: Experimental chemical shift changes
+        initial_guess: Initial parameter guess to refine
+        bounds: Parameter bounds as (lower, upper) tuple
+        
+    Returns:
+        Improved parameter guess based on data analysis
     """
     guess = np.array(initial_guess, dtype=float)
     lower_bounds, upper_bounds = bounds
@@ -188,6 +199,17 @@ def _adaptive_grid_search(model_func, initial_guess: np.ndarray,
     
     This uses different step sizes for different parameter types and
     progressively refines the search around the best candidates.
+    
+    Args:
+        model_func: Model function to optimize
+        initial_guess: Initial parameter values
+        bounds: Parameter bounds as (lower, upper) tuple
+        H0: Host concentration data
+        d_delta_exp: Experimental data to fit
+        max_iter: Maximum optimization iterations
+        
+    Returns:
+        Optimized parameter guess from grid search
     """
     best_guess = initial_guess.copy()
     lower_bounds, upper_bounds = bounds
@@ -195,7 +217,7 @@ def _adaptive_grid_search(model_func, initial_guess: np.ndarray,
     # Ensure Ka parameters have minimum values
     for i in range(len(best_guess)):
         if i < len(lower_bounds):
-            if i == 0 or i == 1:  # Ka and Kd parameters
+            if i == 0 or i == 1:
                 min_val = max(lower_bounds[i], 1e-6)
                 best_guess[i] = max(best_guess[i], min_val)
     
@@ -285,16 +307,24 @@ def _coordinate_descent_refinement(model_func, initial_guess: np.ndarray,
     
     This provides final refinement by optimizing each parameter individually
     using a more sophisticated 1D optimization approach.
-    """
-    from scipy.optimize import minimize_scalar
     
+    Args:
+        model_func: Model function to optimize
+        initial_guess: Initial parameter values
+        bounds: Parameter bounds as (lower, upper) tuple
+        H0: Host concentration data
+        d_delta_exp: Experimental data to fit
+        
+    Returns:
+        Refined parameter guess
+    """
     best_guess = initial_guess.copy()
     lower_bounds, upper_bounds = bounds
     
     # Ensure Ka parameters have minimum values
     for i in range(len(best_guess)):
         if i < len(lower_bounds):
-            if i == 0 or i == 1:  # Ka and Kd parameters
+            if i == 0 or i == 1:
                 min_val = max(lower_bounds[i], 1e-6)
                 best_guess[i] = max(best_guess[i], min_val)
     
@@ -371,44 +401,88 @@ def _coordinate_descent_refinement(model_func, initial_guess: np.ndarray,
 def enhanced_curve_fit(model_name: str, model_func, H0: np.ndarray, d_delta_exp: np.ndarray,
                       initial_guess: list, bounds: tuple, maxfev: int = 100000) -> tuple:
     """
-    Enhanced curve fitting with smart initial guessing and robust error estimation.
+    Enhanced curve fitting with convergence detection and detailed logging.
     
-    The main improvement comes from better initial parameter estimates rather than 
-    complex weighting schemes. This maintains mathematical correctness while
-    improving convergence and reliability.
+    Wraps scipy's curve_fit to track function evaluations and detect potential
+    convergence issues, providing detailed warnings when fits may be unreliable.
     
     Args:
-        model_name: Name of the binding model
+        model_name: Name of the binding model being fitted
         model_func: Model function to fit
-        H0: Host concentration array
-        d_delta_exp: Experimental data
-        initial_guess: Initial parameter guess (should be from smart_initial_guess)
-        bounds: Parameter bounds
-        maxfev: Maximum function evaluations
+        H0: Total host concentration array
+        d_delta_exp: Experimental chemical shift changes to fit
+        initial_guess: Initial parameter guess
+        bounds: Parameter bounds as (lower, upper) tuple
+        maxfev: Maximum function evaluations (default: 100000)
         
     Returns:
-        Tuple of (fitted_params, covariance_matrix)
+        Tuple of (parameters, covariance_matrix) from curve_fit
+        
+    Raises:
+        RuntimeError: If curve fitting fails
     """
+    # Track function evaluations
+    eval_count = [0]
+    
+    def wrapped_func(x, *params):
+        eval_count[0] += 1
+        return model_func(x, *params)
     
     try:
-        # Use standard curve_fit with the improved initial guess
-        # The main benefit comes from smart_initial_guess, not from weighting/scaling
         params, covariance = curve_fit(
-            model_func, H0, d_delta_exp,
+            wrapped_func, H0, d_delta_exp,
             p0=initial_guess,
             bounds=bounds,
             maxfev=maxfev
         )
         
+        # Log actual function evaluations
+        logging.info(f"[{model_name}] Function evaluations: {eval_count[0]}")
+        
+        # Check if maxfev was hit (indicates potential non-convergence)
+        if eval_count[0] >= maxfev * 0.95:  # Within 5% of limit
+            logging.warning(
+                f"[{model_name}] Approached maxfev limit ({eval_count[0]}/{maxfev}). "
+                "Fit may not have converged properly."
+            )
+            
+            # Calculate fit quality
+            residuals = d_delta_exp - model_func(H0, *params)
+            rmse = np.sqrt(np.mean(residuals**2))
+            max_data = np.max(np.abs(d_delta_exp))
+            
+            # If RMSE is more than 20% of data range, warn about poor fit
+            if rmse > 0.2 * max_data:
+                logging.warning(
+                    f"[{model_name}] Poor fit quality (RMSE={rmse:.4f}, "
+                    f"{100*rmse/max_data:.1f}% of data range). "
+                    "Consider trying different initial guesses."
+                )
+        
         return params, covariance
         
+    except RuntimeError as e:
+        if "maxfev" in str(e).lower():
+            logging.error(
+                f"[{model_name}] Failed to converge within {maxfev} function evaluations. "
+                f"Actual evaluations: {eval_count[0]}"
+            )
+        raise e
     except Exception as e:
-        # If fitting fails, this indicates a more serious problem
-        # that won't be solved by scaling/weighting
+        logging.error(f"[{model_name}] Fitting failed: {e}")
         raise e
 
 
 def metric_value_range(metric: str) -> str:
+    """
+    Get the typical value range for a given diagnostic metric.
+    
+    Args:
+        metric: Name of the diagnostic metric
+        
+    Returns:
+        String describing the typical value range
+    """
     """
     Get the expected value range for a given metric.
 
@@ -437,6 +511,18 @@ def metric_value_range(metric: str) -> str:
 def interpret_diagnostic(
     metric: str, value: float, threshold: float, passed: bool
 ) -> str:
+    """
+    Provide interpretation of a diagnostic test result.
+    
+    Args:
+        metric: Name of the diagnostic metric
+        value: Computed value of the metric
+        threshold: Threshold value for the test
+        passed: Whether the test was passed
+        
+    Returns:
+        Human-readable interpretation string
+    """
     """
     Provide interpretation for diagnostic test results.
 
@@ -509,6 +595,19 @@ def interpret_diagnostic(
 def compare_models_by_metric(
     output_rows: List[Dict[str, Any]], metric: str = "AIC"
 ) -> None:
+    """
+    Compare and rank models by a specified information criterion.
+    
+    Sorts models by the selected metric and logs a detailed comparison table
+    showing all fit statistics and diagnostic results.
+    
+    Args:
+        output_rows: List of dictionaries containing model results
+        metric: Metric to use for ranking (default: "AIC")
+        
+    Returns:
+        Sorted list of model results (best model first)
+    """
     """
     Compare and rank models based on a specified metric.
 
@@ -834,15 +933,18 @@ def advanced_residual_diagnostics(
     """
     Perform comprehensive residual diagnostics.
 
+    Runs statistical tests including normality tests, autocorrelation analysis,
+    and custom pattern detection to assess model fit quality.
+
     Args:
         H0: Host concentration data
         residuals: Model residuals
         model_name: Name of the model
-        enable_tests: Whether to run statistical tests
-        enable_custom_corr: Whether to run custom correlation tests
+        enable_tests: Whether to run statistical tests (default: True)
+        enable_custom_corr: Whether to run custom correlation tests (default: True)
 
     Returns:
-        Dictionary containing all diagnostic results
+        Dictionary containing all diagnostic results including test statistics and flags
     """
     if not enable_tests:
         logging.info(f"Skipping residual diagnostics for {model_name} due to CLI flag.")
@@ -868,25 +970,19 @@ def advanced_residual_diagnostics(
     # Run autocorrelation tests
     autocorr = autocorrelation_tests(H0, residuals, model_name)
 
-    # Shapiro-Wilk normality test (as mentioned in README)
-    from scipy import stats
+    # Shapiro-Wilk normality test
     try:
-        if len(residuals) >= 3 and len(residuals) <= 5000:  # Shapiro-Wilk range limits
+        if len(residuals) >= 3 and len(residuals) <= 5000:
             shapiro_stat, shapiro_p = stats.shapiro(residuals)
             normality_pass = shapiro_p > 0.05
         else:
-            # Fallback to 3-sigma rule for very small or very large datasets
             residuals_std = (residuals - np.mean(residuals)) / np.std(residuals)
             normality_pass = np.all(np.abs(residuals_std) < 3)
             shapiro_stat, shapiro_p = None, None
     except Exception:
-        # Fallback to 3-sigma rule
         residuals_std = (residuals - np.mean(residuals)) / np.std(residuals)
         normality_pass = np.all(np.abs(residuals_std) < 3)
         shapiro_stat, shapiro_p = None, None
-
-    # Calculate skewness and kurtosis
-    import pandas as pd
 
     skewness = pd.Series(residuals).skew()
     kurt = pd.Series(residuals).kurtosis()
@@ -911,6 +1007,20 @@ def advanced_residual_diagnostics(
 
 
 def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False):
+    """
+    Process all CSV files in the input folder and fit binding models.
+    
+    This function reads NMR titration data from CSV files, fits multiple binding
+    models, performs statistical diagnostics, and generates output files and plots.
+    
+    Args:
+        config: Configuration dictionary containing analysis parameters
+        skip_tests: If True, skip residual diagnostic tests
+        plot_normalized: If True, include normalized residual plots
+        
+    Returns:
+        None (outputs are written to files)
+    """
     input_folder = config["general"]["input_dir"]
     output_folder = config["general"]["results_dir"]
     maxfev = config["general"]["maxfev"]
@@ -920,11 +1030,18 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
     skip_normres = config.get("cli_flags", {}).get("no_normalized", False)
     custom_corr_enabled = config.get("cli_flags", {}).get("custom_residual_check", True)
 
+    adaptive_maxfev = config["general"].get("adaptive_maxfev", False)
+    base_maxfev = config["general"].get("base_maxfev", 100000)
+    complex_multiplier = config["general"].get("complex_maxfev_multiplier", 5)
+    
+    # Collect all warnings during processing
+    all_warnings = []
+
     global_delta_range = collect_global_max_deltadelta(input_folder)
     if global_delta_range is None:
-        logging.warning(
-            "Global Δδ range could not be determined. Normalized residuals may be inaccurate."
-        )
+        warning_msg = "Global Δδ range could not be determined. Normalized residuals may be inaccurate."
+        logging.warning(warning_msg)
+        all_warnings.append(warning_msg)
 
     for filename in os.listdir(input_folder):
         if not filename.endswith(".csv"):
@@ -958,8 +1075,34 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
 
         for model_name, model in models.items():
             try:
+                # Warning for multi-equilibrium model with insufficient data
+                if model_name == "H₂G + HG + H₂" and len(H0) < 25:
+                    warning_msg = (
+                        f"[{filename}] [{model_name}] Limited data for complex model: {len(H0)} points "
+                        f"(recommended: >=25). Fit may be unreliable with {len(model['initial_guess'])} parameters."
+                    )
+                    logging.warning(warning_msg)
+                    all_warnings.append(warning_msg)
+                
+                # Determine maxfev based on model complexity
+                if adaptive_maxfev:
+                    num_params = len(model["initial_guess"])
+                    if num_params >= 5:  # Complex models
+                        model_maxfev = base_maxfev * complex_multiplier
+                    elif num_params >= 4:  # Medium complexity
+                        model_maxfev = base_maxfev * 2
+                    else:  # Simple models
+                        model_maxfev = base_maxfev
+                
+                    logging.info(
+                        f"[{model_name}] Using maxfev={model_maxfev} "
+                        f"({num_params} parameters)"
+                    )
+                else:
+                    model_maxfev = config["general"]["maxfev"]
+            
                 logging.info(f"\nEvaluating model: {model_name}")
-                guess = smart_initial_guess(
+                improved_guess = smart_initial_guess(
                     model["lambda"],
                     model["initial_guess"],
                     model["bounds"],
@@ -971,25 +1114,45 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
 
                 # Use enhanced curve fitting with weighting and scaling
                 try:
-                    params, cov = enhanced_curve_fit(
-                        model_name, func, H0, d_delta_exp, guess, bounds, maxfev
+                    params, cov = fit_with_retry(
+                        model_name,
+                        func,
+                        H0,
+                        d_delta_exp,
+                        improved_guess,
+                        bounds,
+                        maxfev=model_maxfev,
+                        max_retries=3
                     )
                     fit_vals = func(H0, *params)
                     residuals = fit_vals - d_delta_exp
                     std_err = np.sqrt(np.diag(cov))
-                    n_iter = maxfev  # Enhanced method doesn't track iterations directly
+                    n_iter = model_maxfev
                     logging.info(f"Enhanced fitting completed successfully.")
                     logging.info(f"Function evaluations: {n_iter}")
                     
+                    # Warning for poorly determined parameters (>500% error)
+                    for i, (param, err) in enumerate(zip(params, std_err)):
+                        if abs(param) > 1e-10:
+                            relative_error = err / abs(param)
+                            if relative_error > 5.0:
+                                param_name = model["parameter_names"][i] if i < len(model["parameter_names"]) else f"param_{i}"
+                                warning_msg = (
+                                    f"[{filename}] [{model_name}] Parameter '{param_name}' poorly determined: "
+                                    f"{param:.3e} +/- {err:.3e} ({relative_error*100:.1f}% error). "
+                                    f"Consider this fit unreliable."
+                                )
+                                logging.warning(warning_msg)
+                                all_warnings.append(warning_msg)
+                    
                 except Exception as e:
-                    # Fallback to least_squares if enhanced method fails
                     logging.warning(f"Enhanced fitting failed, using least_squares: {e}")
                     
                     def residuals_func(params):
                         return func(H0, *params) - d_delta_exp
 
                     result = least_squares(
-                        residuals_func, x0=guess, bounds=bounds, max_nfev=maxfev
+                        residuals_func, x0=improved_guess, bounds=bounds, max_nfev=model_maxfev
                     )
                     params = result.x
                     fit_vals = func(H0, *params)
@@ -997,9 +1160,6 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
                     n_iter = result.nfev * len(H0)
 
                     logging.info(f"Fallback fitting completed in {n_iter} function evaluations.")
-
-                    # Estimating covariance (approximation)
-                    from scipy.linalg import svd
 
                     _, s, VT = svd(result.jac, full_matrices=False)
                     threshold = np.finfo(float).eps * max(result.jac.shape) * s[0]
@@ -1075,19 +1235,12 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
                     }
                 )
                 
-                # Add debug logging to verify Cook's Distance is in diagnostics
-                logging.debug(f"Diagnostics keys: {list(diagnostics.keys())}")
-                logging.debug(f"Cook's max: {diagnostics.get('cooks_max')}")
-                logging.debug(f"Cook's extreme: {diagnostics.get('cooks_extreme')}")
-
                 logging.info(f"Model {model_name} fit completed")
-                # Log parameters with proper names
                 param_names = model.get(
                     "parameter_names", [f"param_{i+1}" for i in range(len(params))]
                 )
                 for name, value, error in zip(param_names, params, std_err):
                     logging.info(f"  {name}: {value:.6f} ± {error:.6f}")
-                logging.debug(f"Parm - results: {results}")
 
             except Exception as e:
                 logging.error(f"Exception in model {model_name}: {e}")
@@ -1111,11 +1264,42 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
             file_title=filename,
             show_normalized=not skip_normres,
         )
+    
+    # Print warning summary at the end
+    if all_warnings:
+        logging.info("\n" + "="*80)
+        logging.info("WARNING SUMMARY")
+        logging.info("="*80)
+        logging.info(f"Total warnings during analysis: {len(all_warnings)}")
+        logging.info("")
+        for idx, warning in enumerate(all_warnings, 1):
+            logging.info(f"{idx}. {warning}")
+        logging.info("="*80 + "\n")
+    else:
+        logging.info("\nAnalysis completed with no warnings.\n")
 
 
 def plot_results(
     H0, G0, d_delta_exp, model_results, filename, file_title=None, show_normalized=True
 ):
+    """
+    Generate plots for all fitted binding models.
+    
+    Creates a multi-panel figure showing fitted curves, residuals, and optionally
+    normalized residuals for each binding model.
+    
+    Args:
+        H0: Total host concentration array
+        G0: Total guest concentration array
+        d_delta_exp: Experimental chemical shift changes
+        model_results: Dictionary mapping model names to (fitted_values, residuals) tuples
+        filename: Path where the plot will be saved
+        file_title: Optional title for the figure (default: None)
+        show_normalized: If True, include normalized residual plots (default: True)
+        
+    Returns:
+        None (plot is saved to file)
+    """
     fig, axes = plt.subplots(
         nrows=5, ncols=3 if show_normalized else 2, figsize=(18, 14)
     )
@@ -1160,3 +1344,81 @@ def plot_results(
     plt.subplots_adjust(top=0.9)
     plt.savefig(filename)
     plt.close()
+
+
+def fit_with_retry(model_name: str, model_func, H0: np.ndarray, d_delta_exp: np.ndarray,
+                   initial_guess: list, bounds: tuple, maxfev: int = 100000,
+                   max_retries: int = 3) -> tuple:
+    """
+    Attempt curve fitting with retry logic using perturbed initial guesses.
+    
+    This function tries to fit the model multiple times with progressively
+    perturbed initial guesses if convergence fails, improving robustness.
+    
+    Args:
+        model_name: Name of the binding model being fitted
+        model_func: Model function to fit
+        H0: Total host concentration array
+        d_delta_exp: Experimental chemical shift changes to fit
+        initial_guess: Initial parameter guess
+        bounds: Parameter bounds as (lower, upper) tuple
+        maxfev: Maximum function evaluations (default: 100000)
+        max_retries: Maximum number of retry attempts (default: 3)
+        
+    Returns:
+        Tuple of (parameters, covariance_matrix) from successful fit
+        
+    Raises:
+        Exception: If all retry attempts fail
+    """
+    
+    last_exception = None
+    
+    for attempt in range(max_retries):
+        try:
+            if attempt == 0:
+                # First attempt: use provided guess
+                current_guess = initial_guess
+                logging.info(f"[{model_name}] Attempt {attempt + 1}/{max_retries}")
+            else:
+                # Subsequent attempts: perturb the guess
+                perturbation = 0.2 * (attempt + 1)  # Increase perturbation each time
+                current_guess = [
+                    p * (1 + np.random.uniform(-perturbation, perturbation))
+                    for p in initial_guess
+                ]
+                
+                # Ensure bounds are respected
+                lower, upper = bounds
+                for i in range(len(current_guess)):
+                    current_guess[i] = np.clip(current_guess[i], lower[i], upper[i])
+                
+                logging.warning(
+                    f"[{model_name}] Retry {attempt + 1}/{max_retries} "
+                    f"with perturbed guess (±{perturbation*100:.0f}%)"
+                )
+            
+            params, covariance = enhanced_curve_fit(
+                model_name, model_func, H0, d_delta_exp,
+                current_guess, bounds, maxfev
+            )
+            
+            # Success!
+            if attempt > 0:
+                logging.info(f"[{model_name}] Fit succeeded on attempt {attempt + 1}")
+            
+            return params, covariance
+            
+        except Exception as e:
+            last_exception = e
+            logging.warning(f"[{model_name}] Attempt {attempt + 1} failed: {e}")
+            
+            if attempt == max_retries - 1:
+                # Last attempt failed
+                logging.error(
+                    f"[{model_name}] All {max_retries} fitting attempts failed. "
+                    "Skipping this model."
+                )
+                raise last_exception
+    
+    raise last_exception
