@@ -20,7 +20,7 @@ from . import analysis, models, utils
 # Import main functions
 from .analysis import plot_results, process_csv_files_in_folder
 from .models import model_definitions
-from .utils import collect_global_max_deltadelta, validate_data
+from .utils import collect_global_max_deltadelta, validate_data, normalize_concentrations, denormalize_parameters
 
 __all__ = [
     "models",
@@ -31,4 +31,6 @@ __all__ = [
     "model_definitions",
     "validate_data",
     "collect_global_max_deltadelta",
+    "normalize_concentrations",
+    "denormalize_parameters",
 ]

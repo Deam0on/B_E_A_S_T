@@ -124,6 +124,94 @@ def custom_residual_pattern_test(residuals: ArrayLike) -> Dict[str, Any]:
     }
 
 
+def normalize_concentrations(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, float]]:
+    """
+    Normalize concentration values to improve numerical stability.
+    
+    Scales H and G to a reasonable range (e.g., 0.001-1.0) to avoid
+    numerical precision issues with very small values and long decimal expansions.
+    
+    Args:
+        df: Input dataframe with H, G, delta columns
+        
+    Returns:
+        Tuple of (normalized_df, scale_factors)
+    """
+    # Find appropriate scale factors based on order of magnitude
+    h_max = df['H'].abs().max()
+    g_max = df['G'].abs().max()
+    
+    # Use order of magnitude for scaling
+    h_scale = 10 ** np.floor(np.log10(h_max)) if h_max > 0 else 1e-10
+    g_scale = 10 ** np.floor(np.log10(g_max)) if g_max > 0 else 1e-10
+    
+    # Avoid division by zero or too-large scales
+    h_scale = max(h_scale, 1e-10)
+    g_scale = max(g_scale, 1e-10)
+    
+    # Create normalized copy
+    df_norm = df.copy()
+    df_norm['H'] = df['H'] / h_scale
+    df_norm['G'] = df['G'] / g_scale
+    
+    scale_factors = {
+        'h_scale': h_scale,
+        'g_scale': g_scale
+    }
+    
+    return df_norm, scale_factors
+
+
+def denormalize_parameters(params: np.ndarray, scale_factors: Dict[str, float], 
+                          model_name: str) -> np.ndarray:
+    """
+    Convert fitted parameters back to original concentration scale.
+    
+    For binding constants Ka and Kd, the relationship is:
+    Ka_original = Ka_normalized / concentration_scale
+    
+    Chemical shift parameters (d_inf) remain unchanged as they are
+    measured quantities independent of concentration units.
+    
+    Args:
+        params: Fitted parameters from normalized data
+        scale_factors: Dictionary with h_scale and g_scale
+        model_name: Name of the model to determine parameter scaling
+        
+    Returns:
+        Parameters in original scale
+    """
+    h_scale = scale_factors['h_scale']
+    
+    params_original = params.copy()
+    
+    # Scale binding constants (Ka, Kd) inversely with concentration
+    # Ka values are typically the first 1-2 parameters
+    
+    if model_name in ["HG"]:
+        # 1:1 binding: [Ka, d_inf]
+        params_original[0] = params[0] / h_scale  # Ka scales inversely with H
+        # params_original[1] is d_inf - no scaling needed
+        
+    elif model_name in ["HG₂", "H₂G", "HG + H₂"]:
+        # 1:2, 2:1, and dimer models: [Ka, Kd, d_inf_1, d_inf_2]
+        params_original[0] = params[0] / h_scale  # Ka
+        params_original[1] = params[1] / h_scale  # Kd
+        # params_original[2:] are d_inf values - no scaling needed
+        
+    elif model_name == "H₂G + HG + H₂":
+        # Multi-equilibrium: [KHG, Kd, KH2G, d_inf_1, d_inf_2]
+        params_original[0] = params[0] / h_scale  # KHG
+        params_original[1] = params[1] / h_scale  # Kd
+        params_original[2] = params[2] / h_scale  # KH2G
+        # params_original[3:] are d_inf values - no scaling needed
+    
+    # Chemical shift parameters (d_inf) don't need scaling
+    # They are already in the correct units (Hz, ppm, etc.)
+    
+    return params_original
+
+
 def collect_global_max_deltadelta(input_folder: str) -> float:
     """
     Scan all CSV files in the input folder and return the maximum Δδ across all files.

@@ -25,6 +25,8 @@ from utils import (
     autocorrelation_tests,
     collect_global_max_deltadelta,
     custom_residual_pattern_test,
+    denormalize_parameters,
+    normalize_concentrations,
     save_combined_csv,
     validate_data,
 )
@@ -943,12 +945,14 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
             logging.error(f"Skipping {filename} due to validation error.")
             continue
 
-        H0, G0, d_delta_exp = np.genfromtxt(
-            full_path, delimiter=",", names=True, unpack=True
-        )
-        H0 = np.array(H0, dtype=float)
-        G0 = np.array(G0, dtype=float)
-        delta = np.array(d_delta_exp, dtype=float)
+        # Normalize concentrations for numerical stability
+        df_normalized, scale_factors = normalize_concentrations(df)
+        logging.info(f"Normalized {filename}: H scale={scale_factors['h_scale']:.2e}, G scale={scale_factors['g_scale']:.2e}")
+
+        # Extract normalized concentrations
+        H0 = df_normalized['H'].values
+        G0 = df_normalized['G'].values
+        delta = df['delta'].values  # Chemical shifts don't need normalization
         d_delta_exp = np.abs(delta - delta[0])
         d_delta_exp[0] = 0
 
@@ -1035,25 +1039,31 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
                     enable_custom_corr=True,
                 )
 
-                # Create parameter dictionary with names
+                # Denormalize parameters back to original scale
+                params_denorm = denormalize_parameters(params, scale_factors, model_name)
+                std_err_denorm = denormalize_parameters(std_err, scale_factors, model_name)
+                
+                logging.info(f"Parameters denormalized from scale: h_scale={scale_factors['h_scale']:.2e}")
+
+                # Create parameter dictionary with names (using denormalized values)
                 param_names = model.get(
                     "parameter_names", [f"param_{i+1}" for i in range(len(params))]
                 )
                 named_parameters = {
-                    name: value for name, value in zip(param_names, params)
+                    name: value for name, value in zip(param_names, params_denorm)
                 }
                 named_errors = {
-                    f"{name}_error": error for name, error in zip(param_names, std_err)
+                    f"{name}_error": error for name, error in zip(param_names, std_err_denorm)
                 }
 
                 output_rows.append(
                     {
                         "file": filename,
                         "model": model_name,
-                        "parameters": params.tolist(),
+                        "parameters": params_denorm.tolist(),
                         "parameter_names": param_names,
                         "named_parameters": named_parameters,
-                        "standard_errors": std_err.tolist(),
+                        "standard_errors": std_err_denorm.tolist(),
                         "named_errors": named_errors,
                         "r_squared": r2,
                         "AIC": aic,
@@ -1062,7 +1072,7 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
                         "weighted_RMSE": weighted_rmse,
                         "confidence_intervals": [
                             (v - 1.96 * s, v + 1.96 * s)
-                            for v, s in zip(params, std_err)
+                            for v, s in zip(params_denorm, std_err_denorm)
                         ],
                         "fitted_values": fit_vals.tolist(),
                         "residuals": residuals.tolist(),
@@ -1081,11 +1091,8 @@ def process_csv_files_in_folder(config, skip_tests=False, plot_normalized=False)
                 logging.debug(f"Cook's extreme: {diagnostics.get('cooks_extreme')}")
 
                 logging.info(f"Model {model_name} fit completed")
-                # Log parameters with proper names
-                param_names = model.get(
-                    "parameter_names", [f"param_{i+1}" for i in range(len(params))]
-                )
-                for name, value, error in zip(param_names, params, std_err):
+                # Log parameters with proper names (denormalized values)
+                for name, value, error in zip(param_names, params_denorm, std_err_denorm):
                     logging.info(f"  {name}: {value:.6f} ± {error:.6f}")
                 logging.debug(f"Parm - results: {results}")
 
