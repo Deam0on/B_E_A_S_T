@@ -278,6 +278,8 @@ def advanced_residual_diagnostics(
 def validate_data(df: pd.DataFrame) -> bool:
     """
     Validate that the input dataframe contains required columns and data.
+    Also trims numeric values to at most 6 decimal places and warns if
+    duplicate rows (identical values across columns) are present after rounding.
 
     Args:
         df: Input dataframe to validate
@@ -292,8 +294,29 @@ def validate_data(df: pd.DataFrame) -> bool:
         logging.error(f"Missing required columns: {missing}")
         return False
 
+    # Trim numeric columns to max 6 decimal places (in-place)
+    try:
+        numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+        if numeric_cols:
+            df.loc[:, numeric_cols] = df.loc[:, numeric_cols].round(6)
+    except Exception as e:
+        logging.warning(f"Rounding numeric columns failed: {e}")
+
+    # Warn about NaNs in required columns
     if df[required_cols].isnull().any().any():
-        logging.warning("Detected NaN values in input data")
+        logging.warning("Detected NaN values in required input data")
+
+    # Warn if there are duplicate rows (identical values across all columns) after rounding
+    try:
+        dup_mask = df.duplicated(keep=False)
+        if dup_mask.any():
+            dup_indices = df.index[dup_mask].tolist()
+            logging.warning(
+                f"Detected duplicate rows (identical values) after rounding. Count: {dup_mask.sum()}. Indices: {dup_indices[:10]}"
+                + (f" ... (and {len(dup_indices)-10} more)" if len(dup_indices) > 10 else "")
+            )
+    except Exception as e:
+        logging.warning(f"Duplicate detection failed: {e}")
 
     if len(df) < 3:
         logging.error("Insufficient data points (minimum 3 required)")
